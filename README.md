@@ -2,8 +2,8 @@
 
 A web application and LLM-powered RAG system for insurance consultation.
 
-## Features
-- Document parsing with Docling
-- MLX Qwen Embeddings
-- Vector Search with Qdrant
-- Containerized development with Docker and UV
+The systme uses:
+- Docling for document parsing
+- Qdrant for vector storage
+- MLX Qwen Embeddings for embedding
+- LangGraph for agent orchestration

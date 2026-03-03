@@ -1,22 +1,18 @@
 FROM python:3.11-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (if needed later)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Enable bytecode compilation for faster startups
+ENV UV_COMPILE_BYTECODE=1
+# Copy only the configuration files first to cache the installation layer
+COPY pyproject.toml uv.lock ./
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install dependencies without installing the project itself yet
+RUN uv sync --frozen --no-install-project
 
-# Copy the rest of the project files
+# Copy the rest of your code
 COPY . .
 
-# Expose Jupyter port
-EXPOSE 8888
-
-# Command to run Jupyter Notebook with no token or password
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=8888", "--no-browser", "--allow-root", "--NotebookApp.token=''", "--NotebookApp.password=''"]
+# Run your application
+CMD ["uv", "run", "main.py"]
