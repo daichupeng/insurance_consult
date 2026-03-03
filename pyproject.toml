@@ -1,0 +1,17 @@
+[project]
+name = "insrance-consult"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "docling>=2.76.0",
+    "ipykernel>=7.2.0",
+    "langchain>=1.2.10",
+    "langchain-community>=0.4.1",
+    "langchain-qdrant>=1.1.0",
+    "langgraph>=1.0.10",
+    "mlx>=0.31.0",
+    "mlx-embeddings>=0.0.5",
+    "qdrant-client>=1.17.0",
+]

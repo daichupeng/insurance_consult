@@ -1,0 +1,5 @@
+jupyter
+qdrant
+langgraph
+langchain
+docling

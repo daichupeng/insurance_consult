@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  jupyter:
+    build: .
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/app
+    environment:
+      - JUPYTER_ENABLE_LAB=yes
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333" # Access via dashboard at http://localhost:6333
+    volumes:
+      - ./qdrant_storage:/qdrant/storage # Keeps your insurance data safe
