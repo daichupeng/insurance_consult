@@ -37,3 +37,12 @@ def profile_analyzer_node(state: AgentState) -> dict:
         "user_profile": extracted_profile,
         "messages": messages
     }
+
+def criteria_generator_node(state: AgentState) -> dict:
+    profile = state.get("user_profile")
+    if not profile:
+        # Failsafe if we somehow entered without a profile
+        return {"criteria": []}
+        
+    criteria = criteria_generator.generate_criteria(profile)
+    return {"criteria": criteria}

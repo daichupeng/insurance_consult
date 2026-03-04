@@ -35,10 +35,7 @@ class ProfileAnalyzer:
                 messages.append(SystemMessage(content=f"The user has already provided some profile information:\n{existing_info}\nDo not ask for these details again unless they explicitly want to change them."))
                 
         messages.append(HumanMessage(content=user_input))
-        i=0
         while True:
-            print(i)
-            i+=1
             response = self.llm_with_tools.invoke(messages)
             messages.append(response)
             
@@ -49,7 +46,6 @@ class ProfileAnalyzer:
 
             for tool_call in response.tool_calls:
                 if tool_call["name"] == "ask_user_for_clarification":
-                    print(tool_call["args"])
                     user_response = ask_user_for_clarification.invoke(tool_call["args"])
                     messages.append(ToolMessage(content=user_response, tool_call_id=tool_call["id"]))
                 elif tool_call["name"] == "UserProfile":
