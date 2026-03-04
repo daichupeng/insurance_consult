@@ -9,9 +9,11 @@ dependencies = [
     "ipykernel>=7.2.0",
     "langchain>=1.2.10",
     "langchain-community>=0.4.1",
+    "langchain-openai>=1.1.10",
     "langchain-qdrant>=1.1.0",
     "langgraph>=1.0.10",
     "mlx>=0.31.0",
     "mlx-embeddings>=0.0.5",
+    "pydantic>=2.12.5",
     "qdrant-client>=1.17.0",
 ]

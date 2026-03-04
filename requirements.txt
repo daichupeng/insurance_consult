@@ -1,5 +1,8 @@
-jupyter
-qdrant
-langgraph
+pydantic
 langchain
-docling
+langchain-openai
+langgraph
+qdrant-client
+python-dotenv
+# Additional dependencies for docling/PDF parsing
+# docling 
