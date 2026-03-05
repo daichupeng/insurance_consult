@@ -1,26 +1,35 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict
+from typing import TypeVar, Generic, Optional, Literal, Union, List, Dict, Annotated, TypedDict
+import operator
 
+T = TypeVar('T')
 # User Profile to be optimized later. Maybe more dynamic
 
-class UserProfile(BaseModel):
-    age: Optional[int] = Field(None, description="Age of the user")
-    gender: Optional[str] = Field(None, description="Gender of the user")
-    occupation: Optional[str] = Field(None, description="Occupation of the user")
-    annual_income: Optional[float] = Field(None, description="Annual income of the user in SGD")
-    dependents: Optional[int] = Field(None, description="Number of financial dependents")
-    health_status: Optional[str] = Field(None, description="General health status or specific pre-existing conditions")
-    existing_coverage: Optional[float] = Field(None, description="Existing life insurance coverage amount in SGD")
-    primary_goal: Optional[str] = Field(None, description="Primary goal for seeking life insurance (e.g., family protection, investment, estate planning, debt coverage)")
-    annual_budget: Optional[float] = Field(None, description="Annual budget for insurance premiums in SGD")
+class AttributeValue(BaseModel, Generic[T]):
+    value: T
+    source: Literal["User input", "Recommended", "Default", "System calculated"]
+    reasoning: Optional[str] = Field(None, description="If the value is inferred or system calculated, provide the details here.")
+    confirmed_by_user: bool = Field(False, description="Whether the value is confirmed by the user.")
+
+
+class UserRequirements(BaseModel):
+    age: int = Field(description="Age of the user")
+    gender: str = Field(description="Gender of the user")
+    occupation: str = Field(description="Occupation of the user")
+    is_smoker: bool = Field(description="Whether the user is a smoker")
+    annual_income: int = Field(description="Annual income of the user in SGD")
+    dependents: AttributeValue[int] = Field(description="Number of financial dependents")
+    health_status: AttributeValue[str] = Field(description="General health status or specific pre-existing conditions")
+    existing_coverage: int = Field(description="Existing life insurance coverage amount in SGD")
+    primary_goal: str = Field(description="Primary goal for seeking life insurance (e.g., family protection, investment, estate planning, debt coverage)")
+    coverage_amount: AttributeValue[float] = Field(description="Desired coverage amount in SGD")
+    budget: AttributeValue[float] = Field(description="Annual budget for insurance premiums in SGD")
+    policy_type: AttributeValue[str] = Field(description="Type of insurance policy (e.g., term life, whole life, universal life)")
+    policy_duration: AttributeValue[int] = Field(description="Duration of the insurance policy in years")
 
 class ProfileAnalysisResult(BaseModel):
     sufficient_info: bool = Field(description="Whether the user has provided enough information to make a reasonable life insurance recommendation.")
     clarification_questions: str = Field(description="Questions to ask the user if sufficient_info is False, to gather missing necessary details.")
-
-class InsurancePolicy(BaseModel):
-    # Placeholder for insurance policy data
-    pass
 
 class ScoringItem(BaseModel):
     item: str=Field(description="Scoring item")
@@ -30,6 +39,21 @@ class ScoringItem(BaseModel):
 
 class ScoringCriteria(BaseModel):
     criteria: List[ScoringItem] = Field(description="List of criteria used to score life insurance policies for this user.")
+    filters: str=Field(description="Hard filters for the policy. Certain policies should be excluded based on these filters.")
+
+
+class RetrieverState(TypedDict):
+    criteria: List[ScoringItem]
+    current_criterion_index: int
+    collected_context: Annotated[List[str], operator.add]
+    messages: Annotated[List[dict], operator.add]
+    filters: str
+
+
+class InsurancePolicy(BaseModel):
+    # Placeholder for insurance policy data
+    pass
+
 
 class PolicyScoring(BaseModel):
     # Placeholder for how a policy scores against criteria
