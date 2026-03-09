@@ -35,4 +35,16 @@ class CriteriaGenerator:
         chain = self.prompt | self.llm_structured
         result: ScoringCriteria = chain.invoke({"profile_details": profile_details})
         
+        print("\n[CriteriaGenerator]: Generated Criteria:")
+        for idx, crit in enumerate(result.criteria, 1):
+            print(f"  {idx}. {crit.item} (Weight: {crit.weight}) - {crit.description}")
+            
+        print("\n[CriteriaGenerator]: Generated Hard Filters:")
+        if result.filters:
+            for idx, filter_txt in enumerate(result.filters, 1):
+                print(f"  {idx}. {filter_txt}")
+        else:
+            print("  None")
+        print("\n")
+        
         return result
