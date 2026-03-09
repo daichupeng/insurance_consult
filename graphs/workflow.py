@@ -44,15 +44,25 @@ def criteria_generator_node(state: AgentState) -> dict:
     profile = state.get("user_requirements")
     if not profile:
         # Failsafe if we somehow entered without a profile
-        return {"criteria": []}
+        return {"criteria": ScoringCriteria(criteria=[], filters=[])}
         
     criteria = criteria_generator.generate_criteria(profile)
     return {"criteria": criteria}
 
 def retriever_node(state: AgentState) -> dict:
     criteria = state['criteria']
-    if not criteria:
-        return {"retrieved_context": []}
+    if not criteria.criteria and not criteria.filters:
+        return {"policies": []}
         
-    retrieved_docs = retriever.retrieve(criteria)
-    return {"retrieved_context": retrieved_docs}
+    retrieved_policies = retriever.retrieve(criteria)
+    return {"policies": retrieved_policies}
+
+def policy_scorer_node(state: AgentState) -> dict:
+    policies = state.get('policies', [])
+    criteria = state.get('criteria')
+    
+    if not policies or not criteria:
+        return {"policies": policies}
+        
+    evaluated_policies = policy_scorer.score_policies(policies, criteria)
+    return {"policies": evaluated_policies}

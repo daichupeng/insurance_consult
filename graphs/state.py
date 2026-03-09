@@ -1,17 +1,16 @@
-from typing import List, TypedDict, Annotated, Optional
+from typing import List, TypedDict, Annotated, Optional, Dict
 import operator
-from schema.models import UserRequirements, ScoringItem, PolicyScoring, RecommendationReport
+from schema.models import UserRequirements, ScoringItem, PolicyScoring, RecommendationReport, ScoringCriteria, Policy
 
 class AgentState(TypedDict):
     """
     State defining the data passed between nodes in the LangGraph workflow.
     """
     user_requirements: Optional[UserRequirements]
-    criteria: List[ScoringItem]
-    retrieved_context: List[str]
-    gradings: List[PolicyScoring]
+    criteria: ScoringCriteria
     is_good_recommendation: bool
     final_report: Optional[RecommendationReport]
+    policies: List[Policy]
     # To prevent infinite reflection loops
     iterations: int             
     messages: Annotated[List[dict], operator.add] # Chat history

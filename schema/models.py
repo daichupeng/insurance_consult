@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import TypeVar, Generic, Optional, Literal, Union, List, Dict, Annotated, TypedDict
+from typing import TypeVar, Generic, Optional, Literal, Union, List, Dict, Annotated, TypedDict, Tuple
 import operator
 
 T = TypeVar('T')
@@ -39,15 +39,20 @@ class ScoringItem(BaseModel):
 
 class ScoringCriteria(BaseModel):
     criteria: List[ScoringItem] = Field(description="List of criteria used to score life insurance policies for this user.")
-    filters: str=Field(description="Hard filters for the policy. Certain policies should be excluded based on these filters.")
+    filters: List[str]=Field(description="Hard filters for the policy. Certain policies should be excluded based on these filters.")
 
+class Policy(BaseModel):
+    policy_name: str = Field(description="Name of the policy")
+    fulfil_filters: Tuple[bool, str] = Field(description='Whether the policy fulfills the filters. If not, why not?')
+    scoring: List[Tuple[int, ScoringItem, str]] = Field(description = 'Score for each item, the item itself, and reasoning')
+    retrieved_context: Dict[str, List[str]] = Field(description = 'Relevant context found in the policy documents')
 
 class RetrieverState(TypedDict):
-    criteria: List[ScoringItem]
-    current_criterion_index: int
+    search_items: List[ScoringItem]
+    current_item_index: int
+    mode: str
     collected_context: Annotated[List[str], operator.add]
     messages: Annotated[List[dict], operator.add]
-    filters: str
 
 
 class InsurancePolicy(BaseModel):

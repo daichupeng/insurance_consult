@@ -35,19 +35,10 @@ def search_policy_docs(query: str, policy_name: str = None) -> str:
     """
     print(f"\n[Tool Execution]: Searching for '{query}'" + (f" in '{policy_name}'" if policy_name else ""))
     
-    qdrant_filter = None
-    if policy_name:
-        qdrant_filter = Filter(must=[
-            FieldCondition(
-                key="metadata.source", 
-                match=MatchValue(value=f"../raw_policies/aia/{policy_name}.pdf") # Assuming based on notebook chunking logs
-            )
-        ])
 
     docs = vector_store.similarity_search(
         query=query,
         k=5,
-        filter=qdrant_filter
     )
     
     if not docs:

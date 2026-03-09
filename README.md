@@ -7,3 +7,9 @@ The systme uses:
 - Qdrant for vector storage
 - MLX Qwen Embeddings for embedding
 - LangGraph for agent orchestration
+
+0309 todo:
+- RAG embedding optimization. Retrieval is not good enough.
+- Criteria generation optimization: reflexion
+- Dynamic user requirement 
+- Retrieval reflection
