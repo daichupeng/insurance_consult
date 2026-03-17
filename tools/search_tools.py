@@ -11,6 +11,13 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'rag')))
 from mlx_embedder import MLXQwenEmbeddings
 
+from dotenv import load_dotenv
+load_dotenv()
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+
+_llm = ChatOpenAI(model="gpt-4o", temperature=0)
+
 # Initialize Qdrant Client globally for tools
 _client = QdrantClient(url="http://localhost:6333")
 _collection_name = "life_insurance_policies"
@@ -79,12 +86,28 @@ def query_expansion(criterion: str) -> str:
     e.g., "Total Permanent Disability" -> "TPD, Permanent disability, Presumed incapacity"
     """
     print(f"\n[Tool Execution]: Expanding query '{criterion}'")
-    variations = [
-        f"{criterion} definition",
-        f"{criterion} clause",
-        f"{criterion} benefits and conditions"
-    ]
-    return ", ".join(variations)
+    
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", "You are an expert in life insurance terminology. Generate 3 to 5 clear, concise semantic variations, synonyms, or related terms for the given search term to improve vector database recall. Return ONLY a comma-separated list of these variations."),
+        ("human", "Search term: {criterion}")
+    ])
+    
+    chain = prompt | _llm
+    result = chain.invoke({"criterion": criterion})
+    
+    # Return the generated comma-separated variations
+    variations = result.content.strip()
+    print(f"  -> Generated variations: {variations}")
+    return variations
+
+@tool
+def remove_context(snippet: str) -> str:
+    """
+    Instructs the system to remove a specific irrelevant snippet from the collected context.
+    Pass the exact snippet text or a unique substring of it to be removed.
+    """
+    print(f"\n[Tool Execution]: Removing context containing snippet: '{snippet[:30]}...'")
+    return f"Context containing '{snippet}' has been flagged for removal."
 
 @tool
 def list_available_policies() -> str:

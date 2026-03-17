@@ -51,9 +51,9 @@ class RetrieverState(TypedDict):
     search_items: List[ScoringItem]
     current_item_index: int
     mode: str
-    collected_context: Annotated[List[str], operator.add]
+    collected_context: List[str]
     messages: Annotated[List[dict], operator.add]
-
+    iterations: int
 
 class InsurancePolicy(BaseModel):
     # Placeholder for insurance policy data

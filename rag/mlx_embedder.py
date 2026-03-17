@@ -29,7 +29,21 @@ class MLXQwenEmbeddings(Embeddings):
         embeddings = outputs.text_embeds
         
         # Convert the MLX array to a standard Python list of floats for Qdrant
-        return embeddings.tolist()
+        res = embeddings.tolist()
+        
+        # DEBUG
+        if not res or not res[0]:
+            raise ValueError(f"Empty embeddings list! Shape was: {embeddings.shape}")
+        
+        import math
+        for i, vec in enumerate(res):
+            for j, x in enumerate(vec):
+                if math.isnan(x):
+                    res[i][j] = 0.0
+                elif math.isinf(x):
+                    res[i][j] = 1e4 if x > 0 else -1e4
+                    
+        return res
 
     def embed_query(self, text: str) -> List[float]:
         """Used by the evaluator node to embed the single user query."""
