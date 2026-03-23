@@ -134,8 +134,7 @@ class CriteriaGenerator:
 
     def generate_criteria(self, profile: UserRequirements) -> ScoringCriteria:
         """Generates and perfects comparison points (criteria) for insurance policies based on the user's profile and goals."""
-        profile_dict = profile.model_dump(exclude_none=True)
-        profile_details = "\n".join([f"{k.replace('_', ' ').title()}: {v}" for k, v in profile_dict.items()])
+        profile_details = profile.to_text()
         
         initial_state = {
             "profile_details": profile_details,

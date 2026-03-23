@@ -81,7 +81,7 @@ class Retriever:
         ))
         
         messages = [system_prompt] + state['messages']
-        llm_with_tools = llm.bind_tools([search_policy_docs, get_policy_summary, query_expansion, list_available_policies, remove_context])
+        llm_with_tools = llm.bind_tools([search_policy_docs, get_policy_summary, query_expansion, list_available_policies])
         
         response = llm_with_tools.invoke(messages)
         return {"messages": [response]}
@@ -129,7 +129,7 @@ class Retriever:
         item = state['search_items'][state['current_item_index']]
         iterations = state.get('iterations', 0)
         
-        if iterations >= 3:
+        if iterations >= 1:
             print("  -> Reflection limit reached. Proceeding.")
             return {"messages": [HumanMessage(content="Reflector: All good (limit reached). Proceed to next.")], "iterations": iterations + 1}
             

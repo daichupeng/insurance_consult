@@ -1,0 +1,352 @@
+2026-03-23 15:29:44.0114 - INFO - graphrag_llm.metrics.log_metrics_writer - Metrics for openai/text-embedding-3-large: {
+  "attempted_request_count": 1,
+  "successful_response_count": 1,
+  "failed_response_count": 0,
+  "failure_rate": 0.0,
+  "requests_with_retries": 0,
+  "retries": 0,
+  "retry_rate": 0.0,
+  "compute_duration_seconds": 2.8314030170440674,
+  "compute_duration_per_response_seconds": 2.8314030170440674,
+  "cache_hit_rate": 0.0,
+  "streaming_responses": 0,
+  "responses_with_tokens": 1,
+  "prompt_tokens": 6,
+  "total_tokens": 6,
+  "tokens_per_response": 6.0,
+  "cost_per_response": 0.0
+}
+2026-03-23 15:29:44.0114 - INFO - graphrag_llm.metrics.log_metrics_writer - Metrics for openai/gpt-4o: {
+  "attempted_request_count": 1,
+  "successful_response_count": 1,
+  "failed_response_count": 0,
+  "failure_rate": 0.0,
+  "requests_with_retries": 0,
+  "retries": 0,
+  "retry_rate": 0.0,
+  "compute_duration_seconds": 0,
+  "compute_duration_per_response_seconds": 0.0,
+  "cache_hit_rate": 0.0,
+  "streaming_responses": 1,
+  "tokens_per_response": 0.0,
+  "cost_per_response": 0.0
+}
+2026-03-23 15:49:15.0841 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 15:49:19.0536 - INFO - graphrag_llm.metrics.log_metrics_writer - Metrics for openai/text-embedding-3-large: {
+  "attempted_request_count": 1,
+  "successful_response_count": 1,
+  "failed_response_count": 0,
+  "failure_rate": 0.0,
+  "requests_with_retries": 0,
+  "retries": 0,
+  "retry_rate": 0.0,
+  "compute_duration_seconds": 0.6694529056549072,
+  "compute_duration_per_response_seconds": 0.6694529056549072,
+  "cache_hit_rate": 0.0,
+  "streaming_responses": 0,
+  "responses_with_tokens": 1,
+  "prompt_tokens": 19,
+  "total_tokens": 19,
+  "tokens_per_response": 19.0,
+  "cost_per_response": 0.0
+}
+2026-03-23 15:49:19.0536 - INFO - graphrag_llm.metrics.log_metrics_writer - Metrics for openai/gpt-4o: {
+  "attempted_request_count": 1,
+  "successful_response_count": 1,
+  "failed_response_count": 0,
+  "failure_rate": 0.0,
+  "requests_with_retries": 0,
+  "retries": 0,
+  "retry_rate": 0.0,
+  "compute_duration_seconds": 0,
+  "compute_duration_per_response_seconds": 0.0,
+  "cache_hit_rate": 0.0,
+  "streaming_responses": 1,
+  "tokens_per_response": 0.0,
+  "cost_per_response": 0.0
+}
+2026-03-23 17:16:44.0302 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:16:57.0766 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:17:38.0365 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:18:00.0397 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:18:11.0920 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:18:31.0066 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:19:05.0982 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:19:16.0464 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:19:50.0751 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:19:51.0600 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:19:53.0742 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:19:53.0760 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:19:53.0902 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:19:53.0925 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:19:54.0188 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:20:17.0272 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:20:31.0508 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:20:49.0802 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:21:09.0636 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 17:21:14.0761 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:21:20.0458 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 17:21:27.0851 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:21:41.0505 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:28:48.0607 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:29:05.0856 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:29:33.0576 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:29:52.0167 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:30:07.0087 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:30:23.0967 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:30:30.0079 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 17:30:40.0995 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 17:30:48.0135 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:31:06.0839 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:31:26.0921 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:31:46.0038 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:32:06.0462 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:32:18.0181 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:32:22.0802 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:32:27.0423 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:32:51.0066 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:33:37.0245 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:33:40.0997 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:34:00.0890 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:34:16.0210 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:34:27.0035 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:34:37.0356 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:34:49.0296 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:35:10.0206 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 17:35:21.0112 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 17:35:26.0358 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:35:39.0515 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:35:52.0148 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:36:00.0000 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:36:20.0349 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:36:31.0190 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:36:41.0853 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 17:37:02.0589 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 17:37:48.0534 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:01:29.0209 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:02:00.0343 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:02:30.0554 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:02:36.0928 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:02:56.0348 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:03:16.0428 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:03:45.0346 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:03:57.0740 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:04:51.0519 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:05:03.0255 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:05:15.0981 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:05:36.0637 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:05:54.0832 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:06:12.0106 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:06:45.0743 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:07:09.0500 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:07:48.0042 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:08:00.0711 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:08:28.0506 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:08:41.0131 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:08:56.0044 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:09:25.0474 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:09:41.0165 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:09:52.0881 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:01.0830 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:04.0979 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:10:14.0604 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:18.0446 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:22.0182 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:10:27.0173 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:27.0291 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:27.0576 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:27.0984 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:28.0255 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:29.0931 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:35.0323 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:36.0313 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:38.0161 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:38.0418 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:40.0615 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:10:46.0143 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:10:50.0894 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:10:59.0801 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:11:16.0930 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:11:26.0995 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:11:42.0801 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:11:50.0123 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:12:25.0673 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:12:47.0506 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:13:16.0752 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:20.0164 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:20.0219 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:25.0208 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:50.0722 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:51.0380 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:51.0493 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:51.0896 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:59.0620 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:13:59.0863 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:14:05.0005 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:14:14.0686 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:14:38.0234 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:14:50.0215 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:15:01.0555 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:15:12.0166 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:15:25.0494 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:15:29.0433 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:15:31.0653 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:15:35.0863 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:15:52.0493 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:16:05.0429 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:05.0523 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:05.0630 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:05.0725 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:05.0875 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:06.0146 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:07.0169 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:10.0340 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:10.0341 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:16:30.0533 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:16:45.0912 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:16:58.0761 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:17:02.0501 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:17:28.0493 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:17:49.0275 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:17:50.0947 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:17:53.0228 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:18:19.0309 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:18:41.0761 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:18:56.0978 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:19:10.0486 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:19:36.0034 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:19:58.0490 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:20:04.0878 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:20:24.0415 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:20:30.0424 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:20:51.0245 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:21:12.0867 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:21:20.0188 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:22:10.0130 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 20:22:18.0883 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 20:22:28.0786 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:22:52.0095 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:23:25.0849 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 20:23:38.0924 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0693 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0702 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0802 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0828 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0844 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0885 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0912 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0913 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:29.0921 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0047 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0065 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0116 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0123 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0172 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0241 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:30.0279 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:37.0200 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:41.0399 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:46.0720 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:48.0920 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:49.0201 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:49.0912 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:25:50.0071 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:50.0841 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:51.0119 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:53.0145 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:53.0226 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:53.0735 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:53.0759 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:25:54.0664 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:55.0007 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:55.0288 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:25:56.0745 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:25:58.0397 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:00.0470 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:01.0027 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:01.0075 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:01.0379 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:01.0386 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:02.0150 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:02.0236 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:02.0258 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:02.0435 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:04.0016 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:04.0763 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:05.0221 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:06.0480 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:07.0791 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:07.0807 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:08.0159 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:11.0097 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:11.0154 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:11.0385 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:11.0558 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:26:11.0903 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:12.0088 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:14.0166 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:15.0033 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:15.0046 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:15.0188 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:19.0538 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:19.0542 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:26:20.0037 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:20.0622 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:21.0309 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:22.0143 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:22.0741 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:25.0759 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:25.0901 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:25.0987 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:26.0552 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:26.0739 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:29.0964 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:30.0463 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:30.0938 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:32.0505 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:33.0424 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:26:35.0409 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:35.0911 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:26:38.0316 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:38.0967 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:39.0880 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:41.0238 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:41.0611 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:42.0502 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:42.0992 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:44.0744 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:44.0967 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:45.0268 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:45.0580 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:45.0712 - WARNING - graphrag.query.llm.text_utils - Error decoding faulty json, attempting repair
+2026-03-23 21:26:45.0865 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:47.0995 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:48.0146 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:50.0250 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:50.0541 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:50.0909 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:53.0551 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:54.0991 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:26:56.0863 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:26:57.0075 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:58.0483 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:26:59.0601 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:27:02.0268 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:03.0108 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:05.0748 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:08.0203 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:14.0574 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:16.0319 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:16.0740 - WARNING - graphrag.query.structured_search.global_search.search - Warning: All map responses have score 0 (i.e., no relevant information found from the dataset), returning a canned 'I do not know' answer. You can try enabling `allow_general_knowledge` to encourage the LLM to incorporate relevant general knowledge, at the risk of increasing hallucinations.
+2026-03-23 21:27:17.0867 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:21.0230 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:26.0563 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:29.0766 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:31.0793 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:27:59.0854 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:28:00.0936 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:28:06.0727 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:28:19.0493 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:28:31.0431 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:28:42.0665 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-03-23 21:29:10.0020 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state

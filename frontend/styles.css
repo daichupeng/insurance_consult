@@ -1,0 +1,24 @@
+/* Thin custom scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+/* Chat message slide-in */
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-enter { animation: msgIn 0.18s ease-out; }
+
+/* Status pill pulse dot */
+@keyframes softPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.pulse-dot { animation: softPulse 1.4s ease-in-out infinite; }
+
+/* Expand / collapse transition */
+.expand-enter { animation: msgIn 0.15s ease-out; }
+
+* { box-sizing: border-box; }

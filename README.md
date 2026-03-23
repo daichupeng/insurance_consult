@@ -23,3 +23,20 @@ The systme uses:
     - Dynamic user requirement
 
     - Policy scoring process: to further break down tasks
+
+
+0318
+    done:
+    - RAG indexing for tables
+    - Criteria reflection
+    - Retrieval reflection
+
+    todo:
+    - GraphRAG
+    - For criteria generation, further optimize. Think of how to evaluate the quality of criteria generation.
+    - Improve retrieval efficiency and relevance
+
+    - Scoring: introduce more tools
+        - Premium calculation
+        - Other scoring tools
+        - Maybe ask agent to write code for scoring if needed

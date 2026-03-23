@@ -1,0 +1,1 @@
+GraphRAG is a library developed by Microsoft that creates knowledge graphs over datasets. It operates in stages: indexing and querying. The process runs locally unless external APIs are invoked.

@@ -1,35 +1,55 @@
 from pydantic import BaseModel, Field
-from typing import TypeVar, Generic, Optional, Literal, Union, List, Dict, Annotated, TypedDict, Tuple
+from typing import Any, TypeVar, Generic, Optional, Literal, Union, List, Dict, Annotated, TypedDict, Tuple
 import operator
 
 T = TypeVar('T')
-# User Profile to be optimized later. Maybe more dynamic
 
-class AttributeValue(BaseModel, Generic[T]):
-    value: T
-    source: Literal["User input", "Recommended", "Default", "System calculated"]
-    reasoning: Optional[str] = Field(None, description="If the value is inferred or system calculated, provide the details here.")
-    confirmed_by_user: bool = Field(False, description="Whether the value is confirmed by the user.")
+
+class RequirementItem(BaseModel):
+    """A single, self-contained requirement captured during the consultation."""
+    key: str = Field(description="Unique snake_case identifier (e.g. 'beneficiary', 'monthly_budget', 'outstanding_mortgage')")
+    label: str = Field(description="Human-readable label shown in the UI (e.g. 'Primary Beneficiary', 'Monthly Budget')")
+    value: Any = Field(description="The captured value — string, number, list, or boolean")
+    source: Literal["User input", "Recommended", "Inferred", "System calculated"] = Field(
+        default="User input",
+        description="How this value was obtained"
+    )
+    reasoning: Optional[str] = Field(
+        default=None,
+        description="Why this was inferred or recommended, or any important nuance about the value"
+    )
+    confirmed_by_user: bool = Field(
+        default=False,
+        description="Whether the user explicitly confirmed this value"
+    )
 
 
 class UserRequirements(BaseModel):
-    age: int = Field(description="Age of the user")
-    gender: str = Field(description="Gender of the user")
-    occupation: str = Field(description="Occupation of the user")
-    is_smoker: bool = Field(description="Whether the user is a smoker")
-    annual_income: int = Field(description="Annual income of the user in SGD")
-    dependents: AttributeValue[int] = Field(description="Number of financial dependents")
-    health_status: AttributeValue[str] = Field(description="General health status or specific pre-existing conditions")
-    existing_coverage: int = Field(description="Existing life insurance coverage amount in SGD")
-    primary_goal: str = Field(description="Primary goal for seeking life insurance (e.g., family protection, investment, estate planning, debt coverage)")
-    coverage_amount: AttributeValue[float] = Field(description="Desired coverage amount in SGD")
-    budget: AttributeValue[float] = Field(description="Annual budget for insurance premiums in SGD")
-    policy_type: AttributeValue[str] = Field(description="Type of insurance policy (e.g., term life, whole life, universal life)")
-    policy_duration: AttributeValue[int] = Field(description="Duration of the insurance policy in years")
+    """
+    Flexible, open-ended requirements profile built through conversation.
+    Items are captured in the order they are discovered — not a fixed checklist.
+    """
+    items: List[RequirementItem] = Field(
+        description="All requirements discovered during the consultation, in discovery order"
+    )
 
-class ProfileAnalysisResult(BaseModel):
-    sufficient_info: bool = Field(description="Whether the user has provided enough information to make a reasonable life insurance recommendation.")
-    clarification_questions: str = Field(description="Questions to ask the user if sufficient_info is False, to gather missing necessary details.")
+    def to_text(self) -> str:
+        """Serialise to human-readable text suitable for downstream agents."""
+        lines = []
+        for r in self.items:
+            line = f"- {r.label}: {r.value}"
+            if r.reasoning:
+                line += f"  ({r.reasoning})"
+            if r.source != "User input":
+                line += f"  [source: {r.source}]"
+            lines.append(line)
+        return "\n".join(lines)
+
+    def get(self, key: str) -> Optional[RequirementItem]:
+        for item in self.items:
+            if item.key == key:
+                return item
+        return None
 
 class ScoringItem(BaseModel):
     item: str=Field(description="Scoring item")

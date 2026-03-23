@@ -1,5 +1,6 @@
 from langgraph.graph import StateGraph, START, END
 from graphs.state import AgentState
+from schema.models import ScoringCriteria
 
 # Import nodes (agents)
 from agents.profile_analyzer import ProfileAnalyzer
@@ -7,7 +8,7 @@ from agents.criteria_generator import CriteriaGenerator
 from agents.policy_scorer import PolicyScorer
 from agents.scoring_reviewer import ScoringReviewer
 from agents.report_writer import ReportWriter
-from agents.retriever import Retriever
+from agents.graph_rag_retriever import GraphRAGRetriever
 
 import logging
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Initialize components
 profile_analyzer = ProfileAnalyzer()
 criteria_generator = CriteriaGenerator()
-retriever = Retriever()
+retriever = GraphRAGRetriever()
 policy_scorer = PolicyScorer()
 scoring_reviewer = ScoringReviewer()
 report_writer = ReportWriter()
@@ -66,3 +67,28 @@ def policy_scorer_node(state: AgentState) -> dict:
         
     evaluated_policies = policy_scorer.score_policies(policies, criteria)
     return {"policies": evaluated_policies}
+
+
+def main():
+
+    workflow = StateGraph(AgentState)
+    workflow.add_node("profile_analyzer", profile_analyzer_node)
+    workflow.add_node("criteria_generator", criteria_generator_node)
+    workflow.add_node("retriever_node", retriever_node)
+    workflow.add_node("policy_scorer_node", policy_scorer_node)
+
+    workflow.add_edge(START, "profile_analyzer")
+    workflow.add_edge("profile_analyzer", "criteria_generator")
+    workflow.add_edge("criteria_generator", "retriever_node")
+    workflow.add_edge("retriever_node", "policy_scorer_node")
+    workflow.add_edge("policy_scorer_node", END)
+
+    app = workflow.compile()
+
+    state = AgentState(messages=messages)
+
+    state = app.invoke(state)
+
+
+if __name__ == "__main__":
+    main()
