@@ -1,0 +1,91 @@
+{
+  "term": {
+    "label": "Term Life",
+    "totalProducts": 145,
+    "policies": [
+      {
+        "id": "0",
+        "insurerId": "199002477Z",
+        "insurerName": "Prudential Assurance Company Singapore (Pte) Limited",
+        "productId": "LT5-LN-HCRF",
+        "productName": "PRUActive Term",
+        "productGroup": "T",
+        "productSubCategory": "LN",
+        "productSubCategoryLabel": "Level SA — Non-Renewable",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": true,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": true,
+        "hasRenewability": false,
+        "ciRiderAvailable": true,
+        "tpdRiderAvailable": true,
+        "optionalRiders": [
+          "Critical Illness",
+          "Waiver of Premiums"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/199002477Z/PRUActive_Term_CI_PS.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/199002477Z/PRUActive_Term_Brochure.pdf",
+        "insurerInfoUrl": "https://www.prudential.com.sg/products/protection/life/pruactive-term",
+        "contactEmail": "customer.service@prudential.com.sg",
+        "lastUpdatedOn": "Jul 08, 2025",
+        "description": "PRUActive Term is a non-participating Singapore dollar term plan with a regular premium payment term that provides financial protection against death, Terminal Illness and Total and Permanent Disability. With a minimum sum assured of S$100,000, this term plan offers you peace of mind against the twists of fate. It allows you to choose your desired premium payment term and policy term.\n\nPRUActive Term also provides an option to increase protection with the Incremental Sum Assured benefit.",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "premiumResult": {
+          "annualPremium": "S$ 1,352",
+          "coverageTerm": "5 Years",
+          "premiumTerm": "5 Years",
+          "totalPremium": "N/A",
+          "distributionCost": "N/A",
+          "creditRating": "N/A",
+          "matchedSA": "S$ 500,000",
+          "matchedTerm": "16 to 20"
+        },
+        "detailScraped": true
+      },
+      {
+        "id": "1",
+        "insurerId": "200501737H",
+        "insurerName": "FWD SINGAPORE PTE. LTD.",
+        "productId": "DT07_TPDY_CIY",
+        "productName": "Term Life Plus",
+        "productGroup": "T",
+        "productSubCategory": "LO",
+        "productSubCategoryLabel": "Level SA — Renewable",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": true,
+        "cpfisAllowed": true,
+        "isLevelSumAssured": true,
+        "hasRenewability": true,
+        "ciRiderAvailable": true,
+        "tpdRiderAvailable": true,
+        "optionalRiders": [
+          "Waiver of Premiums"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/200501737H/WA_Sum_200501737H_DT07_TPDY_CIY_Oct2025.pdf",
+        "brochureUrl": "",
+        "insurerInfoUrl": "https://www.fwd.com.sg/life-insurance/enhanced-term-life-insurance",
+        "contactEmail": "contact.sg@fwd.com",
+        "lastUpdatedOn": "Oct 10, 2025",
+        "description": "FWD Term Life Plus is a non-participating, regular premium life insurance plan that provides financial protection against Death and Terminal Illness. This plan allows you to be covered up to S$1.5 million.\n\nChoose from a range of coverage term options to suit your protection needs;\n- Fixed term: from 5 years or any other year up to age 70\n- Renewable term: Yearly renewable to age 100\n\nBenefits of this plan\n- Get covered against death and terminal illness\n- Spouse benefit\n- Enhance your protectio",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "premiumResult": {
+          "annualPremium": "S$ 400",
+          "coverageTerm": "20 Years",
+          "premiumTerm": "20 Years",
+          "totalPremium": "N/A",
+          "distributionCost": "N/A",
+          "creditRating": "N/A",
+          "matchedSA": "S$ 500,000",
+          "matchedTerm": "16 to 20"
+        },
+        "detailScraped": true
+      }
+    ]
+  }
+}

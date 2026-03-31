@@ -1,0 +1,103 @@
+{
+  "whole": {
+    "label": "Whole Life",
+    "totalProducts": 154,
+    "policies": [
+      {
+        "id": "0",
+        "insurerId": "201433645N",
+        "insurerName": "China Life Insurance (Singapore) Pte. Ltd.",
+        "productId": "AGS",
+        "productName": "China Life Lifetime Income Supreme Plan",
+        "productGroup": "W",
+        "productSubCategory": "LC",
+        "productSubCategoryLabel": "Limited Pay — Participating",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": true,
+        "hasRenewability": true,
+        "ciRiderAvailable": false,
+        "tpdRiderAvailable": false,
+        "optionalRiders": [
+          "Waiver of Premiums"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/201433645N/WA_PS_Lifetime Income Supreme Plan_V2025.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/201433645N/WA_Broc_Lifetime Income Supreme Plan.pdf",
+        "insurerInfoUrl": "https://www.chinalife.com.sg/en",
+        "contactEmail": "WA@chinalife.com.sg",
+        "lastUpdatedOn": "Jun 27, 2025",
+        "description": "China Life Lifetime Income Supreme Plan is a single premium payment, participating whole life plan that is designed to serve one’s income and wealth accumulation needs by providing lifetime guaranteed yearly income and non-guaranteed yearly income starting from the end of the 5th policy year.\n\nFor multi-generational income needs, the plan allows the appointment of Contingent Life Insured(s) to ensure continuity of the policy benefits. Besides yearly income, the plan also provides financial prote",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "detailScraped": true
+      },
+      {
+        "id": "1",
+        "insurerId": "199002477Z",
+        "insurerName": "Prudential Assurance Company Singapore (Pte) Limited",
+        "productId": "WM7",
+        "productName": "PRULifetime Income Plus (RP)",
+        "productGroup": "W",
+        "productSubCategory": "LC",
+        "productSubCategoryLabel": "Limited Pay — Participating",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": true,
+        "hasRenewability": true,
+        "ciRiderAvailable": false,
+        "tpdRiderAvailable": true,
+        "optionalRiders": [
+          "Waiver of Premiums"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/199002477Z/PRULifetime Income Plus - RP Product Summary.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/199002477Z/PRULifetime Income Plus Brochure.pdf",
+        "insurerInfoUrl": "https://www.prudential.com.sg/pliplus",
+        "contactEmail": "customer.service@prudential.com.sg",
+        "lastUpdatedOn": "Oct 02, 2025",
+        "description": "PRULifetime Income Plus (RP) is a regular premium participating whole life insurance plan. This plan has fixed premium payment terms of 4 or 10 years. It provides financial protection against death or accidental death, for as long as the life assured lives. In addition, PRULifetime Income Plus (RP) provides a Guaranteed and Non-Guaranteed Monthly Cash Benefit from the 49th month onwards. There is also a Disability Waiver Benefit, a Retrenchment Benefit and the Option to Change the Life Assured. ",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "detailScraped": true
+      },
+      {
+        "id": "2",
+        "insurerId": "198002116D",
+        "insurerName": "Manulife (Singapore) Pte. Ltd.",
+        "productId": "LRP2_4X_CI_Age80",
+        "productName": "LifeReady Plus (II) (with Critical Illness coverage)",
+        "productGroup": "W",
+        "productSubCategory": "LN",
+        "productSubCategoryLabel": "Level SA — Non-Renewable",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": true,
+        "hasRenewability": false,
+        "ciRiderAvailable": true,
+        "tpdRiderAvailable": true,
+        "optionalRiders": [
+          "Early Critical Illness",
+          "Waiver of Premiums",
+          "Others"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/198002116D/WA_LRP2_CI_PdtSum.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/198002116D/WA_LRP2_Brochure.pdf",
+        "insurerInfoUrl": "https://www.manulife.com.sg/lifereadyplus",
+        "contactEmail": "service@manulife.com",
+        "lastUpdatedOn": "Sep 23, 2025",
+        "description": "LifeReady Plus (II) is a whole life insurance plan that provides comprehensive protection with choice to multiply your guaranteed coverage and rewarding your health.",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "detailScraped": true
+      }
+    ]
+  }
+}

@@ -17,13 +17,12 @@ os.environ["GRAPHRAG_API_KEY"] = api_key
 
 def run_query(query: str, method: str):
     print(f"Running {method} search with GraphRAG for: '{query}'")
-    venv_python = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.venv', 'bin', 'python'))
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     try:
         # Run graphrag query
         subprocess.run(
-            [venv_python, "-m", "graphrag", "query", "--root", script_dir, "--method", method, "--query", query],
+            [sys.executable, "-m", "graphrag", "query", "--root", script_dir, "--method", method, query],
             check=True,
             env=os.environ
         )

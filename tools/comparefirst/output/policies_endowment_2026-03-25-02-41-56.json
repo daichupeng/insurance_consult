@@ -1,0 +1,133 @@
+{
+  "endowment": {
+    "label": "Endowment",
+    "totalProducts": 101,
+    "policies": [
+      {
+        "id": "0",
+        "insurerId": "201106386R",
+        "insurerName": "AIA Singapore",
+        "productId": "SFG(LP)",
+        "productName": "AIA Smart Flexi Growth",
+        "productGroup": "E",
+        "productSubCategory": "LN",
+        "productSubCategoryLabel": "Level SA — Non-Renewable",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": true,
+        "hasRenewability": false,
+        "ciRiderAvailable": false,
+        "tpdRiderAvailable": false,
+        "optionalRiders": [
+          "Waiver of Premiums"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/201106386R/WA_Sum_201106386R_SFG_Jul2025.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/201106386R/WA_Broc_201106386R_SFG_Jul2021.pdf",
+        "insurerInfoUrl": "https://www.aia.com.sg/en/our-products/savings/aia-smart-flexi-growth.html?cmpid=CompareFirst-6027",
+        "contactEmail": "sg.ecare@aia.com",
+        "lastUpdatedOn": "Jul 09, 2025",
+        "description": "Perform search\nto\nview payout details\nPerform search\nto\nview premium details\nPerform search\nto\nview payout details\nPerform search\nto\nview payout details",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "premiumResult": {
+          "annualPremium": "S$ 5,000 p.a.",
+          "coverageTerm": "N/A",
+          "premiumTerm": "N/A",
+          "totalPremium": "N/A",
+          "distributionCost": "N/A",
+          "creditRating": "N/A",
+          "matchedSA": "N/A",
+          "matchedTerm": "16 to 20"
+        },
+        "detailScraped": true
+      },
+      {
+        "id": "6",
+        "insurerId": "199002477Z",
+        "insurerName": "Prudential Assurance Company Singapore (Pte) Limited",
+        "productId": "XY7-RN",
+        "productName": "PRUActive Saver III",
+        "productGroup": "E",
+        "productSubCategory": "RN",
+        "productSubCategoryLabel": "Regular Pay — Non-Participating",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": false,
+        "hasRenewability": false,
+        "ciRiderAvailable": false,
+        "tpdRiderAvailable": false,
+        "optionalRiders": [
+          "Waiver of Premiums",
+          "Personal Accident"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/199002477Z/PRUActive Saver III_Summary.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/199002477Z/PRUActive Saver III Brochure ENG OA 4 Sep.pdf",
+        "insurerInfoUrl": "www.prudential.com.sg/pasvr3",
+        "contactEmail": "customer.service@prudential.com.sg",
+        "lastUpdatedOn": "Jul 12, 2025",
+        "description": "Perform search\nto\nview payout details\nPerform search\nto\nview premium details\nPerform search\nto\nview payout details\nPerform search\nto\nview payout details",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "premiumResult": {
+          "annualPremium": "S$ 5,000 p.a.",
+          "coverageTerm": "N/A",
+          "premiumTerm": "N/A",
+          "totalPremium": "N/A",
+          "distributionCost": "N/A",
+          "creditRating": "N/A",
+          "matchedSA": "N/A",
+          "matchedTerm": "16 to 20"
+        },
+        "detailScraped": true
+      },
+      {
+        "id": "8",
+        "insurerId": "196900499K",
+        "insurerName": "Singapore Life Ltd.",
+        "productId": "MES2NCIRC",
+        "productName": "Singlife Steadypay Saver",
+        "productGroup": "E",
+        "productSubCategory": "RC",
+        "productSubCategoryLabel": "Regular Pay — Participating",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": false,
+        "hasRenewability": true,
+        "ciRiderAvailable": false,
+        "tpdRiderAvailable": false,
+        "optionalRiders": [
+          "Waiver of Premiums",
+          "Others"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/196900499K/SinglifeSteadypaySaver_PS_Dec25.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/196900499K/SinglifeSteadypaySaver_PB_Dec25.pdf",
+        "insurerInfoUrl": "https://singlife.com/savings/steadypay-saver",
+        "contactEmail": "cs_life@singlife.com",
+        "lastUpdatedOn": "Dec 17, 2025",
+        "description": "Perform search\nto\nview payout details\nPerform search\nto\nview premium details\nPerform search\nto\nview payout details\nPerform search\nto\nview payout details",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "premiumResult": {
+          "annualPremium": "S$ 5,000 p.a.",
+          "coverageTerm": "N/A",
+          "premiumTerm": "N/A",
+          "totalPremium": "N/A",
+          "distributionCost": "N/A",
+          "creditRating": "N/A",
+          "matchedSA": "N/A",
+          "matchedTerm": "16 to 20"
+        },
+        "detailScraped": true
+      }
+    ]
+  }
+}

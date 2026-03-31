@@ -25,10 +25,11 @@ worker thread gets its own loop — no shared state.
 import logging
 import os
 import threading
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
@@ -36,7 +37,7 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from schema.models import Policy, ScoringCriteria, ScoringItem, RetrieverState
+from schema.models import Policy, PolicyBasicInfo, ScoringCriteria, ScoringItem, RetrieverState
 from tools.graphrag_tools import (
     graphrag_global_search,
     graphrag_local_search,
@@ -76,6 +77,7 @@ class _RetrievalTask:
     item: ScoringItem
     mode: str          # "filter" or "criterion"
     task_index: int    # original position, used to preserve ordering
+    policy_index: int  # index into available_policies / crawled_info_list
 
 
 # ── Retriever ─────────────────────────────────────────────────────────────────
@@ -241,15 +243,46 @@ class GraphRAGRetriever:
 
     # ── Public interface ──────────────────────────────────────────────────────
 
-    def retrieve(self, criteria: ScoringCriteria) -> List[Policy]:
+    def retrieve(
+        self,
+        criteria: ScoringCriteria,
+        on_policy_done: Optional[Callable] = None,
+        crawled_policies: Optional[List[dict]] = None,
+    ) -> List[Policy]:
         """
         Dispatch one retrieval agent per (policy × item) pair and run them all
         concurrently. Returns Policy objects ready for the PolicyScorer.
+
+        If crawled_policies is provided (non-empty list of dicts from PolicyFetcher),
+        only those policies are queried and their basic_info is pre-populated from
+        the crawler data. Otherwise falls back to scanning raw_policies/ on disk.
         """
-        available_policies: List[str] = (
-            [f.stem for f in sorted(_POLICIES_DIR.rglob("*.pdf"))]
-            if _POLICIES_DIR.exists() else []
-        )
+        # Build positional basic_info list from crawled data (preserves duplicates)
+        # crawled_info_list[i] corresponds to available_policies[i]
+        crawled_info_list: List[PolicyBasicInfo] = []
+        if crawled_policies:
+            available_policies = []
+            for p in crawled_policies:
+                name = p.get("policy_name", "")
+                if name:
+                    available_policies.append(name)
+                    crawled_info_list.append(PolicyBasicInfo(
+                        insurer=p.get("insurer", ""),
+                        annual_premium=p.get("annual_premium", "N/A"),
+                        coverage_term_years=p.get("coverage_term_years", "N/A"),
+                        premium_term_years=p.get("premium_term_years", "N/A"),
+                        total_premium=p.get("total_premium", "N/A"),
+                        distribution_cost=p.get("distribution_cost", "N/A"),
+                        credit_rating=p.get("credit_rating", "N/A"),
+                        guaranteed_maturity_benefit=p.get("guaranteed_maturity_benefit", "N/A"),
+                        product_summary_url=p.get("product_summary_url", ""),
+                        brochure_url=p.get("brochure_url", ""),
+                    ))
+        else:
+            available_policies = (
+                [f.stem for f in sorted(_POLICIES_DIR.rglob("*.pdf"))]
+                if _POLICIES_DIR.exists() else []
+            )
         if not available_policies:
             logger.warning("No policy PDFs found in %s", _POLICIES_DIR)
             return []
@@ -257,7 +290,7 @@ class GraphRAGRetriever:
         # ── Build flat task list ───────────────────────────────────────────
         tasks: List[_RetrievalTask] = []
         idx = 0
-        for policy_name in available_policies:
+        for policy_idx, policy_name in enumerate(available_policies):
             for f_text in (criteria.filters or []):
                 tasks.append(_RetrievalTask(
                     policy_name=policy_name,
@@ -265,6 +298,7 @@ class GraphRAGRetriever:
                                      scoring_rules="N/A", weight=0),
                     mode="filter",
                     task_index=idx,
+                    policy_index=policy_idx,
                 ))
                 idx += 1
             for crit_item in (criteria.criteria or []):
@@ -273,6 +307,7 @@ class GraphRAGRetriever:
                     item=crit_item,
                     mode="criterion",
                     task_index=idx,
+                    policy_index=policy_idx,
                 ))
                 idx += 1
 
@@ -289,6 +324,16 @@ class GraphRAGRetriever:
             total,
             n_workers,
         )
+
+        # ── Per-policy completion tracking (for incremental callbacks) ────
+        n_filters  = len(criteria.filters  or [])
+        n_criteria = len(criteria.criteria or [])
+        tasks_per_policy = n_filters + n_criteria
+
+        policy_lock         = threading.Lock()
+        policy_done_counts: Dict[int, int]       = defaultdict(int)   # keyed by policy_index
+        policy_filter_ctx:  Dict[int, List[str]] = defaultdict(list)
+        policy_crit_ctx:    Dict[int, List[str]] = defaultdict(list)
 
         # ── Run all tasks in parallel ──────────────────────────────────────
         results: Dict[int, List[str]] = {}   # task_index → collected_context
@@ -309,12 +354,45 @@ class GraphRAGRetriever:
                         failed.policy_name, failed.mode, exc,
                     )
                     results[failed.task_index] = []
+                    completed_task = failed
+                    context = []
+
+                # Track per-policy progress and fire callback when all done
+                if on_policy_done and tasks_per_policy > 0:
+                    with policy_lock:
+                        pidx  = completed_task.policy_index
+                        pname = completed_task.policy_name
+                        if completed_task.mode == "filter":
+                            policy_filter_ctx[pidx].extend(context)
+                        else:
+                            policy_crit_ctx[pidx].extend(context)
+                        policy_done_counts[pidx] += 1
+                        if policy_done_counts[pidx] >= tasks_per_policy:
+                            basic = (crawled_info_list[pidx]
+                                     if crawled_info_list and pidx < len(crawled_info_list)
+                                     else PolicyBasicInfo())
+                            partial = Policy(
+                                policy_name=pname,
+                                basic_info=basic,
+                                fulfil_filters=(False, "Pending evaluation by Policy Scorer"),
+                                scoring=[(0, ScoringItem(item="Pending", description="",
+                                                         scoring_rules="", weight=0),
+                                          "Pending evaluation by Policy Scorer")],
+                                retrieved_context={
+                                    "filters":   list(policy_filter_ctx[pidx]),
+                                    "criteria":  list(policy_crit_ctx[pidx]),
+                                },
+                            )
+                            try:
+                                on_policy_done(partial)
+                            except Exception as cb_exc:  # noqa: BLE001
+                                logger.warning("[Retriever] on_policy_done callback error: %s", cb_exc)
 
         # ── Assemble Policy objects (preserve policy order) ────────────────
         all_policies: List[Policy] = []
         task_idx = 0
 
-        for policy_name in available_policies:
+        for policy_idx, policy_name in enumerate(available_policies):
             filters_context:  List[str] = []
             criteria_context: List[str] = []
 
@@ -326,8 +404,12 @@ class GraphRAGRetriever:
                 criteria_context.extend(results.get(task_idx, []))
                 task_idx += 1
 
+            basic = (crawled_info_list[policy_idx]
+                     if crawled_info_list and policy_idx < len(crawled_info_list)
+                     else PolicyBasicInfo())
             all_policies.append(Policy(
                 policy_name=policy_name,
+                basic_info=basic,
                 fulfil_filters=(False, "Pending evaluation by Policy Scorer"),
                 scoring=[(0, ScoringItem(item="Pending", description="",
                                          scoring_rules="", weight=0),

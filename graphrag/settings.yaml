@@ -25,14 +25,16 @@ embedding_models:
 ### Document processing settings ###
 
 input:
-  type: text  # file format: text | csv | json | jsonl | markitdown
+  type: csv
   base_dir: "input"
-  file_pattern: '.*\.txt$$'
+  file_pattern: '.*\.csv$$'
+  title_column: "title"
+  text_column: "text"
 
 chunking:
   type: tokens
-  size: 1200
-  overlap: 100
+  size: 8000
+  overlap: 0
   encoding_model: o200k_base
 
 ### Storage settings ###
@@ -99,7 +101,7 @@ community_reports:
   max_input_length: 8000
 
 snapshots:
-  graphml: false
+  graphml: true
   embeddings: false
 
 ### Query settings ###

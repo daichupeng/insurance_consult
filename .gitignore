@@ -25,3 +25,16 @@ rag/.ipynb_checkpoints/
 
 # Project specific
 qdrant_storage/
+
+# GraphRAG specific
+graphrag/input/
+graphrag/output/
+graphrag/neo4j_data/
+graphrag/cache/
+graphrag/logs/
+
+# Raw Data
+raw_policies/
+
+# IDE / other
+.claude/

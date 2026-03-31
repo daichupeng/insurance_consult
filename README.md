@@ -40,3 +40,28 @@ The systme uses:
         - Premium calculation
         - Other scoring tools
         - Maybe ask agent to write code for scoring if needed
+
+
+0326
+    done:
+    - GraphRAG. 
+    - Dynamic crawling policie documents
+    - Dynamic requirements
+    
+    todo:
+    - Requirements are quite rigid. The consultant is not functioning as an advisor but just a information gatherer
+    - Criteria generator is ok but can further optimize. Especially the economic criteria should be more straightforward
+    - Policy fetcher can fetch more information for later processing
+    - Retriever and Scorer needs more optimization:
+        - Access to more information from comparefirst
+        - More flexible tools for economic calculation
+        - Smarter query expansion
+
+    - Individual rating is not consistent
+        - Maybe summarize into comparison
+        - Score basedd on comparison table
+        - Summarize into a big table, before scoring wholistically
+
+    - user in the loop to ask more questions
+
+    - Scenarios to run

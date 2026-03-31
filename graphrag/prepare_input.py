@@ -33,14 +33,16 @@ OUTPUT_DIR    = Path(__file__).parent / "output"
 
 
 def convert_pdfs() -> int:
-    """Convert all PDFs to .txt. Returns number of files written."""
+    """Convert all PDFs to .csv chunks. Returns number of files written."""
     try:
         from docling.document_converter import DocumentConverter
+        from docling.chunking import HierarchicalChunker
     except ImportError:
         logger.error("docling is not installed. Run: uv sync")
         sys.exit(1)
 
     converter = DocumentConverter()
+    chunker = HierarchicalChunker()
     INPUT_DIR.mkdir(exist_ok=True)
 
     pdfs = sorted(POLICIES_DIR.rglob("*.pdf"))
@@ -55,7 +57,7 @@ def convert_pdfs() -> int:
 
     written = 0
     for pdf_path in pdfs:
-        out_path = INPUT_DIR / (pdf_path.stem + ".txt")
+        out_path = INPUT_DIR / (pdf_path.stem + ".csv")
 
         if out_path.exists():
             logger.info("  [skip]       %s  (already converted)", pdf_path.name)
@@ -64,13 +66,19 @@ def convert_pdfs() -> int:
         logger.info("  [converting] %s …", pdf_path.name)
         try:
             result  = converter.convert(str(pdf_path))
-            text    = result.document.export_to_markdown()
-            out_path.write_text(text, encoding="utf-8")
+            chunks  = list(chunker.chunk(result.document))
+            
+            import csv
+            with open(out_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["title", "text"])
+                for c in chunks:
+                    writer.writerow([pdf_path.name, c.text])
+            
             logger.info(
-                "  [done]       → %s  (%d chars, ~%d tokens)",
+                "  [done]       → %s  (%d semantic chunks)",
                 out_path.name,
-                len(text),
-                len(text) // 4,  # rough token estimate
+                len(chunks)
             )
             written += 1
         except Exception as exc:
@@ -103,10 +111,9 @@ def main():
     args = parser.parse_args()
 
     if args.force:
-        for f in INPUT_DIR.glob("*.txt"):
-            if f.name != "sample.txt":
-                f.unlink()
-        logger.info("Removed existing .txt files (--force)\n")
+        for f in INPUT_DIR.glob("*.csv"):
+            f.unlink()
+        logger.info("Removed existing .csv files (--force)\n")
 
     written = convert_pdfs()
 

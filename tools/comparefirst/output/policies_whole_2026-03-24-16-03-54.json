@@ -1,0 +1,39 @@
+{
+  "whole": {
+    "label": "Whole Life",
+    "totalProducts": 154,
+    "policies": [
+      {
+        "id": "0",
+        "insurerId": "201433645N",
+        "insurerName": "China Life Insurance (Singapore) Pte. Ltd.",
+        "productId": "AGS",
+        "productName": "China Life Lifetime Income Supreme Plan",
+        "productGroup": "W",
+        "productSubCategory": "LC",
+        "productSubCategoryLabel": "Limited Pay — Participating",
+        "premiumPaymentMode": "Annual",
+        "srsPremiumAllowed": false,
+        "cpfisAllowed": false,
+        "isLevelSumAssured": true,
+        "hasRenewability": true,
+        "ciRiderAvailable": false,
+        "tpdRiderAvailable": false,
+        "optionalRiders": [
+          "Waiver of Premiums"
+        ],
+        "compulsoryRiders": [],
+        "productSummaryPdf": "https://www.comparefirst.sg/documents/201433645N/WA_PS_Lifetime Income Supreme Plan_V2025.pdf",
+        "brochureUrl": "https://www.comparefirst.sg/documents/201433645N/WA_Broc_Lifetime Income Supreme Plan.pdf",
+        "insurerInfoUrl": "https://www.chinalife.com.sg/en",
+        "contactEmail": "WA@chinalife.com.sg",
+        "lastUpdatedOn": "Jun 27, 2025",
+        "description": "Download Product Summary",
+        "underwritingType": "N/A",
+        "ridersAvailableFromDetail": [],
+        "annualPremium": "Requires search (age/gender/SA specific)",
+        "detailScraped": true
+      }
+    ]
+  }
+}

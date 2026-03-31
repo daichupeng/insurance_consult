@@ -17,14 +17,11 @@ os.environ["GRAPHRAG_API_KEY"] = api_key
 
 def run_index():
     print("Starting GraphRAG indexing process...")
-    # Add root to PYTHONPATH so we can run graphrag from the virtual environment
-    venv_python = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '.venv', 'bin', 'python'))
-    
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
     try:
         subprocess.run(
-            [venv_python, "-m", "graphrag", "index", "--root", script_dir],
+            [sys.executable, "-m", "graphrag", "index", "--root", script_dir],
             check=True,
             env=os.environ
         )

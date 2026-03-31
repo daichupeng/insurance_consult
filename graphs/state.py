@@ -11,6 +11,7 @@ class AgentState(TypedDict):
     is_good_recommendation: bool
     final_report: Optional[RecommendationReport]
     policies: List[Policy]
+    crawled_policies: List[dict]   # Raw results from comparefirst.sg crawler
     # To prevent infinite reflection loops
-    iterations: int             
+    iterations: int
     messages: Annotated[List[dict], operator.add] # Chat history
