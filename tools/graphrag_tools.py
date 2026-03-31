@@ -154,11 +154,12 @@ def graphrag_global_search(query: str) -> str:
 
 
 # Re-export shared tools so callers only need one import
-from tools.search_tools import list_available_policies, remove_context
+from tools.search_tools import list_available_policies, remove_context, query_expansion
 
 __all__ = [
     "graphrag_local_search",
     "graphrag_global_search",
     "list_available_policies",
     "remove_context",
+    "query_expansion",
 ]

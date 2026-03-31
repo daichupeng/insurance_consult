@@ -29,6 +29,7 @@ from typing_extensions import TypedDict
 
 from schema.models import UserRequirements
 from tools.policy_tools import check_policy_exists, download_policy_pdf
+from tools.calculator import life_insurance_roi
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -80,6 +81,7 @@ class NormalizedPolicy(BaseModel):
     guaranteed_maturity_benefit: str = Field(default="N/A", description="Guaranteed maturity benefit (endowment only)")
     product_summary_url: str  = Field(default="", description="URL to product summary PDF")
     brochure_url: str         = Field(default="", description="URL to brochure PDF")
+    return_rate: float        = Field(default=0.0, description="ROI / Return rate")
 
 
 class NormalizedPoliciesList(BaseModel):
@@ -149,199 +151,6 @@ def crawl_comparefirst(
         logger.error("[PolicyFetcher] crawl_comparefirst error: %s", exc, exc_info=True)
         return json.dumps({"error": str(exc)})
 
-
-# ── Graph nodes ───────────────────────────────────────────────────────────────
-
-def _node_extract_params(state: FetcherState) -> dict:
-    """LLM: UserRequirements text → CrawlerParams."""
-    with _Timer("extract_params (LLM)"):
-        extractor = _llm.with_structured_output(CrawlerParams)
-        prompt = (
-            "You are a parameter extractor for a life-insurance policy crawler.\n\n"
-            "Given the user's insurance requirements, extract the crawler parameters.\n\n"
-            "Rules:\n"
-            "- product_type: pick the most appropriate among 'term', 'whole', 'endowment'. Default 'term'.\n"
-            "- dob: convert any age / dob to DD/MM/YYYY. If only age given, use 01/01/<current_year - age>.\n"
-            "- gender: 'M' for male, 'F' for female. Default 'M'.\n"
-            "- smoker: True only if explicitly mentioned as smoker.\n"
-            "- ci: True if critical illness / CI benefit mentioned.\n"
-            "- sum_assured: desired coverage in SGD. Default 500000.\n"
-            "- coverage_term: years. Default 20.\n"
-            "- premium_term: payment term years (whole life). Default 20.\n"
-            "- premium_amount: annual premium for endowment. Default 300.\n\n"
-            f"User requirements:\n{state['requirements_text']}"
-        )
-        try:
-            params: CrawlerParams = extractor.invoke([SystemMessage(content=prompt)])
-            logger.info("[PolicyFetcher] Extracted params: %s", params.model_dump())
-            return {"crawler_params": params.model_dump()}
-        except Exception as exc:
-            logger.error("[PolicyFetcher] param extraction failed: %s", exc)
-            defaults = CrawlerParams(
-                product_type="term", dob="01/01/1990",
-                gender="M", smoker=False, ci=False,
-            )
-            return {"crawler_params": defaults.model_dump()}
-
-
-def _node_call_crawler(state: FetcherState) -> dict:
-    """Call the crawler with the extracted params."""
-    p = state["crawler_params"]
-    logger.info(
-        "[PolicyFetcher] Crawling — type=%s dob=%s gender=%s smoker=%s ci=%s "
-        "sa=%s cov=%sy prem_term=%sy pa=%s",
-        p["product_type"], p["dob"], p["gender"],
-        p["smoker"], p["ci"],
-        p["sum_assured"], p["coverage_term"], p["premium_term"], p["premium_amount"],
-    )
-    with _Timer(f"crawl_comparefirst ({p['product_type']})"):
-        raw = crawl_comparefirst.invoke(p)
-    logger.info("[PolicyFetcher] Crawler raw output (%d chars)", len(raw))
-    return {"raw_json": raw}
-
-
-def _node_parse_policies(state: FetcherState) -> dict:
-    """LLM: raw crawler JSON → List[NormalizedPolicy]."""
-    raw = state["raw_json"]
-
-    # Sanity-check for crawler error
-    try:
-        probe = json.loads(raw)
-        if isinstance(probe, dict) and "error" in probe:
-            logger.error("[PolicyFetcher] Crawler returned error: %s", probe["error"])
-            return {"normalized": []}
-    except json.JSONDecodeError:
-        logger.error("[PolicyFetcher] Crawler returned non-JSON: %s", raw[:200])
-        return {"normalized": []}
-
-    with _Timer("parse_policies (LLM)"):
-        parser = _llm.with_structured_output(NormalizedPoliciesList)
-        prompt = (
-            "You are a data normaliser for insurance policy records.\n\n"
-            "Given a JSON array of raw policy objects from a web crawler, "
-            "normalise each one into the required structured format.\n\n"
-            "Rules:\n"
-            "- policy_name: '<insurer> <product_name>' (combine both fields).\n"
-            "- annual_premium: keep the 'S$ NNN' string but ensure exactly one 'S$' prefix "
-            "and a clean number. Remove duplicated currency symbols.\n"
-            "- coverage_term_years / premium_term_years: extract just the number of years "
-            "as a string (e.g. '16'). If 'Whole Life' keep as 'Whole Life'.\n"
-            "- total_premium / distribution_cost: keep 'S$ NNN' format or 'N/A'.\n"
-            "- credit_rating: keep the full rating string, e.g. 'A2 (Moody\\'s)'.\n"
-            "- guaranteed_maturity_benefit: keep 'S$ NNN' or 'N/A'.\n"
-            "- URLs: keep exactly as-is.\n\n"
-            f"Raw crawler output:\n{raw}"
-        )
-        try:
-            result: NormalizedPoliciesList = parser.invoke([SystemMessage(content=prompt)])
-            policies = [p.model_dump() for p in result.policies]
-            logger.info("[PolicyFetcher] LLM normalised %d policies", len(policies))
-            for i, p in enumerate(policies):
-                logger.info(
-                    "  [%d] %s | premium=%s | cover=%sy | rating=%s",
-                    i + 1, p["policy_name"], p["annual_premium"],
-                    p["coverage_term_years"], p["credit_rating"],
-                )
-            return {"normalized": policies}
-        except Exception as exc:
-            logger.error("[PolicyFetcher] LLM parse failed: %s", exc, exc_info=True)
-            return {"normalized": []}
-
-
-def _node_check_download(state: FetcherState) -> dict:
-    """Programmatically check / download each policy PDF."""
-    policies = state["normalized"]
-    if not policies:
-        return {"enriched": []}
-
-    logger.info("[PolicyFetcher] Checking / downloading %d policies …", len(policies))
-    enriched = []
-
-    for i, p in enumerate(policies):
-        policy_name = p.get("policy_name", "")
-        product_summary_url = p.get("product_summary_url", "")
-        insurer = p.get("insurer", policy_name.split()[0] if policy_name else "unknown").lower()
-
-        t0 = time.perf_counter()
-        exists = check_policy_exists.invoke({"policy_name": policy_name})
-        p["local_pdf_available"] = exists
-        elapsed_check = time.perf_counter() - t0
-        logger.info(
-            "  [%d/%d] exists=%s  (%.2fs)  %s",
-            i + 1, len(policies), exists, elapsed_check, policy_name,
-        )
-
-        if not exists and product_summary_url:
-            t1 = time.perf_counter()
-            status = download_policy_pdf.invoke({
-                "policy_name": policy_name,
-                "product_summary_url": product_summary_url,
-                "insurer": insurer,
-            })
-            elapsed_dl = time.perf_counter() - t1
-            p["download_status"] = status
-            p["local_pdf_available"] = "Already exists" in status or "Downloaded" in status
-            logger.info(
-                "  [%d/%d] download: %s  (%.2fs)",
-                i + 1, len(policies), status[:80], elapsed_dl,
-            )
-        else:
-            p["download_status"] = "Already in local DB" if exists else "No product summary URL"
-
-        enriched.append(p)
-
-    return {"enriched": enriched}
-
-def _node_index_new_policies(state: FetcherState) -> dict:
-    """If any policies were downloaded, run prepare_input and run_index."""
-    policies = state["enriched"]
-    
-    needs_indexing = any(
-        "Downloaded" in p.get("download_status", "") 
-        for p in policies
-    )
-    
-    if needs_indexing:
-        logger.info("[PolicyFetcher] New policies downloaded. Triggering GraphRAG indexing...")
-        base_dir = Path(__file__).parent.parent
-        prepare_script = base_dir / "graphrag" / "prepare_input.py"
-        index_script = base_dir / "graphrag" / "run_index.py"
-        
-        with _Timer("GraphRAG Indexing"):
-            try:
-                subprocess.run(["uv", "run", "python", str(prepare_script)], check=True)
-                subprocess.run(["uv", "run", "python", str(index_script)], check=True)
-                logger.info("[PolicyFetcher] GraphRAG indexing completed successfully.")
-            except subprocess.CalledProcessError as e:
-                logger.error("[PolicyFetcher] GraphRAG indexing failed: %s", e)
-    else:
-        logger.info("[PolicyFetcher] No new policies downloaded. Skipping GraphRAG indexing.")
-        
-    return {}
-
-# ── Build graph ───────────────────────────────────────────────────────────────
-
-def _build_graph() -> StateGraph:
-    g = StateGraph(FetcherState)
-    g.add_node("extract_params",   _node_extract_params)
-    g.add_node("call_crawler",     _node_call_crawler)
-    g.add_node("parse_policies",   _node_parse_policies)
-    g.add_node("check_download",   _node_check_download)
-    g.add_node("index_new_policies", _node_index_new_policies)
-
-    g.add_edge(START,             "extract_params")
-    g.add_edge("extract_params",  "call_crawler")
-    g.add_edge("call_crawler",    "parse_policies")
-    g.add_edge("parse_policies",  "check_download")
-    g.add_edge("check_download",  "index_new_policies")
-    g.add_edge("index_new_policies", END)
-
-    return g.compile()
-
-
-_GRAPH = _build_graph()
-
-
 # ── Public API ────────────────────────────────────────────────────────────────
 
 class PolicyFetcher:
@@ -354,7 +163,7 @@ class PolicyFetcher:
         Number of policies to fetch (default 10).
     """
 
-    def __init__(self, count: int = 10):
+    def __init__(self, count: int = 3):
         self.count = count
 
     def fetch(
@@ -386,7 +195,7 @@ class PolicyFetcher:
         }
 
         # Inject count into the crawler call via state override
-        _original_crawl = _node_call_crawler
+        _original_crawl = self._node_call_crawler
 
         def _crawl_with_count(state: FetcherState) -> dict:
             # Patch count into params before calling
@@ -396,11 +205,11 @@ class PolicyFetcher:
 
         # Re-compile a fresh graph with the count-patched node
         g = StateGraph(FetcherState)
-        g.add_node("extract_params",  _node_extract_params)
+        g.add_node("extract_params",   self._node_extract_params)
         g.add_node("call_crawler",    _crawl_with_count)
-        g.add_node("parse_policies",  _node_parse_policies)
+        g.add_node("parse_policies",  self._node_parse_policies)
         g.add_node("check_download",  self._make_check_download_node(on_policy_found))
-        g.add_node("index_new_policies", _node_index_new_policies)
+        g.add_node("index_new_policies", self._node_index_new_policies)
 
         g.add_edge(START,            "extract_params")
         g.add_edge("extract_params", "call_crawler")
@@ -425,6 +234,7 @@ class PolicyFetcher:
         """Returns a check_download node that fires the streaming callback."""
         def _node(state: FetcherState) -> dict:
             policies = state["normalized"]
+            crawler_params = state.get("crawler_params", {})
             if not policies:
                 return {"enriched": []}
 
@@ -432,6 +242,18 @@ class PolicyFetcher:
                 "[PolicyFetcher] Checking / downloading %d policies …", len(policies)
             )
             enriched = []
+            
+            # Extract arguments for ROI calculation from crawler_params if available
+            ptype = crawler_params.get("product_type", "term")
+            dob = crawler_params.get("dob", "01/01/1990")
+            # Extract year from DD/MM/YYYY
+            try:
+                age = 2026 - int(dob.split('/')[-1])
+            except:
+                age = 30
+            gender = crawler_params.get("gender", "M")
+            sum_assured = float(crawler_params.get("sum_assured", 500000))
+            coverage_term = int(crawler_params.get("coverage_term", 20))
 
             for i, p in enumerate(policies):
                 policy_name = p.get("policy_name", "")
@@ -440,6 +262,35 @@ class PolicyFetcher:
                     p.get("insurer", policy_name.split()[0] if policy_name else "unknown")
                     .lower()
                 )
+                
+                # Compute ROI
+                try:
+                    ann_prem_str = p.get("annual_premium", "0")
+                    # Extract numerals
+                    import re
+                    ann_prem = float(re.sub(r'[^\d.]', '', ann_prem_str)) if re.sub(r'[^\d.]', '', ann_prem_str) else 0.0
+                    
+                    prem_term_str = p.get("premium_term_years", str(crawler_params.get("premium_term", 20)))
+                    import re
+                    # Extracted format might be '16' or 'Whole Life'
+                    if 'whole' in prem_term_str.lower():
+                        prem_term = 99 - age
+                    else:
+                        prem_term = int(re.sub(r'[^\d]', '', prem_term_str)) if re.sub(r'[^\d]', '', prem_term_str) else 20
+                        
+                    roi = life_insurance_roi(
+                        insurance_type=ptype,
+                        annual_premium=ann_prem,
+                        premium_term=prem_term,
+                        age=age,
+                        gender=gender,
+                        sum_assured=sum_assured,
+                        coverage_term=coverage_term
+                    )
+                    p["return_rate"] = roi
+                except Exception as e:
+                    logger.warning("[PolicyFetcher] ROI calc error: %s", e)
+                    p["return_rate"] = 0.0
 
                 t0 = time.perf_counter()
                 exists = check_policy_exists.invoke({"policy_name": policy_name})
@@ -484,3 +335,132 @@ class PolicyFetcher:
             return {"enriched": enriched}
 
         return _node
+
+
+    @staticmethod
+    def _node_extract_params(state: FetcherState) -> dict:
+        """LLM: UserRequirements text → CrawlerParams."""
+        with _Timer("extract_params (LLM)"):
+            extractor = _llm.with_structured_output(CrawlerParams)
+            prompt = (
+                "You are a parameter extractor for a life-insurance policy crawler.\n\n"
+                "Given the user's insurance requirements, extract the crawler parameters.\n\n"
+                "Rules:\n"
+                "- product_type: pick the most appropriate among 'term', 'whole', 'endowment'. Default 'term'.\n"
+                "- dob: convert any age / dob to DD/MM/YYYY. If only age given, use 01/01/<current_year - age>.\n"
+                "- gender: 'M' for male, 'F' for female. Default 'M'.\n"
+                "- smoker: True only if explicitly mentioned as smoker.\n"
+                "- ci: True if critical illness / CI benefit mentioned.\n"
+                "- sum_assured: desired coverage in SGD. Default 500000.\n"
+                "- coverage_term: years. Default 20.\n"
+                "- premium_term: payment term years (whole life). Default 20.\n"
+                "- premium_amount: annual premium for endowment. Default 300.\n\n"
+                f"User requirements:\n{state['requirements_text']}"
+            )
+            try:
+                params: CrawlerParams = extractor.invoke([SystemMessage(content=prompt)])
+                logger.info("[PolicyFetcher] Extracted params: %s", params.model_dump())
+                return {"crawler_params": params.model_dump()}
+            except Exception as exc:
+                logger.error("[PolicyFetcher] param extraction failed: %s", exc)
+                defaults = CrawlerParams(
+                    product_type="term", dob="01/01/1990",
+                    gender="M", smoker=False, ci=False,
+                )
+                return {"crawler_params": defaults.model_dump()}
+
+
+    @staticmethod
+    def _node_call_crawler(state: FetcherState) -> dict:
+        """Call the crawler with the extracted params."""
+        p = state["crawler_params"]
+        logger.info(
+            "[PolicyFetcher] Crawling — type=%s dob=%s gender=%s smoker=%s ci=%s "
+            "sa=%s cov=%sy prem_term=%sy pa=%s",
+            p["product_type"], p["dob"], p["gender"],
+            p["smoker"], p["ci"],
+            p["sum_assured"], p["coverage_term"], p["premium_term"], p["premium_amount"],
+        )
+        with _Timer(f"crawl_comparefirst ({p['product_type']})"):
+            raw = crawl_comparefirst.invoke(p)
+        logger.info("[PolicyFetcher] Crawler raw output (%d chars)", len(raw))
+        return {"raw_json": raw}
+
+
+    @staticmethod
+    def _node_parse_policies(state: FetcherState) -> dict:
+        """LLM: raw crawler JSON → List[NormalizedPolicy]."""
+        raw = state["raw_json"]
+
+        # Sanity-check for crawler error
+        try:
+            probe = json.loads(raw)
+            if isinstance(probe, dict) and "error" in probe:
+                logger.error("[PolicyFetcher] Crawler returned error: %s", probe["error"])
+                return {"normalized": []}
+        except json.JSONDecodeError:
+            logger.error("[PolicyFetcher] Crawler returned non-JSON: %s", raw[:200])
+            return {"normalized": []}
+
+        with _Timer("parse_policies (LLM)"):
+            parser = _llm.with_structured_output(NormalizedPoliciesList)
+            prompt = (
+                "You are a data normaliser for insurance policy records.\n\n"
+                "Given a JSON array of raw policy objects from a web crawler, "
+                "normalise each one into the required structured format.\n\n"
+                "Rules:\n"
+                "- policy_name: '<insurer> <product_name>' (combine both fields).\n"
+                "- annual_premium: keep the 'S$ NNN' string but ensure exactly one 'S$' prefix "
+                "and a clean number. Remove duplicated currency symbols.\n"
+                "- coverage_term_years / premium_term_years: extract just the number of years "
+                "as a string (e.g. '16'). If 'Whole Life' keep as 'Whole Life'.\n"
+                "- total_premium / distribution_cost: keep 'S$ NNN' format or 'N/A'.\n"
+                "- credit_rating: keep the full rating string, e.g. 'A2 (Moody\\'s)'.\n"
+                "- guaranteed_maturity_benefit: keep 'S$ NNN' or 'N/A'.\n"
+                "- URLs: keep exactly as-is.\n\n"
+                f"Raw crawler output:\n{raw}"
+            )
+            try:
+                result: NormalizedPoliciesList = parser.invoke([SystemMessage(content=prompt)])
+                policies = [p.model_dump() for p in result.policies]
+                logger.info("[PolicyFetcher] LLM normalised %d policies", len(policies))
+                for i, p in enumerate(policies):
+                    logger.info(
+                        "  [%d] %s | premium=%s | cover=%sy | rating=%s",
+                        i + 1, p["policy_name"], p["annual_premium"],
+                        p["coverage_term_years"], p["credit_rating"],
+                    )
+                return {"normalized": policies}
+            except Exception as exc:
+                logger.error("[PolicyFetcher] LLM parse failed: %s", exc, exc_info=True)
+                return {"normalized": []}
+
+
+
+    @staticmethod
+    def _node_index_new_policies(state: FetcherState) -> dict:
+        """If any policies were downloaded, run prepare_input and run_index."""
+        policies = state["enriched"]
+        
+        needs_indexing = any(
+            "Downloaded" in p.get("download_status", "") 
+            for p in policies
+        )
+        
+        if needs_indexing:
+            logger.info("[PolicyFetcher] New policies downloaded. Triggering GraphRAG indexing...")
+            base_dir = Path(__file__).parent.parent
+            prepare_script = base_dir / "graphrag" / "prepare_input.py"
+            index_script = base_dir / "graphrag" / "run_index.py"
+            
+            with _Timer("GraphRAG Indexing"):
+                try:
+                    subprocess.run(["uv", "run", "python", str(prepare_script)], check=True)
+                    subprocess.run(["uv", "run", "python", str(index_script)], check=True)
+                    logger.info("[PolicyFetcher] GraphRAG indexing completed successfully.")
+                except subprocess.CalledProcessError as e:
+                    logger.error("[PolicyFetcher] GraphRAG indexing failed: %s", e)
+        else:
+            logger.info("[PolicyFetcher] No new policies downloaded. Skipping GraphRAG indexing.")
+            
+        return {}

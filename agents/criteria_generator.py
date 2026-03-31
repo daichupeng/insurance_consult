@@ -34,16 +34,15 @@ class CriteriaGenerator:
         self.reflector_llm = llm.with_structured_output(CriteriaReflection)
         
         system_prompt = (
-            "You are a Senior Wealth Strategist specializing in insurance. Your task is to design a decisio framework for a life insurance acquisition based on the user requirements and the feedbacks given to your previous framework."
+            "You are a Senior Wealth Strategist specializing in insurance. Your task is to design a decision framework for a life insurance acquisition based on the user requirements and the feedbacks given to your previous framework."
             "Logical Directives: "
-            "- Constraint vs. Optimization: Do not score parameters that are binary requirements. Scoring should be reserved for 'differentiators' that provide marginal utility or superior long-term value."
-            "- Economic Reality: Consider the time value of money and the reliability of the carrier's dividend/interest projections."
-            "- MECE Framework: Ensure criteria are Mutually Exclusive and Collectively Exhaustive. There should be zero 'double-counting'."
-            "- No need to factor in the premium cost, as it will be calculated separately."
+            "- Constraint vs. Optimization: Do not score parameters that are binary requirements. Scoring should be reserved for 'differentiators'."
+            "- MECE Framework: Ensure criteria are Mutually Exclusive and Collectively Exhaustive. There should be zero overlapping."
+            "- Focus on the non-monetary factors. Do not consider the premium cost and payouts."
             "Output Requirements:"
             "- Hard Filters: Essential 'must-haves' that disqualify a policy immediately."
-            "- Scoring Criteria: Strategic variables with weights totaling exactly 100."
-            "- Explanation: Briefly describe the criterion and justification of why it is a 'value-driver' rather than just a requirement."
+            "- Scoring Criteria: 2-4 most important variables with weights totaling exactly 100."
+            "- Explanation: Briefly describe the criterion and justification."
         )
         
         self.prompt = ChatPromptTemplate.from_messages([
@@ -55,10 +54,11 @@ class CriteriaGenerator:
             "You are a Chief Risk Officer auditing an insurance procurement framework for a user. Your role is to identify logical fallacies, redundancies, and strategic misalignments."
             "Audit the framework against these Principles of Excellence:"
             "Optimization Clarity: Are the scoring criteria focused on variables (things that change) rather than constants (things required by the filter)? Scoring a requirement is a logical failure."
-            "Economic Return: Does the framework provide a clear and reasonable assessment of the return rate considering all financial related factors (excluding the premium cost)?"
+            "Conciseness: The framework should be concise and to the point. Avoid redundant criteria; combine or remove trivial and overlapping criteria."
             "Functional MECE: Are the scoring categories and filters truly distinct and cover all important aspects? Identify any 'hidden correlations' where two criteria are essentially measuring the same thing, and consider missing criteria."
             "Requirements Matching: Do the filters and scoring criteria align with the user's requirements and background? Do the weights reflect the user's priorities?"
             "Quantifiability: The scoring criteria should be quantifiable and objective. Avoid subjective judgments and vague criteria as much as possible."
+            "The framework focuses purely on non-monetary factors. Do not consider the premium cost and payouts."
             "Action:"
             "If the framework has flaws and needs to be improved, set is_perfect to False and explain the professional reasoning behind the critique. Otherwise, set is_perfect to True."
         )

@@ -10,6 +10,7 @@ from agents.policy_scorer import PolicyScorer
 from agents.scoring_reviewer import ScoringReviewer
 from agents.report_writer import ReportWriter
 from agents.graph_rag_retriever import GraphRAGRetriever
+from agents.summarizer import PolicySummarizer
 
 import logging
 
@@ -20,6 +21,7 @@ profile_analyzer = ProfileAnalyzer()
 criteria_generator = CriteriaGenerator()
 policy_fetcher = PolicyFetcher()
 retriever = GraphRAGRetriever()
+summarizer_agent = PolicySummarizer()
 policy_scorer = PolicyScorer()
 scoring_reviewer = ScoringReviewer()
 report_writer = ReportWriter()
@@ -69,6 +71,16 @@ def retriever_node(state: AgentState) -> dict:
     retrieved_policies = retriever.retrieve(criteria, crawled_policies=crawled or None)
     return {"policies": retrieved_policies}
 
+def summarizer_node(state: AgentState) -> dict:
+    policies = state.get('policies', [])
+    criteria = state.get('criteria')
+    
+    if not policies or not criteria:
+        return {"policies": policies}
+        
+    summarized_policies = summarizer_agent.summarize_policies(policies, criteria)
+    return {"policies": summarized_policies}
+
 def policy_scorer_node(state: AgentState) -> dict:
     policies = state.get('policies', [])
     criteria = state.get('criteria')
@@ -87,13 +99,15 @@ def main():
     workflow.add_node("criteria_generator", criteria_generator_node)
     workflow.add_node("policy_fetcher_node", policy_fetcher_node)
     workflow.add_node("retriever_node", retriever_node)
+    workflow.add_node("summarizer_node", summarizer_node)
     workflow.add_node("policy_scorer_node", policy_scorer_node)
 
     workflow.add_edge(START, "profile_analyzer")
     workflow.add_edge("profile_analyzer", "criteria_generator")
     workflow.add_edge("criteria_generator", "policy_fetcher_node")
     workflow.add_edge("policy_fetcher_node", "retriever_node")
-    workflow.add_edge("retriever_node", "policy_scorer_node")
+    workflow.add_edge("retriever_node", "summarizer_node")
+    workflow.add_edge("summarizer_node", "policy_scorer_node")
     workflow.add_edge("policy_scorer_node", END)
 
     app = workflow.compile()

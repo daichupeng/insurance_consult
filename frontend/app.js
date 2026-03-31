@@ -21,11 +21,10 @@ function PhaseBar({ phase }) {
     <div className="flex items-center gap-1 text-xs select-none">
       {PHASES.map((p, i) => (
         <React.Fragment key={p}>
-          <span className={`px-2 py-0.5 rounded-full font-medium transition-all ${
-            i < cur  ? "bg-green-100 text-green-700" :
+          <span className={`px-2 py-0.5 rounded-full font-medium transition-all ${i < cur ? "bg-green-100 text-green-700" :
             i === cur ? "bg-blue-600 text-white shadow-sm" :
-                        "bg-gray-100 text-gray-400"
-          }`}>{LABELS[p]}</span>
+              "bg-gray-100 text-gray-400"
+            }`}>{LABELS[p]}</span>
           {i < PHASES.length - 1 && (
             <span className={`text-xs ${i < cur ? "text-green-400" : "text-gray-200"}`}>›</span>
           )}
@@ -44,9 +43,9 @@ function TypingBubble() {
         AI
       </div>
       <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
-        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{animationDelay:"0ms"}} />
-        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{animationDelay:"150ms"}} />
-        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{animationDelay:"300ms"}} />
+        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
       </div>
     </div>
   );
@@ -109,7 +108,7 @@ function ChatMessage({ msg }) {
 
 function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStarted }) {
   const [input, setInput] = useState("");
-  const endRef    = useRef(null);
+  const endRef = useRef(null);
   const textareaRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -127,8 +126,8 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
   const placeholder = !isStarted
     ? "Describe your insurance needs to get started…"
     : isWaitingAnswer ? "Type your answer…"
-    : isProcessing   ? "Processing…"
-    : "Type a message…";
+      : isProcessing ? "Processing…"
+        : "Type a message…";
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -156,7 +155,7 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
           </div>
         )}
         {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
-        {isTyping && <TypingBubble />}
+        {isTyping && (phase === "idle" || phase === "profile") && <TypingBubble />}
         <div ref={endRef} />
       </div>
 
@@ -192,9 +191,9 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
 
 function SourceBadge({ source }) {
   const MAP = {
-    "User input":        "bg-blue-50 text-blue-700 border-blue-100",
-    "Recommended":       "bg-amber-50 text-amber-700 border-amber-100",
-    "Inferred":          "bg-purple-50 text-purple-700 border-purple-100",
+    "User input": "bg-blue-50 text-blue-700 border-blue-100",
+    "Recommended": "bg-amber-50 text-amber-700 border-amber-100",
+    "Inferred": "bg-purple-50 text-purple-700 border-purple-100",
     "System calculated": "bg-gray-50 text-gray-500 border-gray-100",
   };
   return (
@@ -208,8 +207,8 @@ function RequirementItemCard({ item }) {
   const displayValue = Array.isArray(item.value)
     ? item.value.join(", ")
     : item.value === true ? "Yes"
-    : item.value === false ? "No"
-    : String(item.value ?? "—");
+      : item.value === false ? "No"
+        : String(item.value ?? "—");
 
   return (
     <div className="bg-white rounded-xl p-3.5 border border-gray-100">
@@ -241,8 +240,8 @@ function RequirementsView({ data }) {
   }
 
   // Group by source for a cleaner layout
-  const userItems      = data.items.filter((i) => i.source === "User input");
-  const inferredItems  = data.items.filter((i) => i.source === "Inferred" || i.source === "System calculated");
+  const userItems = data.items.filter((i) => i.source === "User input");
+  const inferredItems = data.items.filter((i) => i.source === "Inferred" || i.source === "System calculated");
   const recommendedItems = data.items.filter((i) => i.source === "Recommended");
 
   const Section = ({ title, items }) => items.length === 0 ? null : (
@@ -312,7 +311,7 @@ function CriteriaView({ data }) {
   }
 
   const sorted = [...(data.criteria || [])].sort((a, b) => b.weight - a.weight);
-  const total  = (data.criteria || []).reduce((s, c) => s + c.weight, 0);
+  const total = (data.criteria || []).reduce((s, c) => s + c.weight, 0);
 
   return (
     <div className="p-5 space-y-5 overflow-y-auto h-full">
@@ -352,7 +351,7 @@ function CrawledPolicyCard({ p, index }) {
   const [open, setOpen] = useState(false);
   const premium = p.annual_premium || "—";
   const coverTerm = p.coverage_term_years || "—";
-  const premTerm  = p.premium_term_years && p.premium_term_years !== "N/A" ? p.premium_term_years : null;
+  const premTerm = p.premium_term_years && p.premium_term_years !== "N/A" ? p.premium_term_years : null;
   const creditRating = p.credit_rating && p.credit_rating !== "N/A" ? p.credit_rating : null;
   const summaryUrl = p.product_summary_url || null;
   const brochureUrl = p.brochure_url || null;
@@ -372,11 +371,10 @@ function CrawledPolicyCard({ p, index }) {
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <span className="font-semibold text-gray-900 text-sm">{p.policy_name || "Unknown policy"}</span>
             {available !== undefined && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${
-                available
-                  ? "bg-green-50 text-green-700 border-green-100"
-                  : "bg-amber-50 text-amber-700 border-amber-100"
-              }`}>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${available
+                ? "bg-green-50 text-green-700 border-green-100"
+                : "bg-amber-50 text-amber-700 border-amber-100"
+                }`}>
                 {available ? "✓ In DB" : "⬇ Downloading"}
               </span>
             )}
@@ -386,8 +384,11 @@ function CrawledPolicyCard({ p, index }) {
               <span className="font-medium text-blue-700">S$ {typeof premium === "number" ? premium.toLocaleString() : premium} / yr</span>
             )}
             {coverTerm !== "—" && <span>Cover: {coverTerm} yr{coverTerm > 1 ? "s" : ""}</span>}
-            {premTerm  && <span>Pay: {premTerm} yr{premTerm > 1 ? "s" : ""}</span>}
+            {premTerm && <span>Pay: {premTerm} yr{premTerm > 1 ? "s" : ""}</span>}
             {creditRating && <span className="px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">{creditRating}</span>}
+            {p.return_rate !== undefined && (
+              <span className="font-medium text-purple-700 ml-1">ROI: {(p.return_rate * 100).toFixed(2)}%</span>
+            )}
           </div>
         </div>
         <span className="text-gray-300 text-xs flex-shrink-0 mt-1">{open ? "▲" : "▼"}</span>
@@ -495,10 +496,10 @@ function ScoreDigit({ score }) {
 
 function PolicyCard({ policy, rank }) {
   const [showFilters, setShowFilters] = useState(true);
-  const [showScores,  setShowScores]  = useState(rank === 1);
-  const [showCtx,     setShowCtx]     = useState(false);
+  const [showScores, setShowScores] = useState(rank === 1);
+  const [showCtx, setShowCtx] = useState(false);
 
-  const passes     = policy.fulfil_filters[0];
+  const passes = policy.fulfil_filters[0];
   const filterNote = policy.fulfil_filters[1];
   const totalScore = policy.scoring.reduce(
     (s, [score, crit]) => s + score * (crit.weight / 100), 0
@@ -510,9 +511,8 @@ function PolicyCard({ policy, rank }) {
   const criteriaEvidence = policy.retrieved_context?.criteria || [];
 
   return (
-    <div className={`bg-white rounded-xl border overflow-hidden ${
-      rank === 1 && passes ? "border-blue-200 shadow-md" : "border-gray-100"
-    }`}>
+    <div className={`bg-white rounded-xl border overflow-hidden ${rank === 1 && passes ? "border-blue-200 shadow-md" : "border-gray-100"
+      }`}>
       {/* Header */}
       <div className="p-4 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
@@ -560,6 +560,9 @@ function PolicyCard({ policy, rank }) {
                   Brochure ↗
                 </a>
               )}
+              {policy.return_rate !== undefined && (
+                <span className="font-medium text-purple-700 ml-1">ROI: {(policy.return_rate * 100).toFixed(2)}%</span>
+              )}
             </div>
           )}
         </div>
@@ -589,11 +592,10 @@ function PolicyCard({ policy, rank }) {
           <div className="px-4 pb-4 space-y-3 expand-enter">
             {/* Overall filter verdict */}
             {filterNote && (
-              <div className={`rounded-lg p-3 text-sm leading-relaxed ${
-                passes
-                  ? "bg-green-50 text-green-800 border border-green-100"
-                  : "bg-red-50 text-red-800 border border-red-100"
-              }`}>
+              <div className={`rounded-lg p-3 text-sm leading-relaxed ${passes
+                ? "bg-green-50 text-green-800 border border-green-100"
+                : "bg-red-50 text-red-800 border border-red-100"
+                }`}>
                 <div className="text-[10px] uppercase font-semibold mb-1 opacity-60">Verdict</div>
                 {filterNote}
               </div>
@@ -689,7 +691,7 @@ function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
   // During retrieval phase show skeleton cards for all known policies
   if ((phase === "retrieval" || phase === "scoring") && (!data || data.length === 0)) {
     const retrieved = retrievalPolicies ? retrievalPolicies.length : 0;
-    const total     = availablePolicies ? availablePolicies.length : 0;
+    const total = availablePolicies ? availablePolicies.length : 0;
     return (
       <div className="p-5 space-y-4 overflow-y-auto h-full">
         <div className="flex items-center justify-between text-xs text-gray-400">
@@ -701,7 +703,7 @@ function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
         </div>
         {(availablePolicies || []).map((name) => {
           const partial = (retrievalPolicies || []).find((p) => p.policy_name === name);
-          const filterCount  = partial?.retrieved_context?.filters?.length  ?? 0;
+          const filterCount = partial?.retrieved_context?.filters?.length ?? 0;
           const criteriaCount = partial?.retrieved_context?.criteria?.length ?? 0;
           return (
             <div key={name} className={`bg-white rounded-xl border p-4 transition-all ${partial ? "border-green-100" : "border-gray-100"}`}>
@@ -720,7 +722,7 @@ function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
               </div>
               {partial && (filterCount > 0 || criteriaCount > 0) && (
                 <div className="mt-2 flex gap-3 text-[11px] text-gray-400">
-                  {filterCount   > 0 && <span>{filterCount} filter snippet{filterCount > 1 ? "s" : ""}</span>}
+                  {filterCount > 0 && <span>{filterCount} filter snippet{filterCount > 1 ? "s" : ""}</span>}
                   {criteriaCount > 0 && <span>{criteriaCount} criteria snippet{criteriaCount > 1 ? "s" : ""}</span>}
                 </div>
               )}
@@ -768,14 +770,84 @@ function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
   );
 }
 
+function ComparisonView({ criteria, policies }) {
+  if (!policies || policies.length === 0 || !criteria || !criteria.criteria) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full text-center px-6 text-gray-400">
+        <div className="text-4xl mb-3">⚖️</div>
+        <p className="text-sm">Comparison will be available once policies are evaluated.</p>
+      </div>
+    );
+  }
+
+  const criteriaItems = criteria.criteria;
+
+  return (
+    <div className="p-0 overflow-auto h-full bg-white relative">
+      <table className="w-full text-left border-collapse text-sm">
+        <thead>
+          <tr>
+            <th className="p-4 border-b-2 border-slate-200 bg-slate-50 font-semibold text-slate-700 min-w-[200px] sticky top-0 left-0 z-20 shadow-[1px_0_0_0_#e2e8f0]">
+              Policy
+            </th>
+            {criteriaItems.map((c, i) => (
+              <th key={i} className="p-4 border-b-2 border-slate-200 bg-slate-50 font-semibold text-slate-700 min-w-[300px] sticky top-0 z-10 shadow-[0_1px_0_0_#e2e8f0]">
+                <div className="flex items-center justify-between">
+                  <span>{c.item}</span>
+                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{c.weight}%</span>
+                </div>
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {policies.map((p, i) => (
+            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+              <td className="p-4 border-b border-slate-100 font-medium text-slate-900 bg-white sticky left-0 z-10 align-top shadow-[1px_0_0_0_#f1f5f9]">
+                <div className="font-semibold text-sm mb-1">{p.policy_name}</div>
+                {p.basic_info && p.basic_info.annual_premium && p.basic_info.annual_premium !== "N/A" && (
+                  <div className="text-xs font-normal text-blue-600 mb-2">
+                    {p.basic_info.annual_premium}/yr
+                  </div>
+                )}
+                <div className="inline-flex items-baseline gap-1 mt-2 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="text-xs text-slate-400 font-medium">Score</span>
+                  <span className="text-lg font-bold text-slate-700">
+                    {p.scoring ? p.scoring.reduce((s, [sc, crit]) => s + sc * (crit.weight / 100), 0).toFixed(1) : "-"}
+                  </span>
+                </div>
+              </td>
+              {criteriaItems.map((c, j) => {
+                const summary = p.context_summary?.[c.item] || "No summary available.";
+                const scoreData = p.scoring?.find(([_, crit]) => crit.item === c.item);
+                const score = scoreData ? scoreData[0] : 0;
+                return (
+                  <td key={j} className="p-4 border-b border-slate-100 text-slate-600 align-top text-xs leading-relaxed">
+                    <div className="mb-2">
+                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded flex-shrink-0 font-bold ${score >= 4 ? 'bg-green-100 text-green-700' : score >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
+                        {score}
+                      </span>
+                    </div>
+                    {summary}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ─── Data panel (tabs) ───────────────────────────────────────────────────────
 
 function DataPanel({ requirements, criteria, policies, crawledPolicies, phase, availablePolicies, retrievalPolicies, activeTab, setActiveTab }) {
   const TABS = [
     { id: "requirements", label: "Requirements", icon: "👤", hasData: !!requirements },
-    { id: "criteria",     label: "Criteria",     icon: "📋", hasData: !!criteria },
-    { id: "fetched",      label: "Fetched",       icon: "🔍", hasData: crawledPolicies && crawledPolicies.length > 0 },
-    { id: "policies",     label: "Policies",     icon: "📊", hasData: (policies && policies.length > 0) || (availablePolicies && availablePolicies.length > 0) },
+    { id: "criteria", label: "Criteria", icon: "📋", hasData: !!criteria },
+    { id: "policies", label: "Policies", icon: "📊", hasData: (crawledPolicies && crawledPolicies.length > 0) || (policies && policies.length > 0) || (availablePolicies && availablePolicies.length > 0) },
+    { id: "comparison", label: "Comparison", icon: "⚖️", hasData: policies && policies.length > 0 },
   ];
 
   return (
@@ -787,18 +859,16 @@ function DataPanel({ requirements, criteria, policies, crawledPolicies, phase, a
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5 ${
-                activeTab === tab.id
-                  ? "bg-slate-50 text-blue-600 border-b-2 border-blue-600 -mb-px"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
+              className={`relative px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5 ${activeTab === tab.id
+                ? "bg-slate-50 text-blue-600 border-b-2 border-blue-600 -mb-px"
+                : "text-gray-500 hover:text-gray-700"
+                }`}
             >
               <span>{tab.icon}</span>
               {tab.label}
               {tab.hasData && (
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${
-                  activeTab === tab.id ? "bg-blue-400" : "bg-green-400"
-                }`} />
+                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${activeTab === tab.id ? "bg-blue-400" : "bg-green-400"
+                  }`} />
               )}
             </button>
           ))}
@@ -808,9 +878,13 @@ function DataPanel({ requirements, criteria, policies, crawledPolicies, phase, a
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {activeTab === "requirements" && <RequirementsView data={requirements} />}
-        {activeTab === "criteria"     && <CriteriaView    data={criteria} />}
-        {activeTab === "fetched"      && <CrawledPoliciesView data={crawledPolicies} phase={phase} />}
-        {activeTab === "policies"     && <PoliciesView    data={policies} phase={phase} availablePolicies={availablePolicies} retrievalPolicies={retrievalPolicies} />}
+        {activeTab === "criteria" && <CriteriaView data={criteria} />}
+        {activeTab === "policies" && (
+          (phase === "retrieval" || phase === "scoring" || phase === "complete")
+            ? <PoliciesView data={policies} phase={phase} availablePolicies={availablePolicies} retrievalPolicies={retrievalPolicies} />
+            : <CrawledPoliciesView data={crawledPolicies} phase={phase} />
+        )}
+        {activeTab === "comparison" && <ComparisonView criteria={criteria} policies={policies} />}
       </div>
     </div>
   );
@@ -819,20 +893,20 @@ function DataPanel({ requirements, criteria, policies, crawledPolicies, phase, a
 // ─── Root App ────────────────────────────────────────────────────────────────
 
 function App() {
-  const [sessionId,          setSessionId]          = useState(null);
-  const [messages,           setMessages]           = useState([]);
-  const [phase,              setPhase]              = useState("idle");
-  const [isWaiting,          setIsWaiting]          = useState(false);
-  const [isTyping,           setIsTyping]           = useState(false);
-  const [requirements,       setRequirements]       = useState(null);
-  const [criteria,           setCriteria]           = useState(null);
-  const [crawledPolicies,    setCrawledPolicies]    = useState([]);
-  const [policies,           setPolicies]           = useState([]);
-  const [availablePolicies,  setAvailablePolicies]  = useState([]);
-  const [retrievalPolicies,  setRetrievalPolicies]  = useState([]);
-  const [activeTab,          setActiveTab]          = useState("requirements");
-  const wsRef             = useRef(null);
-  const sessionIdRef      = useRef(null);
+  const [sessionId, setSessionId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [phase, setPhase] = useState("idle");
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
+  const [requirements, setRequirements] = useState(null);
+  const [criteria, setCriteria] = useState(null);
+  const [crawledPolicies, setCrawledPolicies] = useState([]);
+  const [policies, setPolicies] = useState([]);
+  const [availablePolicies, setAvailablePolicies] = useState([]);
+  const [retrievalPolicies, setRetrievalPolicies] = useState([]);
+  const [activeTab, setActiveTab] = useState("requirements");
+  const wsRef = useRef(null);
+  const sessionIdRef = useRef(null);
 
   const addMsg = useCallback((type, content) => {
     setMessages((prev) => [...prev, mkMsg(type, content)]);
@@ -849,20 +923,26 @@ function App() {
         break;
       case "status":
         if (d.phase) setPhase(d.phase);
-        addMsg("status", d.message, d.phase);
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.type !== "status");
+          return [...filtered, mkMsg("status", d.message, d.phase)];
+        });
         break;
       case "requirements":
         setRequirements(d.data);
         setActiveTab("requirements");
-        // Remove blue status bubbles for the profile phase
-        setMessages((prev) => prev.filter((m) => !(m.type === "status" && m.statusPhase === "profile")));
-        addMsg("milestone", "Profile captured successfully");
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.type !== "status");
+          return [...filtered, mkMsg("milestone", "Profile captured successfully")];
+        });
         break;
       case "criteria":
         setCriteria(d.data);
         setActiveTab("criteria");
-        setMessages((prev) => prev.filter((m) => !(m.type === "status" && m.statusPhase === "criteria")));
-        addMsg("milestone", `${d.data.criteria?.length ?? 0} scoring criteria generated`);
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.type !== "status");
+          return [...filtered, mkMsg("milestone", `${d.data.criteria?.length ?? 0} scoring criteria generated`)];
+        });
         break;
       case "crawled_policy":
         // Incremental: one policy arrives at a time during fetching
@@ -870,14 +950,16 @@ function App() {
           const exists = prev.some((p) => p.policy_name === d.data.policy_name);
           return exists ? prev : [...prev, d.data];
         });
-        setActiveTab("fetched");
+        setActiveTab("policies");
         break;
       case "crawled_policies":
         // Full list arrives when fetching is done
         setCrawledPolicies(d.data || []);
-        setMessages((prev) => prev.filter((m) => !(m.type === "status" && m.statusPhase === "fetching")));
-        addMsg("milestone", `${(d.data || []).length} policies fetched from comparefirst.sg`);
-        setActiveTab("fetched");
+        setActiveTab("policies");
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.type !== "status");
+          return [...filtered, mkMsg("milestone", `${(d.data || []).length} policies fetched from comparefirst.sg`)];
+        });
         break;
       case "policies_list":
         setAvailablePolicies(d.data || []);
@@ -895,13 +977,18 @@ function App() {
       case "policies":
         setPolicies(d.data);
         setRetrievalPolicies([]);
-        setActiveTab("policies");
-        setMessages((prev) => prev.filter((m) => !(m.type === "status" && (m.statusPhase === "retrieval" || m.statusPhase === "scoring"))));
-        addMsg("milestone", `${d.data.length} policies evaluated`);
+        setActiveTab("comparison");
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.type !== "status");
+          return [...filtered, mkMsg("milestone", `${d.data.length} policies evaluated`)];
+        });
         break;
       case "complete":
         setPhase("complete");
-        addMsg("milestone", d.message || "Analysis complete!");
+        setMessages((prev) => {
+          const filtered = prev.filter(m => m.type !== "status");
+          return [...filtered, mkMsg("milestone", d.message || "Analysis complete!")];
+        });
         break;
       case "error":
         addMsg("error", d.message);
@@ -928,9 +1015,9 @@ function App() {
         const ws = new WebSocket(`${proto}//${window.location.host}/ws/${session_id}`);
         wsRef.current = ws;
 
-        ws.onopen    = () => { setIsTyping(true); ws.send(JSON.stringify({ type: "start", message: text })); };
+        ws.onopen = () => { setIsTyping(true); ws.send(JSON.stringify({ type: "start", message: text })); };
         ws.onmessage = (e) => handleWsMsg(e.data);
-        ws.onerror   = () => addMsg("error", "Connection error. Please refresh.");
+        ws.onerror = () => addMsg("error", "Connection error. Please refresh.");
       } catch {
         addMsg("error", "Failed to connect to the API server.");
       }
@@ -944,7 +1031,7 @@ function App() {
 
   const handleReset = useCallback(() => {
     wsRef.current?.close();
-    wsRef.current      = null;
+    wsRef.current = null;
     sessionIdRef.current = null;
     setSessionId(null);
     setMessages([]);

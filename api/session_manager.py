@@ -69,12 +69,14 @@ class SessionManager:
                 from agents.criteria_generator import CriteriaGenerator
                 from agents.policy_fetcher import PolicyFetcher
                 from agents.graph_rag_retriever import GraphRAGRetriever
+                from agents.summarizer import PolicySummarizer
                 from agents.policy_scorer import PolicyScorer
 
                 profile_analyzer = ProfileAnalyzer(confirm_callback=confirm_callback)
                 criteria_generator = CriteriaGenerator()
                 policy_fetcher = PolicyFetcher()
                 retriever = GraphRAGRetriever()
+                summarizer_agent = PolicySummarizer()
                 policy_scorer = PolicyScorer()
 
                 # Phase 1: Profile
@@ -128,6 +130,13 @@ class SessionManager:
                 )
                 logger.info("[Session %s] Phase 4 retrieval: %.2fs  (%d policies)",
                             session_id, time.perf_counter() - t0, len(policies))
+
+                # Phase 4.5: Summarization
+                session.phase = "summarization"
+                send({"type": "status", "phase": "summarization", "message": "Summarizing retrieved contexts..."})
+                t0 = time.perf_counter()
+                policies = summarizer_agent.summarize_policies(policies, criteria)
+                logger.info("[Session %s] Phase 4.5 summarization: %.2fs", session_id, time.perf_counter() - t0)
 
                 # Phase 5: Scoring
                 session.phase = "scoring"

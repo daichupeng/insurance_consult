@@ -43,6 +43,7 @@ from tools.graphrag_tools import (
     graphrag_local_search,
     list_available_policies,
     remove_context,
+    query_expansion,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,7 +53,7 @@ _llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key=os.getenv("OPENAI_API_K
 _PROJECT_ROOT = Path(__file__).parent.parent
 _POLICIES_DIR = _PROJECT_ROOT / "raw_policies"  # all subfolders scanned recursively
 
-_TOOLS    = [graphrag_local_search, graphrag_global_search, list_available_policies, remove_context]
+_TOOLS    = [graphrag_local_search, graphrag_global_search, list_available_policies, remove_context, query_expansion]
 _TOOL_MAP = {t.name: t for t in _TOOLS}
 
 MAX_CONCURRENT_TASKS = int(os.getenv("RETRIEVER_MAX_WORKERS", "16"))
@@ -260,12 +261,14 @@ class GraphRAGRetriever:
         # Build positional basic_info list from crawled data (preserves duplicates)
         # crawled_info_list[i] corresponds to available_policies[i]
         crawled_info_list: List[PolicyBasicInfo] = []
+        crawled_return_rates: List[float] = []
         if crawled_policies:
             available_policies = []
             for p in crawled_policies:
                 name = p.get("policy_name", "")
                 if name:
                     available_policies.append(name)
+                    crawled_return_rates.append(float(p.get("return_rate", 0.0)))
                     crawled_info_list.append(PolicyBasicInfo(
                         insurer=p.get("insurer", ""),
                         annual_premium=p.get("annual_premium", "N/A"),
@@ -332,8 +335,7 @@ class GraphRAGRetriever:
 
         policy_lock         = threading.Lock()
         policy_done_counts: Dict[int, int]       = defaultdict(int)   # keyed by policy_index
-        policy_filter_ctx:  Dict[int, List[str]] = defaultdict(list)
-        policy_crit_ctx:    Dict[int, List[str]] = defaultdict(list)
+        policy_ctx:         Dict[int, Dict[str, List[str]]] = defaultdict(lambda: defaultdict(list))
 
         # ── Run all tasks in parallel ──────────────────────────────────────
         results: Dict[int, List[str]] = {}   # task_index → collected_context
@@ -362,10 +364,8 @@ class GraphRAGRetriever:
                     with policy_lock:
                         pidx  = completed_task.policy_index
                         pname = completed_task.policy_name
-                        if completed_task.mode == "filter":
-                            policy_filter_ctx[pidx].extend(context)
-                        else:
-                            policy_crit_ctx[pidx].extend(context)
+                        item_key = completed_task.item.description if completed_task.mode == "filter" else completed_task.item.item
+                        policy_ctx[pidx][item_key].extend(context)
                         policy_done_counts[pidx] += 1
                         if policy_done_counts[pidx] >= tasks_per_policy:
                             basic = (crawled_info_list[pidx]
@@ -374,14 +374,12 @@ class GraphRAGRetriever:
                             partial = Policy(
                                 policy_name=pname,
                                 basic_info=basic,
+                                return_rate=crawled_return_rates[pidx] if crawled_return_rates and pidx < len(crawled_return_rates) else 0.0,
                                 fulfil_filters=(False, "Pending evaluation by Policy Scorer"),
                                 scoring=[(0, ScoringItem(item="Pending", description="",
                                                          scoring_rules="", weight=0),
                                           "Pending evaluation by Policy Scorer")],
-                                retrieved_context={
-                                    "filters":   list(policy_filter_ctx[pidx]),
-                                    "criteria":  list(policy_crit_ctx[pidx]),
-                                },
+                                retrieved_context=dict(policy_ctx[pidx]),
                             )
                             try:
                                 on_policy_done(partial)
@@ -393,15 +391,14 @@ class GraphRAGRetriever:
         task_idx = 0
 
         for policy_idx, policy_name in enumerate(available_policies):
-            filters_context:  List[str] = []
-            criteria_context: List[str] = []
+            retrieved_ctx: Dict[str, List[str]] = {}
 
-            for _ in (criteria.filters or []):
-                filters_context.extend(results.get(task_idx, []))
+            for f_text in (criteria.filters or []):
+                retrieved_ctx[f_text] = results.get(task_idx, [])
                 task_idx += 1
 
-            for _ in (criteria.criteria or []):
-                criteria_context.extend(results.get(task_idx, []))
+            for crit in (criteria.criteria or []):
+                retrieved_ctx[crit.item] = results.get(task_idx, [])
                 task_idx += 1
 
             basic = (crawled_info_list[policy_idx]
@@ -410,11 +407,12 @@ class GraphRAGRetriever:
             all_policies.append(Policy(
                 policy_name=policy_name,
                 basic_info=basic,
+                return_rate=crawled_return_rates[policy_idx] if crawled_return_rates and policy_idx < len(crawled_return_rates) else 0.0,
                 fulfil_filters=(False, "Pending evaluation by Policy Scorer"),
                 scoring=[(0, ScoringItem(item="Pending", description="",
                                          scoring_rules="", weight=0),
                           "Pending evaluation by Policy Scorer")],
-                retrieved_context={"filters": filters_context, "criteria": criteria_context},
+                retrieved_context=retrieved_ctx,
             ))
 
         return all_policies

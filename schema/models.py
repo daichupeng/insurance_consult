@@ -97,9 +97,11 @@ class Policy(BaseModel):
         default_factory=PolicyBasicInfo,
         description="Basic policy facts from comparefirst.sg (premiums, terms, credit rating, URLs)"
     )
+    return_rate: float = Field(default=0.0, description="ROI / Return rate")
     fulfil_filters: Tuple[bool, str] = Field(description='Whether the policy fulfills the filters. If not, why not?')
     scoring: List[Tuple[int, ScoringItem, str]] = Field(description = 'Score for each item, the item itself, and reasoning')
     retrieved_context: Dict[str, List[str]] = Field(description = 'Relevant context found in the policy documents')
+    context_summary: Dict[str, str] = Field(default_factory=dict, description='LLM-generated summary of retrieved_context mapping item identifiers to summary text')
 
 class RetrieverState(TypedDict):
     search_items: List[ScoringItem]
