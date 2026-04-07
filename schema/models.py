@@ -104,6 +104,7 @@ class Policy(BaseModel):
     scoring: List[Tuple[int, ScoringItem, str]] = Field(description = 'Score for each item, the item itself, and reasoning')
     retrieved_context: Dict[str, List[str]] = Field(description = 'Relevant context found in the policy documents')
     context_summary: Dict[str, str] = Field(default_factory=dict, description='LLM-generated summary of retrieved_context mapping item identifiers to summary text')
+    policy_document: str = Field(default="", description="Full markdown text of the policy product summary document")
 
 class RetrieverState(TypedDict):
     search_items: List[ScoringItem]

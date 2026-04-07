@@ -109,7 +109,14 @@ def download_policy_pdf(policy_name: str, product_summary_url: str, insurer: str
 
     logger.info("[policy_tools] Saved %s (%.1f KB)", dest_path.name, dest_path.stat().st_size / 1024)
 
-    # 3. Re-index
+    # Convert the new PDF to Markdown for the MD retriever
+    try:
+        from tools.policyCrawler.convert_to_md import convert_pdf_to_md
+        convert_pdf_to_md(dest_path)
+    except Exception as md_exc:
+        logger.warning("[policy_tools] MD conversion failed for %s: %s", dest_path.name, md_exc)
+
+    # 3. Re-index GraphRAG (keeps both backends in sync)
     status = _reindex_graphrag()
     return f"Downloaded {dest_path.name}. {status}"
 

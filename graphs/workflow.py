@@ -9,18 +9,35 @@ from agents.policy_fetcher import PolicyFetcher
 from agents.policy_scorer import PolicyScorer
 from agents.scoring_reviewer import ScoringReviewer
 from agents.report_writer import ReportWriter
-from agents.graph_rag_retriever import GraphRAGRetriever
 from agents.summarizer import PolicySummarizer
 
 import logging
+import os
+
+from dotenv import load_dotenv
+load_dotenv()  # Ensure .env is loaded before reading RETRIEVER_BACKEND
 
 logger = logging.getLogger(__name__)
+
+# ── Retriever backend selection ───────────────────────────────────────────────
+# Set RETRIEVER_BACKEND=graphrag to use the GraphRAG knowledge-graph retriever.
+# Default is "md" (plain Markdown documents — cheaper & more transparent).
+_RETRIEVER_BACKEND = os.getenv("RETRIEVER_BACKEND", "md").lower()
+
+if _RETRIEVER_BACKEND == "graphrag":
+    from agents.graph_rag_retriever import GraphRAGRetriever as _RetrieverClass
+    logger.info("[Workflow] Using GraphRAG retriever backend.")
+    print("[Workflow] Using GraphRAG retriever backend.")
+else:
+    from agents.md_retriever import MDRetriever as _RetrieverClass
+    logger.info("[Workflow] Using MD retriever backend.")
+    print("[Workflow] Using MD retriever backend.")
 
 # Initialize components
 profile_analyzer = ProfileAnalyzer()
 criteria_generator = CriteriaGenerator()
 policy_fetcher = PolicyFetcher()
-retriever = GraphRAGRetriever()
+retriever = _RetrieverClass()
 summarizer_agent = PolicySummarizer()
 policy_scorer = PolicyScorer()
 scoring_reviewer = ScoringReviewer()

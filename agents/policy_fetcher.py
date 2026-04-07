@@ -273,7 +273,8 @@ class PolicyFetcher:
                     from tools.calculator import life_insurance_roi
                     
                     calc_tool = tool(life_insurance_roi)
-                    roi_agent = _llm.bind_tools([calc_tool], tool_choice=calc_tool.name)
+                    # Force the model to use the tool
+                    roi_agent = _llm.bind_tools([calc_tool], tool_choice={"type": "function", "function": {"name": calc_tool.name}})
                     
                     prompt_text = (
                         "You must extract the arguments for the life_insurance_roi tool from the following information.\n\n"
@@ -291,7 +292,7 @@ class PolicyFetcher:
                         f"- Premium Term: {p.get('premium_term_years', '')}\n"
                         f"- Coverage Term: {p.get('coverage_term_years', '')}\n\n"
                         "Instructions:\n"
-                        "1. Convert the annual premium to a float.\n"
+                        "1. Convert the annual premium to a float (remove 'S$' or commas).\n"
                         "2. Determine the exact premium term (in years) as an integer. If 'Whole Life' use appropriate years remaining. If the string contains a number, extract it.\n"
                         "3. Supply payout_age if the policy's sub_information explicitly suggests a payout age (e.g., 'Payouts from age 75'). Otherwise leave blank or null.\n"
                         "Execute the tool exactly once."
@@ -300,14 +301,16 @@ class PolicyFetcher:
                     msg = roi_agent.invoke([HumanMessage(content=prompt_text)])
                     if msg.tool_calls:
                         args = msg.tool_calls[0]["args"]
-                        print(args)
+                        print(f"[ROI Agent] Tool args for {policy_name}: {args}")
                         roi = life_insurance_roi(**args)
+                        print(f"[ROI Agent] Calculated ROI: {roi*100:.2f}%")
                     else:
+                        print(f"[ROI Agent] No tool call for {policy_name}")
                         roi = 0.0
                         
                     p["return_rate"] = roi
                 except Exception as e:
-                    logger.warning("[PolicyFetcher] ROI calc error: %s", e)
+                    logger.warning("[PolicyFetcher] ROI calc error for %s: %s", policy_name, e)
                     p["return_rate"] = 0.0
 
                 t0 = time.perf_counter()
@@ -459,28 +462,52 @@ class PolicyFetcher:
 
     @staticmethod
     def _node_index_new_policies(state: FetcherState) -> dict:
-        """If any policies were downloaded, run prepare_input and run_index."""
+        """If any policies were downloaded, convert them to MD and run GraphRAG indexing."""
         policies = state["enriched"]
-        
-        needs_indexing = any(
-            "Downloaded" in p.get("download_status", "") 
-            for p in policies
+
+        newly_downloaded = [
+            p for p in policies
+            if "Downloaded" in p.get("download_status", "")
+        ]
+
+        if not newly_downloaded:
+            logger.info("[PolicyFetcher] No new policies downloaded. Skipping indexing.")
+            return {}
+
+        logger.info(
+            "[PolicyFetcher] %d new policies downloaded. Converting to MD and triggering GraphRAG indexing...",
+            len(newly_downloaded),
         )
-        
-        if needs_indexing:
-            logger.info("[PolicyFetcher] New policies downloaded. Triggering GraphRAG indexing...")
-            base_dir = Path(__file__).parent.parent
-            prepare_script = base_dir / "graphrag" / "prepare_input.py"
-            index_script = base_dir / "graphrag" / "run_index.py"
-            
-            with _Timer("GraphRAG Indexing"):
-                try:
-                    subprocess.run(["uv", "run", "python", str(prepare_script)], check=True)
-                    subprocess.run(["uv", "run", "python", str(index_script)], check=True)
-                    logger.info("[PolicyFetcher] GraphRAG indexing completed successfully.")
-                except subprocess.CalledProcessError as e:
-                    logger.error("[PolicyFetcher] GraphRAG indexing failed: %s", e)
-        else:
-            logger.info("[PolicyFetcher] No new policies downloaded. Skipping GraphRAG indexing.")
-            
+
+        # ── MD conversion for each newly downloaded PDF ──────────────────────
+        try:
+            from tools.policyCrawler.convert_to_md import convert_pdf_to_md, _POLICIES_DIR
+            import re
+
+            for p in newly_downloaded:
+                policy_name = p.get("policy_name", "")
+                insurer = p.get("insurer", policy_name.split()[0] if policy_name else "unknown").lower()
+                safe_name = re.sub(r"[^\w\- ]", "_", policy_name).strip()
+                pdf_path = _POLICIES_DIR / insurer / f"{safe_name}.pdf"
+                if pdf_path.exists():
+                    convert_pdf_to_md(pdf_path)
+                else:
+                    logger.warning("[PolicyFetcher] Could not locate PDF for MD conversion: %s", pdf_path)
+        except Exception as exc:
+            logger.warning("[PolicyFetcher] MD conversion step failed: %s", exc)
+
+        # ── GraphRAG indexing ─────────────────────────────────────────────────
+        base_dir = Path(__file__).parent.parent
+        prepare_script = base_dir / "graphrag" / "prepare_input.py"
+        index_script = base_dir / "graphrag" / "run_index.py"
+
+        with _Timer("GraphRAG Indexing"):
+            try:
+                subprocess.run(["uv", "run", "python", str(prepare_script)], check=True)
+                subprocess.run(["uv", "run", "python", str(index_script)], check=True)
+                logger.info("[PolicyFetcher] GraphRAG indexing completed successfully.")
+            except subprocess.CalledProcessError as e:
+                logger.error("[PolicyFetcher] GraphRAG indexing failed: %s", e)
+
         return {}
+

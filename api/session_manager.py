@@ -2,7 +2,9 @@ import asyncio
 import logging
 import time
 import threading
+import os
 from typing import Optional, Any
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
 
@@ -69,14 +71,25 @@ class SessionManager:
                 from agents.profile_analyzer import ProfileAnalyzer
                 from agents.criteria_generator import CriteriaGenerator
                 from agents.policy_fetcher import PolicyFetcher
-                from agents.graph_rag_retriever import GraphRAGRetriever
                 from agents.summarizer import PolicySummarizer
                 from agents.policy_scorer import PolicyScorer
+
+                # Retriever backend selection
+                load_dotenv()
+                backend = os.getenv("RETRIEVER_BACKEND", "md").lower()
+                if backend == "graphrag":
+                    from agents.graph_rag_retriever import GraphRAGRetriever as _RetrieverClass
+                    logger.info("[Session %s] Using GraphRAG retriever backend.", session_id)
+                    print(f"\n[Session {session_id}] Using GraphRAG retriever backend.")
+                else:
+                    from agents.md_retriever import MDRetriever as _RetrieverClass
+                    logger.info("[Session %s] Using MD retriever backend.", session_id)
+                    print(f"\n[Session {session_id}] Using MD retriever backend.")
 
                 profile_analyzer = ProfileAnalyzer(confirm_callback=confirm_callback)
                 criteria_generator = CriteriaGenerator()
                 policy_fetcher = PolicyFetcher()
-                retriever = GraphRAGRetriever()
+                retriever = _RetrieverClass()
                 summarizer_agent = PolicySummarizer()
                 policy_scorer = PolicyScorer()
 
@@ -127,7 +140,7 @@ class SessionManager:
                 policies = retriever.retrieve(
                     criteria,
                     on_policy_done=on_policy_done,
-                    crawled_policies=crawled_policies or None,
+                    crawled_policies=crawled_policies,
                 )
                 logger.info("[Session %s] Phase 4 retrieval: %.2fs  (%d policies)",
                             session_id, time.perf_counter() - t0, len(policies))
