@@ -379,6 +379,12 @@ function CrawledPolicyCard({ p, index }) {
               </span>
             )}
           </div>
+          {(p.sub_type || p.sub_information) && (
+            <div className="text-xs text-gray-600 mb-1.5">
+              {p.sub_type && <span className="font-medium mr-2">{p.sub_type}</span>}
+              {p.sub_information && <span>{p.sub_information}</span>}
+            </div>
+          )}
           <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
             {premium !== "—" && (
               <span className="font-medium text-blue-700">S$ {typeof premium === "number" ? premium.toLocaleString() : premium} / yr</span>
@@ -533,6 +539,12 @@ function PolicyCard({ policy, rank }) {
             )}
           </div>
           <span className="font-semibold text-gray-900">{policy.policy_name}</span>
+          {policy.basic_info && (policy.basic_info.sub_type || policy.basic_info.sub_information) && (
+            <div className="text-[13px] text-gray-600 mt-1 mb-1">
+              {policy.basic_info.sub_type && <span className="font-medium mr-2">{policy.basic_info.sub_type}</span>}
+              {policy.basic_info.sub_information && <span>{policy.basic_info.sub_information}</span>}
+            </div>
+          )}
           {/* Basic info row */}
           {policy.basic_info && (
             <div className="flex items-center gap-3 mt-1.5 flex-wrap text-xs text-gray-500">
@@ -678,7 +690,7 @@ function PolicyCard({ policy, rank }) {
   );
 }
 
-function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
+function PoliciesView({ data, phase, availablePolicies, retrievalPolicies, crawledPolicies }) {
   const [, setTick] = useState(0);
 
   // Auto-refresh every 10 s during retrieval to keep the UI feeling live
@@ -701,12 +713,12 @@ function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
             {phase === "retrieval" ? "Retrieving…" : "Scoring…"}
           </span>
         </div>
-        {(availablePolicies || []).map((name) => {
+        {(availablePolicies || []).map((name, idx) => {
           const partial = (retrievalPolicies || []).find((p) => p.policy_name === name);
           const filterCount = partial?.retrieved_context?.filters?.length ?? 0;
           const criteriaCount = partial?.retrieved_context?.criteria?.length ?? 0;
           return (
-            <div key={name} className={`bg-white rounded-xl border p-4 transition-all ${partial ? "border-green-100" : "border-gray-100"}`}>
+            <div key={`${name}-${idx}`} className={`bg-white rounded-xl border p-4 transition-all ${partial ? "border-green-100" : "border-gray-100"}`}>
               <div className="flex items-center justify-between gap-2">
                 <span className="font-medium text-gray-900 text-sm">{name}</span>
                 {partial ? (
@@ -720,6 +732,38 @@ function PoliciesView({ data, phase, availablePolicies, retrievalPolicies }) {
                   </span>
                 )}
               </div>
+              
+              {(() => {
+                const crawled = (crawledPolicies || [])[idx];
+                if (!crawled) return null;
+                return (
+                  <div className="mt-1">
+                    {(crawled.sub_type || crawled.sub_information) && (
+                      <div className="text-[13px] text-gray-600 mb-1">
+                        {crawled.sub_type && <span className="font-medium mr-2">{crawled.sub_type}</span>}
+                        {crawled.sub_information && <span>{crawled.sub_information}</span>}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-gray-500">
+                      {crawled.annual_premium && crawled.annual_premium !== "N/A" && (
+                        <span className="font-medium text-blue-700">{crawled.annual_premium} / yr</span>
+                      )}
+                      {crawled.coverage_term_years && crawled.coverage_term_years !== "N/A" && (
+                        <span>Cover: {crawled.coverage_term_years} yr</span>
+                      )}
+                      {crawled.premium_term_years && crawled.premium_term_years !== "N/A" && (
+                        <span>Pay: {crawled.premium_term_years} yr</span>
+                      )}
+                      {crawled.credit_rating && crawled.credit_rating !== "N/A" && (
+                        <span className="px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">{crawled.credit_rating}</span>
+                      )}
+                      {crawled.return_rate !== undefined && (
+                        <span className="font-medium text-purple-700 ml-1">ROI: {(crawled.return_rate * 100).toFixed(2)}%</span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
               {partial && (filterCount > 0 || criteriaCount > 0) && (
                 <div className="mt-2 flex gap-3 text-[11px] text-gray-400">
                   {filterCount > 0 && <span>{filterCount} filter snippet{filterCount > 1 ? "s" : ""}</span>}
@@ -805,6 +849,12 @@ function ComparisonView({ criteria, policies }) {
             <tr key={i} className="hover:bg-slate-50/50 transition-colors">
               <td className="p-4 border-b border-slate-100 font-medium text-slate-900 bg-white sticky left-0 z-10 align-top shadow-[1px_0_0_0_#f1f5f9]">
                 <div className="font-semibold text-sm mb-1">{p.policy_name}</div>
+                {p.basic_info && (p.basic_info.sub_type || p.basic_info.sub_information) && (
+                  <div className="text-xs text-gray-600 mb-1">
+                    {p.basic_info.sub_type && <span className="font-medium block">{p.basic_info.sub_type}</span>}
+                    {p.basic_info.sub_information && <span className="block">{p.basic_info.sub_information}</span>}
+                  </div>
+                )}
                 {p.basic_info && p.basic_info.annual_premium && p.basic_info.annual_premium !== "N/A" && (
                   <div className="text-xs font-normal text-blue-600 mb-2">
                     {p.basic_info.annual_premium}/yr
@@ -881,7 +931,7 @@ function DataPanel({ requirements, criteria, policies, crawledPolicies, phase, a
         {activeTab === "criteria" && <CriteriaView data={criteria} />}
         {activeTab === "policies" && (
           (phase === "retrieval" || phase === "scoring" || phase === "complete")
-            ? <PoliciesView data={policies} phase={phase} availablePolicies={availablePolicies} retrievalPolicies={retrievalPolicies} />
+            ? <PoliciesView data={policies} phase={phase} availablePolicies={availablePolicies} retrievalPolicies={retrievalPolicies} crawledPolicies={crawledPolicies} />
             : <CrawledPoliciesView data={crawledPolicies} phase={phase} />
         )}
         {activeTab === "comparison" && <ComparisonView criteria={criteria} policies={policies} />}

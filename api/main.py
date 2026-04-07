@@ -69,8 +69,6 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                     session.updates_queue.get(), timeout=30.0
                 )
                 await websocket.send_text(json.dumps(update, default=str))
-                if update.get("type") in ["complete", "error"]:
-                    break
             except asyncio.TimeoutError:
                 try:
                     await websocket.send_text(json.dumps({"type": "ping"}))
@@ -89,7 +87,12 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                     session_manager.run_workflow(session_id, data["message"], loop)
                 )
             elif data["type"] == "answer":
-                session.set_answer(data["content"])
+                if session.phase == "complete":
+                    asyncio.create_task(
+                        session_manager.run_query(session_id, data["content"], loop)
+                    )
+                else:
+                    session.set_answer(data["content"])
     except WebSocketDisconnect:
         pass
     finally:

@@ -72,6 +72,8 @@ class NormalizedPolicy(BaseModel):
     """One policy as it will be stored in state and sent to the frontend."""
     policy_name: str          = Field(description="Full name: '<Insurer> <Product Name>'")
     insurer: str              = Field(description="Insurer company name")
+    sub_type: str             = Field(default="", description="Sub name of the policy")
+    sub_information: str      = Field(default="", description="Sub information of the policy")
     annual_premium: str       = Field(default="N/A", description="Annual premium, e.g. 'S$ 266'")
     coverage_term_years: str  = Field(default="N/A", description="Coverage term, e.g. '16' or 'Whole Life'")
     premium_term_years: str   = Field(default="N/A", description="Premium term, e.g. '16'")
@@ -263,30 +265,46 @@ class PolicyFetcher:
                     .lower()
                 )
                 
-                # Compute ROI
+                # Compute ROI using LLM tool call
                 try:
-                    ann_prem_str = p.get("annual_premium", "0")
-                    # Extract numerals
-                    import re
-                    ann_prem = float(re.sub(r'[^\d.]', '', ann_prem_str)) if re.sub(r'[^\d.]', '', ann_prem_str) else 0.0
+                    from langchain_core.tools import tool
+                    from langchain_core.messages import HumanMessage
+                    import json
+                    from tools.calculator import life_insurance_roi
                     
-                    prem_term_str = p.get("premium_term_years", str(crawler_params.get("premium_term", 20)))
-                    import re
-                    # Extracted format might be '16' or 'Whole Life'
-                    if 'whole' in prem_term_str.lower():
-                        prem_term = 99 - age
-                    else:
-                        prem_term = int(re.sub(r'[^\d]', '', prem_term_str)) if re.sub(r'[^\d]', '', prem_term_str) else 20
-                        
-                    roi = life_insurance_roi(
-                        insurance_type=ptype,
-                        annual_premium=ann_prem,
-                        premium_term=prem_term,
-                        age=age,
-                        gender=gender,
-                        sum_assured=sum_assured,
-                        coverage_term=coverage_term
+                    calc_tool = tool(life_insurance_roi)
+                    roi_agent = _llm.bind_tools([calc_tool], tool_choice=calc_tool.name)
+                    
+                    prompt_text = (
+                        "You must extract the arguments for the life_insurance_roi tool from the following information.\n\n"
+                        f"User Info:\n"
+                        f"- Age: {age}\n"
+                        f"- Gender: {gender}\n"
+                        f"- Insurance Type: {ptype}\n"
+                        f"- Desired Coverage Term: {coverage_term}\n"
+                        f"- Desired Sum Assured: {sum_assured}\n\n"
+                        f"Policy Info:\n"
+                        f"- Name: {policy_name}\n"
+                        f"- Sub Type: {p.get('sub_type', '')}\n"
+                        f"- Sub Info: {p.get('sub_information', '')}\n"
+                        f"- Annual Premium: {p.get('annual_premium', '')}\n"
+                        f"- Premium Term: {p.get('premium_term_years', '')}\n"
+                        f"- Coverage Term: {p.get('coverage_term_years', '')}\n\n"
+                        "Instructions:\n"
+                        "1. Convert the annual premium to a float.\n"
+                        "2. Determine the exact premium term (in years) as an integer. If 'Whole Life' use appropriate years remaining. If the string contains a number, extract it.\n"
+                        "3. Supply payout_age if the policy's sub_information explicitly suggests a payout age (e.g., 'Payouts from age 75'). Otherwise leave blank or null.\n"
+                        "Execute the tool exactly once."
                     )
+                    
+                    msg = roi_agent.invoke([HumanMessage(content=prompt_text)])
+                    if msg.tool_calls:
+                        args = msg.tool_calls[0]["args"]
+                        print(args)
+                        roi = life_insurance_roi(**args)
+                    else:
+                        roi = 0.0
+                        
                     p["return_rate"] = roi
                 except Exception as e:
                     logger.warning("[PolicyFetcher] ROI calc error: %s", e)
@@ -410,6 +428,8 @@ class PolicyFetcher:
                 "normalise each one into the required structured format.\n\n"
                 "Rules:\n"
                 "- policy_name: '<insurer> <product_name>' (combine both fields).\n"
+                "- sub_type: keep exactly as-is from the raw output.\n"
+                "- sub_information: keep exactly as-is from the raw output.\n"
                 "- annual_premium: keep the 'S$ NNN' string but ensure exactly one 'S$' prefix "
                 "and a clean number. Remove duplicated currency symbols.\n"
                 "- coverage_term_years / premium_term_years: extract just the number of years "

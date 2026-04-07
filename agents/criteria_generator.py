@@ -40,7 +40,7 @@ class CriteriaGenerator:
             "- MECE Framework: Ensure criteria are Mutually Exclusive and Collectively Exhaustive. There should be zero overlapping."
             "- Focus on the non-monetary factors. Do not consider the premium cost and payouts."
             "Output Requirements:"
-            "- Hard Filters: Essential 'must-haves' that disqualify a policy immediately."
+            "- Hard Filters: Essential 'must-haves' that disqualify a policy immediately. The hard filters should not include the basic search conditions: coverage sum, smoker status, age, gender, insurance type, critical illness option."
             "- Scoring Criteria: 2-4 most important variables with weights totaling exactly 100."
             "- Explanation: Briefly describe the criterion and justification."
         )

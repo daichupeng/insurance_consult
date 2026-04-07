@@ -62,6 +62,23 @@ The systme uses:
         - Score basedd on comparison table
         - Summarize into a big table, before scoring wholistically
 
+    - Cache graphrag queries
+
+    - Cache user requirement queries
+
     - user in the loop to ask more questions
 
     - Scenarios to run
+
+0402
+    done:
+    - Economics return calculation
+    - Comparison table
+    - User followup
+
+    todo:
+    - Cache queries "memory"
+    - Use markdown instead of GraphRAG
+    - Optimize prompts: try few-shot, try planner. Langgraph todo agent.
+    - Orchestrator to decide whether to invoke the chatagent or the recommendation agent
+    - User management (phase 2)

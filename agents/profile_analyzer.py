@@ -116,7 +116,7 @@ flag it gently and discuss it.
 
 ## What to capture (not a fixed checklist — follow the conversation)
   beneficiary_purpose   Who depends on them and what the payout would cover
-  age / health / occupation / smoker_status   Eligibility factors
+  date of birth / health / occupation / smoker_status   Eligibility factors
   existing_coverage     Any current life insurance
   coverage_need         How much and roughly for how long
   financial_obligations  Mortgage, debts, dependants' needs

@@ -92,6 +92,8 @@ class PolicyResult:
     """Basic policy information extracted from a search result detail page."""
     insurer: str = ""
     product_name: str = ""
+    sub_type: str = ""
+    sub_information: str = ""
     product_group: str = ""
 
     # Premiums
@@ -506,7 +508,12 @@ def _extract_listing_cards(page: Page, click_sel: str, count: int) -> list[dict]
         var items = Array.from(document.querySelectorAll('li.result_content')).slice(0, count);
         return items.map(function(li) {
             var insurer = (li.querySelector('h3') || {}).innerText || '';
-            var product = (li.querySelector("p#sProdName, p[id='sProdName']") || {}).innerText || '';
+            var productEl = li.querySelector("p#sProdName, p[id='sProdName']");
+            var product = (productEl || {}).innerText || '';
+            var subInfo = '';
+            if (productEl && productEl.nextElementSibling && productEl.nextElementSibling.tagName === 'P') {
+                subInfo = productEl.nextElementSibling.innerText || '';
+            }
             var clickEl = li.querySelector(sel + '[id]');
             var spanId  = (clickEl && clickEl.id) || li.id || '';
             // Best-effort annual premium from the card (may say "Perform search to view")
@@ -515,6 +522,8 @@ def _extract_listing_cards(page: Page, click_sel: str, count: int) -> list[dict]
             return {
                 insurer:      insurer.trim(),
                 product_name: product.trim(),
+                sub_type:     product.trim(),
+                sub_information: subInfo.trim(),
                 span_id:      spanId,
                 card_premium: cardPremium,
             };
@@ -639,13 +648,17 @@ def crawl_policies(
             # -----------------------------------------------------------------
             for i, card in enumerate(cards):
                 product_name = card["product_name"]
+                sub_type     = card["sub_type"]
+                sub_info     = card["sub_information"]
                 insurer      = card["insurer"]
                 span_id      = card["span_id"]
-                print(f"  [{i+1}/{len(cards)}] {insurer} — {product_name}")
+                print(f"  [{i+1}/{len(cards)}] {insurer} — {product_name} / {sub_type} / {sub_info}")
 
                 policy = PolicyResult(
                     insurer=insurer,
                     product_name=product_name,
+                    sub_type=sub_type,
+                    sub_information=sub_info,
                     product_group=product_type,
                 )
 

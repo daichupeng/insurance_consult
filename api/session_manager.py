@@ -18,6 +18,7 @@ class Session:
         self.criteria: Optional[dict] = None
         self.crawled_policies: list = []
         self.policies: list = []
+        self.query_agent: Optional[Any] = None
 
     def set_answer(self, answer: str):
         self._answer_value = answer
@@ -165,3 +166,49 @@ class SessionManager:
 
         thread = threading.Thread(target=run, daemon=True)
         thread.start()
+
+    async def run_query(
+        self,
+        session_id: str,
+        user_message: str,
+        loop: asyncio.AbstractEventLoop,
+    ):
+        session = self.get_session(session_id)
+        if not session:
+            return
+
+        def send(update: dict):
+            asyncio.run_coroutine_threadsafe(
+                session.updates_queue.put(update), loop
+            ).result()
+
+        def run():
+            t0 = time.perf_counter()
+            try:
+                # Lazy load the query agent to save memory if unused
+                if session.query_agent is None:
+                    from agents.query_agent import QueryAgent
+                    session.query_agent = QueryAgent()
+
+                response = session.query_agent.answer_query(
+                    query=user_message,
+                    requirements=session.user_requirements,
+                    criteria=session.criteria,
+                    policies=session.policies,
+                )
+                logger.info("[Session %s] Query answered in %.2fs", session_id, time.perf_counter() - t0)
+                send({"type": "question", "content": response})
+
+            except Exception as e:
+                import traceback
+                logger.error("[Session %s] Query error after %.2fs: %s",
+                             session_id, time.perf_counter() - t0, e, exc_info=True)
+                send({
+                    "type": "error",
+                    "message": f"Query failed: {str(e)}",
+                    "detail": traceback.format_exc(),
+                })
+
+        thread = threading.Thread(target=run, daemon=True)
+        thread.start()
+

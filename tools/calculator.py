@@ -47,14 +47,19 @@ def life_insurance_roi(
     age: int,
     gender: str,
     sum_assured: float,
-    coverage_term: int = 99
+    coverage_term: int = 99,
+    payout_age: int = None
 ) -> float:
     """
     Calculates the life insurance ROI based on life expectancy assumptions.
     Singaporean life expectancy: 81 for male, 85 for female.
+    For whole life insurance, the payout age should be specified according to the sub information of the policy. If not, leave blank.
+    For term life insurance, the payout age can be left blank.
     """
     life_expectancy = 81 if gender.lower() == 'male' else 85
-    assumed_death_year = life_expectancy - age
+    if not payout_age:
+        payout_age = life_expectancy
+    assumed_death_year = payout_age - age
     
     # If the person has already outlived life expectancy, assume payout is immediate or return early
     if assumed_death_year <= 0:

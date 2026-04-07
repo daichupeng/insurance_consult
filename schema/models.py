@@ -64,6 +64,8 @@ class ScoringCriteria(BaseModel):
 class PolicyBasicInfo(BaseModel):
     """Basic policy facts fetched from comparefirst.sg by the policy_fetcher agent."""
     insurer: str              = Field(default="", description="Insurer company name")
+    sub_type: str             = Field(default="", description="Sub name of the policy")
+    sub_information: str      = Field(default="", description="Sub information of the policy")
     annual_premium: str       = Field(default="N/A", description="Annual premium, e.g. 'S$ 266'")
     coverage_term_years: str  = Field(default="N/A", description="Coverage term, e.g. '20' or 'Whole Life'")
     premium_term_years: str   = Field(default="N/A", description="Premium payment term, e.g. '20'")

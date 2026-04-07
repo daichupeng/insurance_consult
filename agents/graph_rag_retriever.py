@@ -271,6 +271,8 @@ class GraphRAGRetriever:
                     crawled_return_rates.append(float(p.get("return_rate", 0.0)))
                     crawled_info_list.append(PolicyBasicInfo(
                         insurer=p.get("insurer", ""),
+                        sub_type=p.get("sub_type", ""),
+                        sub_information=p.get("sub_information", ""),
                         annual_premium=p.get("annual_premium", "N/A"),
                         coverage_term_years=p.get("coverage_term_years", "N/A"),
                         premium_term_years=p.get("premium_term_years", "N/A"),
