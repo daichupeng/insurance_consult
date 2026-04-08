@@ -33,8 +33,12 @@ from langchain_core.tools import tool
 
 import graphrag.api as api
 from graphrag.config.load_config import load_config
+from tools.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
+
+# Initialize Cache Manager
+_cache = CacheManager()
 
 # ── One-time initialisation ───────────────────────────────────────────────────
 
@@ -100,6 +104,13 @@ def graphrag_local_search(query: str) -> str:
                asking about a specific policy.
     """
     print(f"\n[GraphRAG local]  {query}")
+    
+    # --- Cache Check ---
+    cached_answer = _cache.get_answer(query)
+    if cached_answer:
+        print(f"  -> Cache Hit!")
+        return cached_answer
+        
     result, _ = _run_async(
         api.local_search(
             config=_cfg,
@@ -114,7 +125,13 @@ def graphrag_local_search(query: str) -> str:
             query=query,
         )
     )
-    return result if isinstance(result, str) else str(result)
+    res_str = result if isinstance(result, str) else str(result)
+    
+    # Update Cache (Layer A)
+    # Note: Local search usually provides enough context to be considered an "Answer"
+    _cache.store_cache(query, answer=res_str)
+    
+    return res_str
 
 
 @tool
@@ -138,6 +155,13 @@ def graphrag_global_search(query: str) -> str:
                Do NOT name a single policy — use graphrag_local_search for that.
     """
     print(f"\n[GraphRAG global] {query}")
+    
+    # --- Cache Check ---
+    cached_answer = _cache.get_answer(query)
+    if cached_answer:
+        print(f"  -> Cache Hit!")
+        return cached_answer
+        
     result, _ = _run_async(
         api.global_search(
             config=_cfg,
@@ -150,7 +174,12 @@ def graphrag_global_search(query: str) -> str:
             query=query,
         )
     )
-    return result if isinstance(result, str) else str(result)
+    res_str = result if isinstance(result, str) else str(result)
+    
+    # Update Cache (Layer A)
+    _cache.store_cache(query, answer=res_str)
+    
+    return res_str
 
 
 # Re-export shared tools so callers only need one import

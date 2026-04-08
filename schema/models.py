@@ -10,7 +10,7 @@ class RequirementItem(BaseModel):
     key: str = Field(description="Unique snake_case identifier (e.g. 'beneficiary', 'monthly_budget', 'outstanding_mortgage')")
     label: str = Field(description="Human-readable label shown in the UI (e.g. 'Primary Beneficiary', 'Monthly Budget')")
     value: Any = Field(description="The captured value — string, number, list, or boolean")
-    source: Literal["User input", "Recommended", "Inferred", "System calculated"] = Field(
+    source: Literal["User input", "Recommended", "Inferred", "System calculated", "Stored User Profile"] = Field(
         default="User input",
         description="How this value was obtained"
     )

@@ -9493,3 +9493,40 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
 2026-04-07 00:37:06.0963 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
 2026-04-07 00:37:06.0970 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
 2026-04-07 00:37:08.0957 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-04-07 18:29:10.0351 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-04-07 18:31:03.0246 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-04-07 18:31:38.0883 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-04-07 23:50:36.0297 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state
+2026-04-07 23:56:15.0016 - INFO - graphrag_llm.metrics.log_metrics_writer - Metrics for openai/text-embedding-3-large: {
+  "attempted_request_count": 1,
+  "successful_response_count": 1,
+  "failed_response_count": 0,
+  "failure_rate": 0.0,
+  "requests_with_retries": 0,
+  "retries": 0,
+  "retry_rate": 0.0,
+  "compute_duration_seconds": 0.32820892333984375,
+  "compute_duration_per_response_seconds": 0.32820892333984375,
+  "cache_hit_rate": 0.0,
+  "streaming_responses": 0,
+  "responses_with_tokens": 1,
+  "prompt_tokens": 20,
+  "total_tokens": 20,
+  "tokens_per_response": 20.0,
+  "cost_per_response": 0.0
+}
+2026-04-07 23:56:15.0017 - INFO - graphrag_llm.metrics.log_metrics_writer - Metrics for openai/gpt-4o: {
+  "attempted_request_count": 1,
+  "successful_response_count": 1,
+  "failed_response_count": 0,
+  "failure_rate": 0.0,
+  "requests_with_retries": 0,
+  "retries": 0,
+  "retry_rate": 0.0,
+  "compute_duration_seconds": 0,
+  "compute_duration_per_response_seconds": 0.0,
+  "cache_hit_rate": 0.0,
+  "streaming_responses": 1,
+  "tokens_per_response": 0.0,
+  "cost_per_response": 0.0
+}

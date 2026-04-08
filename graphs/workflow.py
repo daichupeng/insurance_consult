@@ -55,7 +55,15 @@ def profile_analyzer_node(state: AgentState) -> dict:
     
     
     existing_profile = state.get("user_requirements")
-    extracted_profile, messages = profile_analyzer.analyze_profile(user_input, existing_profile=existing_profile)
+    user_profile = state.get("user_profile")
+    existing_policies = state.get("existing_policies")
+    
+    extracted_profile, messages = profile_analyzer.analyze_profile(
+        user_input, 
+        existing_profile=existing_profile,
+        user_profile=user_profile,
+        existing_policies=existing_policies
+    )
     
     return {
         "user_requirements": extracted_profile,

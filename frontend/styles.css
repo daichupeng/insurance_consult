@@ -22,3 +22,42 @@
 .expand-enter { animation: msgIn 0.15s ease-out; }
 
 * { box-sizing: border-box; }
+
+/* Dashboard Styles */
+.dashboard-card {
+  background-color: white;
+  border-radius: 1.5rem; /* 2xl */
+  border: 1px solid #f3f4f6; /* gray-100 */
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); /* shadow-sm */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+.dashboard-card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+}
+
+.policy-status-in_effect { background-color: #f0fdf4; color: #15803d; border-color: #dcfce7; }
+.policy-status-lapsed { background-color: #fffbeb; color: #b45309; border-color: #fef3c7; }
+.policy-status-surrendered { background-color: #fef2f2; color: #b91c1c; border-color: #fee2e2; }
+
+/* Modal Backdrop */
+.modal-backdrop {
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-content {
+  animation: slideUp 0.3s ease-out;
+}

@@ -5,7 +5,7 @@ Architecture
 ------------
 The agent runs as a LangGraph StateGraph with three roles:
 
-  Planner   Conducts the conversation with the user via the `ask_user` tool.
+  Planner   Conducts the conversation with the user via the `respond_to_user` tool.
             Asks open questions, follows up on what matters, and records
             everything into a list of RequirementItems. Calls `FinalizeRound`
             when it's done asking for this round.
@@ -53,6 +53,8 @@ MAX_ITERATIONS = 4  # max planner→reviewer rounds before forced submission
 
 class ProfilerState(TypedDict):
     initial_input: str
+    user_profile: Optional[dict]
+    existing_policies: List[dict]
     conversation: Annotated[List, operator.add]   # accumulated Q&A messages
     gathered_items: List[RequirementItem]          # full list, replaced each round
     reviewer_feedback: str                         # feedback from last review
@@ -97,54 +99,61 @@ class ReviewerOutput(BaseModel):
 _PLANNER_PROMPT = """\
 You are a caring and perceptive life insurance consultant conducting a client intake conversation.
 
+## CRITICAL: REDUNDANCY CHECK
+- You have access to the **Stored User Profile** and **Current Insurance Portfolio**.
+- **NEVER** ask for information that is already provided in the profile (e.g., DOB, Gender, Smoking Status, Marital Status).
+- If the user's name, age, and smoking status are known, acknowledge them in your very first message to build trust.
+- Your goal is to fill the **GAPS**, not to re-interview the user for known facts.
+
 ## Core philosophy
 The most important question in life insurance is:
   "Who or what does the money go to if a claim is made — and what will they need it for?"
 Start there if this is the first round. Everything else follows naturally.
 
 ## How to conduct the conversation
-- Ask open, human questions — not a checklist.
-- Listen and follow up on what's meaningful:
-    • Mentioned a mortgage? Ask the outstanding balance and whether their partner could service it alone.
-    • Mentioned young children? Ask their ages (drives the duration).
-    • Mentioned a business? Ask about business debts or partners.
-- You may ask multiple questions per round, but group them naturally — don't fire a list of unrelated questions at once.
-- If an answer is vague, ask for clarification.
-- If something seems inconsistent (e.g. very low budget for high coverage), 
-flag it gently and discuss it.
-- When you recommend a value (e.g. a coverage multiple), explain the reasoning clearly and ask for explicit confirmation before recording it as confirmed.
+- **First Turn**: Greet the user by name. Summarize what you already know about them and their existing coverage.
+- **Tone**: Ask open, human questions — not a checklist.
+- **Probing**: Listen and follow up on what's meaningful (mortgages, children, debts).
+- **Transparency**: When recommending a coverage amount, show your math.
 
-## What to capture (not a fixed checklist — follow the conversation)
+## Insured Sum & "The Gap" Logic
+- **Step 1**: Identify Total Needs (Education costs + Mortgage + Loans + Income Replacement).
+- **Step 2**: Total Existing Coverage = Sum of all 'In Effect' policies in the Portfolio.
+- **Step 3**: **The Gap = Total Needs - Total Existing Coverage**.
+- **Step 4**: Recommend the **Gap** amount as the new policy target. 
+- *Example*: "Since you already have $500k in coverage and your total need is $1.2M, we should look for a new policy to cover the $700k gap."
+Always explain every step of the calculation to the user clearly, before proceeding to the next step.
+
+## What to capture (Use profile to skip these if known)
   beneficiary_purpose   Who depends on them and what the payout would cover
   date of birth / health / occupation / smoker_status   Eligibility factors
   existing_coverage     Any current life insurance
-  coverage_need         How much and roughly for how long
+  coverage_need         How much and roughly for how long. The coverage amount should be a specific number, not a text description. It should be the gap, not the total needs.
   financial_obligations  Mortgage, debts, dependants' needs
-  budget                Annual premium they can comfortably afford
+  budget                Annual premium they can comfortably afford. The budget should be a specific number, not a text description.
+
+## Important
+- Make sure to confirm the user's special needs, especially about their health status and family history
+- Confirm the user's existing coverage and obligations, make sure you have the most up-to-date information
+- When calculating the gap, do not make any assumptions. Gather as much information as you need.
+- Make sure the budget and the coverage amount are explicitly confirmed with user before calling FinalizeRound. Explain the calculation with user clearly.
+- When user asks a question, answer their question first, then ask for the information you need.
 
 ## When to call FinalizeRound
-Call FinalizeRound when you feel you've gathered enough for this round and want the reviewer to assess sufficiency. You do NOT need everything — just enough to meaningfully compare policies. The reviewer will tell you if more is needed.
-
-## RequirementItem fields
-  key               snake_case identifier
-  label             Human-readable name for the UI
-  value             String, number, list, or boolean
-  source            "User input" | "Recommended" | "Inferred"
-  reasoning         Why inferred/recommended (omit for direct user inputs)
-  confirmed_by_user True only if the user explicitly agreed to a recommendation
+Call FinalizeRound when the Reviewer's feedback is addressed or you have a clear "Gap" and "Budget" confirmed.
 """
 
-_REVIEWER_PROMPT = """
-You are a senior insurance underwriter reviewing a client intake profile to decide whether enough information has been gathered to proceed with a meaningful policy comparison.
+_REVIEWER_PROMPT = """\
+You are a senior insurance underwriter reviewing a client intake profile.
+A profile is sufficient when ALL of the following are clear (either from the **Conversation** OR the **Stored User Profile**):
 
-A profile is sufficient when ALL of the following are clear:
 1. Beneficiary & purpose — who gets the money, and what will it be used for?
-2. Coverage need — a rough amount and duration (even a range or a debt figure to cover is enough).
-3. Key eligibility factors — age, occupation, health status, smoker status.
+2. Coverage need — a rough amount and duration (specifically the "Gap" to be covered).
+3. Key eligibility factors — age, occupation, health status, smoker status. (CHECK THE STORED PROFILE FIRST).
 4. Budget — at least an indication of what annual premium they can afford.
 
-Good-faith estimates are acceptable; exact figures are not required.
-If even one of the four points above is genuinely unclear, set is_sufficient to False and provide specific actionable feedback.
+If the information is already in the **Stored User Profile**, consider that requirement SATISFIED. 
+Do not ask the agent to gather information that is already in the database.
 """
 
 
@@ -161,16 +170,15 @@ class ProfileAnalyzer:
             cb = confirm_callback
 
             @tool
-            def ask_user(question: str) -> str:
+            def respond_to_user(question: str) -> str:
                 """
-                Send a question or message to the user and wait for their reply.
-                Use this to ask follow-up questions, request clarification, present
-                a recommendation for confirmation, or flag a concern. You may include
-                multiple related questions in a single call for natural conversation flow.
+                Send a message to the user and wait for their response.
+                Always answer user's question first, then ask for the information you need.
+                Use this to ask follow-up questions, request clarification, answer user's question, present a recommendation for confirmation, or flag a concern.
                 """
                 return cb(question) or ""
 
-            self._ask_tool = ask_user
+            self._ask_tool = respond_to_user
         else:
             from tools.interactive_tools import confirm_requirements as cli_tool
             self._ask_tool = cli_tool
@@ -211,6 +219,23 @@ class ProfileAnalyzer:
                 "Please address these specifically in this round."
             )
 
+        if state.get("user_profile"):
+            up = state["user_profile"]
+            profile_table = "| Attribute | Value |\n| :--- | :--- |\n"
+            profile_table += f"| **Name** | {up.get('name', 'N/A')} |\n"
+            profile_table += f"| **DOB** | {up.get('dob', 'N/A')} |\n"
+            profile_table += f"| **Gender** | {up.get('gender', 'N/A')} |\n"
+            profile_table += f"| **Smoking Status** | {up.get('smoking_status', 'N/A')} |\n"
+            profile_table += f"| **Marital Status** | {up.get('marital_status', 'N/A')} |\n"
+            profile_table += f"| **Children** | {up.get('num_children', 0)} |\n"
+            header_parts.append(f"## Stored User Profile\n{profile_table}")
+            
+        if state.get("existing_policies"):
+            p_table = "| Policy | Status | Coverage Amount |\n| :--- | :--- | :--- |\n"
+            for p in state["existing_policies"]:
+                p_table += f"| {p.get('insurance_name', 'Unnamed')} | {p.get('status', 'N/A')} | S$ {p.get('coverage_amount', 0):,} |\n"
+            header_parts.append(f"## Current Insurance Portfolio\n{p_table}")
+
         messages = [SystemMessage(content="\n\n".join(header_parts))]
 
         # Initial user message is always visible for context
@@ -224,16 +249,18 @@ class ProfileAnalyzer:
         new_conversation: list = []
 
         logger.info("[ProfileAnalyzer] Planner round %d", state["iterations"] + 1)
+        print(f"[DEBUG] [ProfileAnalyzer] Planner round {state['iterations'] + 1} - calling LLM...")
 
         while True:
             response = llm_with_tools.invoke(messages)
+            print(f"[DEBUG] [ProfileAnalyzer] LLM responded with {len(getattr(response, 'tool_calls', []))} tool calls")
             messages.append(response)
 
             if not getattr(response, "tool_calls", None):
                 # Nudge back on track
                 messages.append(HumanMessage(
                     content=(
-                        "Please continue: use `ask_user` to gather more information, "
+                        "Please continue: use `respond_to_user` to gather more information, "
                         "or `FinalizeRound` to submit what you have so far."
                     )
                 ))
@@ -243,11 +270,14 @@ class ProfileAnalyzer:
             finalized_items: Optional[List[RequirementItem]] = None
 
             for call in response.tool_calls:
-                if call["name"] == "ask_user":
+                if call["name"] == "respond_to_user":
+                    print(f"[DEBUG] [ProfileAnalyzer] Tool: respond_to_user -> {call['args']}")
                     answer = self._ask_tool.invoke(call["args"])
+                    print(f"[DEBUG] [ProfileAnalyzer] Tool: respond_to_user response received")
                     tool_messages.append(ToolMessage(content=answer, tool_call_id=call["id"]))
 
                 elif call["name"] == "FinalizeRound":
+                    print(f"[DEBUG] [ProfileAnalyzer] Tool: FinalizeRound -> {len(call['args'].get('items', []))} items")
                     raw_items = call["args"].get("items", [])
                     finalized_items = [
                         RequirementItem(**item) if isinstance(item, dict) else item
@@ -260,7 +290,7 @@ class ProfileAnalyzer:
             messages.extend(tool_messages)
 
             # Track new Q&A pairs for the conversation history
-            if any(c["name"] == "ask_user" for c in response.tool_calls):
+            if any(c["name"] == "respond_to_user" for c in response.tool_calls):
                 new_conversation.append(response)
                 new_conversation.extend(tool_messages)
 
@@ -337,6 +367,8 @@ class ProfileAnalyzer:
         self,
         user_input: str,
         existing_profile: Optional[UserRequirements] = None,
+        user_profile: Optional[dict] = None,
+        existing_policies: Optional[List[dict]] = None,
     ) -> Tuple[UserRequirements, list]:
         """
         Run the planner→reviewer loop until the profile is deemed sufficient.
@@ -344,8 +376,13 @@ class ProfileAnalyzer:
         """
         initial_items = existing_profile.items if existing_profile else []
 
+        print(f"\n[PROFILE] ProfileAnalyzer user_profile: {user_profile}")
+        print(f"\n[PROFILE] ProfileAnalyzer existing_policies: {len(existing_policies or [])} found")
+
         initial_state: ProfilerState = {
             "initial_input": user_input,
+            "user_profile": user_profile,
+            "existing_policies": existing_policies or [],
             "conversation": [],
             "gathered_items": initial_items,
             "reviewer_feedback": "",

@@ -49,6 +49,7 @@ from pydantic import BaseModel, Field
 
 from schema.models import Policy, PolicyBasicInfo, ScoringCriteria, ScoringItem
 from tools.search_tools import query_expansion, remove_context, list_available_policies
+from tools.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -56,6 +57,9 @@ load_dotenv()
 _llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key=os.getenv("OPENAI_API_KEY"))
 _PROJECT_ROOT = Path(__file__).parent.parent
 _POLICIES_DIR = _PROJECT_ROOT / "raw_policies"
+
+# Initialize Cache Manager
+_cache = CacheManager()
 
 MAX_CONCURRENT_TASKS = int(os.getenv("RETRIEVER_MAX_WORKERS", "16"))
 
@@ -89,6 +93,7 @@ def _find_md_file(policy_name: str) -> Path | None:
 def md_local_search(query: str, policy_name: str) -> str:
     """
     Searches the local Markdown product summary for a specific insurance policy.
+    Uses a multi-layer cache (Answer -> Fragment -> Hard Search).
     
     Args:
         query: The specific detail or question to search for in the document.
@@ -96,18 +101,42 @@ def md_local_search(query: str, policy_name: str) -> str:
     """
     print(f"\n[MD Tool]: Searching document '{policy_name}' for: '{query}'")
     
+    # --- Step 1: Layer A Check (Answer) ---
+    cached_answer = _cache.get_answer(query)
+    if cached_answer:
+        print(f"  -> Layer A Cache Hit!")
+        return cached_answer
+
+    # --- Step 2: Layer B Check (Fragment) ---
+    cached_fragment_data = _cache.get_fragment(query)
+    if cached_fragment_data:
+        print(f"  -> Layer B Cache Hit! Generating answer from fragment...")
+        _, fragment = cached_fragment_data
+        prompt = (
+            f"You are searching an insurance policy document fragment: {policy_name}.\n\n"
+            f"GOAL: Find information relevant to: {query}\n\n"
+            f"--- FRAGMENT CONTENT ---\n{fragment}\n--- END ---\n\n"
+            "INSTRUCTIONS:\n"
+            "Extract every passage relevant to the goal. Quote verbatim where possible. "
+            "If the information is not found, clearly state 'Information not found in the fragment'."
+        )
+        response = _llm.invoke([SystemMessage(content=prompt)])
+        result = response.content.strip()
+        # Store in Layer A
+        _cache.store_cache(query, answer=result)
+        return result
+
+    # --- Step 3: Hard Search (Cache Miss) ---
+    print(f"  -> Cache Miss. Performing Hard Search on .md file...")
     md_path = _find_md_file(policy_name)
     if not md_path:
         return f"Error: No .md file found for policy '{policy_name}'."
     
     try:
         text = md_path.read_text(encoding="utf-8")
-        # Truncate if extreme
         if len(text) > _MAX_MD_CHARS:
             text = text[:_MAX_MD_CHARS]
             
-        # Use an internal LLM call to extract specific bits from the text 
-        # instead of sending the whole thing back to the agent as "observation"
         prompt = (
             f"You are searching an insurance policy document: {policy_name}.\n\n"
             f"GOAL: Find information relevant to: {query}\n\n"
@@ -119,7 +148,13 @@ def md_local_search(query: str, policy_name: str) -> str:
         
         response = _llm.invoke([SystemMessage(content=prompt)])
         result = response.content.strip()
-        print(f"  -> Found {len(result)} chars of relevant context.")
+        
+        # Update Cache (Layer B and Layer A)
+        # We use the full extracted result as the fragment for Layer B if it's concise
+        # otherwise we might need a separate extraction for "context fragment"
+        _cache.store_cache(query, answer=result, fragment=result)
+        
+        print(f"  -> Found {len(result)} chars of relevant context. Cache updated.")
         return result
         
     except Exception as exc:
@@ -148,6 +183,11 @@ class MDRetriever:
         self._progress_lock = threading.Lock()
         self._completed = 0
         
+        # Start background MD5 watcher
+        self._stop_watcher = threading.Event()
+        self._watcher_thread = threading.Thread(target=self._run_watcher, daemon=True)
+        self._watcher_thread.start()
+        
         # Define agent tools
         self.tools = [
             md_local_search,
@@ -170,6 +210,25 @@ class MDRetriever:
         
         # We create the agent but we'll invoke it per task
         self.agent_executor = create_react_agent(_llm, self.tools, prompt=system_prompt)
+
+    def _run_watcher(self):
+        """Periodically syncs file hashes and invalidates cache if needed."""
+        while not self._stop_watcher.is_set():
+            try:
+                invalidated = _cache.sync_and_invalidate()
+                if invalidated:
+                    print(f"\n[Cache Watcher] Invalidated entries for: {', '.join(invalidated)}")
+            except Exception as e:
+                logger.error(f"Error in cache watcher: {e}")
+            
+            # Wait 60 seconds before next check
+            self._stop_watcher.wait(60)
+
+    def stop(self):
+        """Stops the background watcher."""
+        self._stop_watcher.set()
+        if self._watcher_thread.is_alive():
+            self._watcher_thread.join(timeout=1)
 
     # ── Single-task execution ─────────────────────────────────────────────────
 

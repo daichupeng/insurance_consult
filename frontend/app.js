@@ -8,7 +8,7 @@ function mkMsg(type, content, statusPhase) {
   return { id: String(++_msgId), type, content, statusPhase };
 }
 
-// ─── Phase progress bar ──────────────────────────────────────────────────────
+// ─── Shared Components ──────────────────────────────────────────────────────
 
 function PhaseBar({ phase }) {
   const PHASES = ["profile", "criteria", "fetching", "retrieval", "scoring", "complete"];
@@ -34,12 +34,10 @@ function PhaseBar({ phase }) {
   );
 }
 
-// ─── Typing bubble ───────────────────────────────────────────────────────────
-
 function TypingBubble() {
   return (
     <div className="flex justify-start mb-3 gap-2 msg-enter">
-      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
+      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold shadow-sm">
         AI
       </div>
       <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
@@ -51,13 +49,11 @@ function TypingBubble() {
   );
 }
 
-// ─── Chat message renderer ──────────────────────────────────────────────────
-
 function ChatMessage({ msg }) {
   if (msg.type === "status") {
     return (
       <div className="flex justify-center my-2 msg-enter">
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-xs">
+        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider">
           <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
           {msg.content}
         </span>
@@ -67,7 +63,7 @@ function ChatMessage({ msg }) {
   if (msg.type === "milestone") {
     return (
       <div className="flex justify-center my-2 msg-enter">
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 border border-green-100 text-green-700 text-xs">
+        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">
           <span>✓</span>{msg.content}
         </span>
       </div>
@@ -76,7 +72,7 @@ function ChatMessage({ msg }) {
   if (msg.type === "error") {
     return (
       <div className="flex justify-center my-2 msg-enter">
-        <span className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs max-w-xs text-center">
+        <span className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs max-w-xs text-center font-bold">
           ⚠ {msg.content}
         </span>
       </div>
@@ -84,8 +80,8 @@ function ChatMessage({ msg }) {
   }
   if (msg.type === "user") {
     return (
-      <div className="flex justify-end mb-3 msg-enter">
-        <div className="max-w-[80%] bg-blue-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed">
+      <div className="flex justify-end mb-4 msg-enter">
+        <div className="max-w-[85%] bg-blue-600 text-white rounded-3xl rounded-br-none px-5 py-3 text-sm font-medium leading-relaxed shadow-lg shadow-blue-100">
           {msg.content}
         </div>
       </div>
@@ -93,18 +89,16 @@ function ChatMessage({ msg }) {
   }
   // agent
   return (
-    <div className="flex justify-start mb-3 gap-2 msg-enter">
-      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold">
+    <div className="flex justify-start mb-4 gap-3 msg-enter">
+      <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-black shadow-sm">
         AI
       </div>
-      <div className="max-w-[80%] bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed text-gray-800 whitespace-pre-wrap">
+      <div className="max-w-[85%] bg-white border border-gray-100 shadow-sm rounded-3xl rounded-bl-none px-5 py-3 text-sm leading-relaxed text-gray-800 whitespace-pre-wrap font-medium">
         {msg.content}
       </div>
     </div>
   );
 }
-
-// ─── Chat panel ──────────────────────────────────────────────────────────────
 
 function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStarted }) {
   const [input, setInput] = useState("");
@@ -113,7 +107,6 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Auto-resize textarea
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
@@ -124,10 +117,10 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
   const isProcessing = ["criteria", "fetching", "retrieval", "scoring"].includes(phase) && !isWaitingAnswer;
 
   const placeholder = !isStarted
-    ? "Describe your insurance needs to get started…"
-    : isWaitingAnswer ? "Type your answer…"
-      : isProcessing ? "Processing…"
-        : "Type a message…";
+    ? "How can I help you today?"
+    : isWaitingAnswer ? "Type your answer..."
+      : isProcessing ? "Thinking..."
+        : "Type a message...";
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -144,24 +137,22 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
+    <div className="flex flex-col h-full bg-white">
+      <div className="flex-1 overflow-y-auto p-6">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center text-3xl mb-4">🛡️</div>
-            <h3 className="font-semibold text-gray-800 mb-1">AI Insurance Consultant</h3>
-            <p className="text-gray-400 text-sm">Tell me about yourself and your insurance goals and I'll find the best match for you.</p>
+            <div className="w-20 h-20 rounded-[2.5rem] bg-blue-50 flex items-center justify-center text-4xl mb-6 shadow-inner ring-8 ring-blue-50/50">🛡️</div>
+            <h3 className="text-xl font-black text-gray-900 mb-2 tracking-tight">AI Insurance Advisor</h3>
+            <p className="text-gray-400 text-sm max-w-xs mx-auto font-medium">I'm here to help you find the best coverage based on your profile and needs.</p>
           </div>
         )}
         {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
-        {isTyping && (phase === "idle" || phase === "profile") && <TypingBubble />}
+        {isTyping && <TypingBubble />}
         <div ref={endRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-gray-100 p-3 bg-white flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex items-end gap-2">
+      <div className="p-6 bg-white flex-shrink-0 border-t border-gray-50">
+        <form onSubmit={handleSubmit} className="flex items-end gap-3 bg-slate-50 p-2 rounded-[2rem] border border-gray-100 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all duration-300">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -170,36 +161,20 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={isProcessing}
-            className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-40 transition resize-none overflow-y-auto leading-relaxed"
-            style={{ minHeight: "42px", maxHeight: "160px" }}
+            className="flex-1 px-4 py-2 bg-transparent text-sm font-medium focus:outline-none disabled:opacity-40 transition resize-none overflow-y-auto leading-relaxed"
+            style={{ minHeight: "40px", maxHeight: "160px" }}
           />
           <button
             type="submit"
             disabled={isProcessing || !input.trim()}
-            className="px-5 py-2.5 bg-blue-600 text-white rounded-2xl text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-100 flex-shrink-0"
           >
-            {!isStarted ? "Start" : isWaitingAnswer ? "Reply" : "Send"}
+            <span className="text-2xl font-bold">➔</span>
           </button>
         </form>
-        <p className="text-[10px] text-gray-300 mt-1.5 ml-1">Enter to send · Shift+Enter for new line</p>
+        <p className="text-[10px] text-gray-300 mt-3 ml-2 font-bold uppercase tracking-widest select-none">Enter to send · Shift+Enter for new line</p>
       </div>
     </div>
-  );
-}
-
-// ─── Requirements panel ──────────────────────────────────────────────────────
-
-function SourceBadge({ source }) {
-  const MAP = {
-    "User input": "bg-blue-50 text-blue-700 border-blue-100",
-    "Recommended": "bg-amber-50 text-amber-700 border-amber-100",
-    "Inferred": "bg-purple-50 text-purple-700 border-purple-100",
-    "System calculated": "bg-gray-50 text-gray-500 border-gray-100",
-  };
-  return (
-    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium ${MAP[source] || MAP["System calculated"]}`}>
-      {source}
-    </span>
   );
 }
 
@@ -211,88 +186,66 @@ function RequirementItemCard({ item }) {
         : String(item.value ?? "—");
 
   return (
-    <div className="bg-white rounded-xl p-3.5 border border-gray-100">
-      <div className="flex items-start justify-between gap-2 mb-1.5">
-        <span className="text-[11px] text-gray-400 font-medium">{item.label}</span>
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          {item.confirmed_by_user && (
-            <span className="text-[10px] text-green-600 font-medium">✓ confirmed</span>
-          )}
-          <SourceBadge source={item.source} />
+    <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-[0.1em]">{item.label}</span>
+        <div className="flex items-center gap-2">
+          {item.confirmed_by_user && <span className="text-[10px] text-green-600 font-black">✓ OK</span>}
+          <span className="text-[10px] px-2 py-0.5 rounded-full border border-gray-100 bg-gray-50 text-gray-500 font-black uppercase">{item.source}</span>
         </div>
       </div>
-      <div className="text-sm font-semibold text-gray-900 leading-snug">{displayValue}</div>
+      <div className="text-sm font-black text-gray-900 leading-snug">{displayValue}</div>
       {item.reasoning && (
-        <div className="text-[11px] text-gray-400 mt-1.5 italic leading-relaxed">{item.reasoning}</div>
+        <div className="text-[11px] text-gray-400 mt-3 pt-3 border-t border-gray-50 font-medium italic leading-relaxed">{item.reasoning}</div>
       )}
     </div>
   );
 }
 
 function RequirementsView({ data }) {
-  if (!data || !data.items || data.items.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-6 text-gray-400">
-        <div className="text-4xl mb-3">👤</div>
-        <p className="text-sm">Your profile will appear here once the consultation begins.</p>
-      </div>
-    );
-  }
-
-  // Group by source for a cleaner layout
-  const userItems = data.items.filter((i) => i.source === "User input");
-  const inferredItems = data.items.filter((i) => i.source === "Inferred" || i.source === "System calculated");
-  const recommendedItems = data.items.filter((i) => i.source === "Recommended");
-
-  const Section = ({ title, items }) => items.length === 0 ? null : (
-    <div>
-      <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">{title}</div>
-      <div className="space-y-2">
-        {items.map((item) => <RequirementItemCard key={item.key} item={item} />)}
-      </div>
+  if (!data?.items?.length) return (
+    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 grayscale opacity-50">
+      <div className="text-6xl mb-4">👤</div>
+      <p className="font-bold text-sm">Dynamic profile building...</p>
     </div>
   );
 
   return (
-    <div className="p-5 space-y-6 overflow-y-auto h-full">
-      <Section title="What you told us" items={userItems} />
-      <Section title="Recommended" items={recommendedItems} />
-      <Section title="Inferred" items={inferredItems} />
+    <div className="p-6 space-y-4 overflow-y-auto h-full bg-slate-50/50">
+      {data.items.map(item => <RequirementItemCard key={item.key} item={item} />)}
     </div>
   );
 }
 
-// ─── Criteria panel ──────────────────────────────────────────────────────────
-
 function CriterionCard({ item }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm shadow-blue-50/20">
       <button
-        className="w-full p-3 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors"
+        className="w-full p-5 text-left flex items-center gap-4 hover:bg-slate-50/50 transition-colors"
         onClick={() => setOpen(!open)}
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-sm font-medium text-gray-800 truncate">{item.item}</span>
-            <span className="text-xs font-bold text-blue-600 ml-2 flex-shrink-0">{item.weight}%</span>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-black text-gray-900 truncate tracking-tight">{item.item}</span>
+            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-xl shadow-sm ring-1 ring-blue-100">{item.weight}%</span>
           </div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5">
-            <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${item.weight}%` }} />
+          <div className="w-full bg-slate-100 rounded-full h-2 shadow-inner">
+            <div className="bg-blue-600 h-full rounded-full transition-all duration-700 shadow-lg shadow-blue-200" style={{ width: `${item.weight}%` }} />
           </div>
         </div>
-        <span className="text-gray-300 text-xs flex-shrink-0">{open ? "▲" : "▼"}</span>
+        <span className="text-gray-300 transition-transform duration-300" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
       </button>
 
       {open && (
-        <div className="px-3 pb-3 pt-2 border-t border-gray-50 space-y-2 expand-enter">
+        <div className="px-6 pb-6 pt-2 border-t border-gray-50 space-y-4 bg-slate-50/20">
           <div>
-            <div className="text-[10px] uppercase font-semibold text-gray-300 mb-1">What to look for</div>
-            <p className="text-xs text-gray-600 leading-relaxed">{item.description}</p>
+            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Objective</div>
+            <p className="text-xs text-gray-700 font-bold leading-relaxed">{item.description}</p>
           </div>
-          <div>
-            <div className="text-[10px] uppercase font-semibold text-gray-300 mb-1">Scoring rules</div>
-            <p className="text-xs text-gray-600 leading-relaxed">{item.scoring_rules}</p>
+          <div className="p-3 bg-blue-50/30 rounded-2xl border border-blue-100/50">
+            <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Scoring Criteria</div>
+            <p className="text-xs text-blue-800 font-black leading-relaxed">{item.scoring_rules}</p>
           </div>
         </div>
       )}
@@ -301,862 +254,641 @@ function CriterionCard({ item }) {
 }
 
 function CriteriaView({ data }) {
-  if (!data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-6 text-gray-400">
-        <div className="text-4xl mb-3">📋</div>
-        <p className="text-sm">Scoring criteria will appear once your profile is complete.</p>
-      </div>
-    );
-  }
-
-  const sorted = [...(data.criteria || [])].sort((a, b) => b.weight - a.weight);
-  const total = (data.criteria || []).reduce((s, c) => s + c.weight, 0);
+  if (!data?.criteria?.length && !data?.filters?.length) return (
+    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 grayscale opacity-50">
+      <div className="text-6xl mb-4">📋</div>
+      <p className="font-bold text-sm">Waiting for profile completion...</p>
+    </div>
+  );
 
   return (
-    <div className="p-5 space-y-5 overflow-y-auto h-full">
-      {data.filters && data.filters.length > 0 && (
-        <div>
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            Hard Filters &mdash; must pass all
+    <div className="p-6 space-y-6 overflow-y-auto h-full bg-slate-50/50">
+      {data.filters?.length > 0 && (
+        <div className="mb-4">
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+             <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.4)]"></span>
+             Mandatory Filters (Must-Haves)
           </div>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {data.filters.map((f, i) => (
-              <div key={i} className="flex items-start gap-2 bg-white rounded-xl p-3 border border-gray-100">
-                <span className="text-red-400 flex-shrink-0 mt-0.5 text-xs">●</span>
-                <span className="text-sm text-gray-700">{f}</span>
+              <div key={i} className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm shadow-blue-50/10">
+                <span className="text-blue-500 text-base">🛡️</span>
+                <span className="text-xs font-black text-gray-800 tracking-tight leading-tight">{f}</span>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      {sorted.length > 0 && (
-        <div>
-          <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide mb-3">
-            Weighted Criteria — total {total}%
-          </div>
-          <div className="space-y-3">
-            {sorted.map((item, i) => <CriterionCard key={i} item={item} />)}
-          </div>
+      <div>
+        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+           <span className="w-1.5 h-1.5 bg-purple-600 rounded-full"></span>
+           Weighted Scoring Criteria
         </div>
-      )}
+        <div className="space-y-4">
+          {data.criteria.map((c, i) => <CriterionCard key={i} item={c} />)}
+        </div>
+      </div>
     </div>
   );
 }
 
-// ─── Crawled policies panel ───────────────────────────────────────────────────
-
-function CrawledPolicyCard({ p, index }) {
-  const [open, setOpen] = useState(false);
-  const premium = p.annual_premium || "—";
-  const coverTerm = p.coverage_term_years || "—";
-  const premTerm = p.premium_term_years && p.premium_term_years !== "N/A" ? p.premium_term_years : null;
-  const creditRating = p.credit_rating && p.credit_rating !== "N/A" ? p.credit_rating : null;
-  const summaryUrl = p.product_summary_url || null;
-  const brochureUrl = p.brochure_url || null;
-  const available = p.local_pdf_available;
-
+function PolicyRankEntry({ policy, rank }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const totalScore = policy.scoring.reduce((s, [sc, crit]) => s + sc * (crit.weight / 100), 0);
+  const colorClass = totalScore >= 4 ? "text-green-600" : totalScore >= 3 ? "text-amber-500" : "text-red-500";
+  
   return (
-    <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-      <button
-        className="w-full p-3.5 text-left flex items-start gap-3 hover:bg-gray-50 transition-colors"
-        onClick={() => setOpen(!open)}
-      >
-        {/* Rank badge */}
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-50 text-blue-600 text-xs font-bold flex items-center justify-center">
-          {index + 1}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="font-semibold text-gray-900 text-sm">{p.policy_name || "Unknown policy"}</span>
-            {available !== undefined && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded border font-medium flex-shrink-0 ${available
-                ? "bg-green-50 text-green-700 border-green-100"
-                : "bg-amber-50 text-amber-700 border-amber-100"
-                }`}>
-                {available ? "✓ In DB" : "⬇ Downloading"}
-              </span>
-            )}
-          </div>
-          {(p.sub_type || p.sub_information) && (
-            <div className="text-xs text-gray-600 mb-1.5">
-              {p.sub_type && <span className="font-medium mr-2">{p.sub_type}</span>}
-              {p.sub_information && <span>{p.sub_information}</span>}
-            </div>
-          )}
-          <div className="flex items-center gap-3 text-xs text-gray-500 flex-wrap">
-            {premium !== "—" && (
-              <span className="font-medium text-blue-700">S$ {typeof premium === "number" ? premium.toLocaleString() : premium} / yr</span>
-            )}
-            {coverTerm !== "—" && <span>Cover: {coverTerm} yr{coverTerm > 1 ? "s" : ""}</span>}
-            {premTerm && <span>Pay: {premTerm} yr{premTerm > 1 ? "s" : ""}</span>}
-            {creditRating && <span className="px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">{creditRating}</span>}
-            {p.return_rate !== undefined && (
-              <span className="font-medium text-purple-700 ml-1">ROI: {(p.return_rate * 100).toFixed(2)}%</span>
-            )}
-          </div>
-        </div>
-        <span className="text-gray-300 text-xs flex-shrink-0 mt-1">{open ? "▲" : "▼"}</span>
-      </button>
-
-      {open && (
-        <div className="px-4 pb-4 pt-2 border-t border-gray-50 space-y-3 expand-enter">
-          {p.total_premium && p.total_premium !== "N/A" && (
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Total premium payable</span>
-              <span className="font-medium text-gray-700">{p.total_premium}</span>
-            </div>
-          )}
-          {p.distribution_cost && p.distribution_cost !== "N/A" && (
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Distribution cost</span>
-              <span className="font-medium text-gray-700">{p.distribution_cost}</span>
-            </div>
-          )}
-          {p.guaranteed_maturity_benefit && p.guaranteed_maturity_benefit !== "N/A" && (
-            <div className="flex justify-between text-xs">
-              <span className="text-gray-400">Guaranteed maturity benefit</span>
-              <span className="font-medium text-gray-700">{p.guaranteed_maturity_benefit}</span>
-            </div>
-          )}
-          {p.download_status && !available && (
-            <div className="text-[11px] text-amber-600 italic">{p.download_status}</div>
-          )}
-          <div className="flex gap-2 flex-wrap">
-            {summaryUrl && (
-              <a href={summaryUrl} target="_blank" rel="noreferrer"
-                className="text-[11px] px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100 hover:bg-blue-100 transition-colors">
-                Product Summary ↗
-              </a>
-            )}
-            {brochureUrl && (
-              <a href={brochureUrl} target="_blank" rel="noreferrer"
-                className="text-[11px] px-2.5 py-1 rounded-lg bg-gray-50 text-gray-600 border border-gray-100 hover:bg-gray-100 transition-colors">
-                Brochure ↗
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CrawledPoliciesView({ data, phase }) {
-  const isFetching = phase === "fetching";
-
-  if (isFetching && (!data || data.length === 0)) {
-    return (
-      <div className="p-5 space-y-4 overflow-y-auto h-full">
-        <div className="flex items-center gap-1.5 text-xs text-blue-600 mb-2">
-          <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
-          Fetching top policies from comparefirst.sg…
-        </div>
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
-            <div className="h-3 bg-gray-100 rounded w-3/5 mb-2" />
-            <div className="h-2.5 bg-gray-100 rounded w-2/5" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-6 text-gray-400">
-        <div className="text-4xl mb-3">🔍</div>
-        <p className="text-sm">Policies fetched from comparefirst.sg will appear here.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-5 space-y-4 overflow-y-auto h-full">
-      <div className="flex items-center justify-between text-xs text-gray-400">
-        <span>{data.length} policies fetched — ranked by lowest annual premium</span>
-        {isFetching && (
-          <span className="flex items-center gap-1.5 text-blue-500">
-            <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
-            Still fetching…
-          </span>
-        )}
-      </div>
-      {data.map((p, i) => <CrawledPolicyCard key={i} p={p} index={i} />)}
-    </div>
-  );
-}
-
-// ─── Policies panel ──────────────────────────────────────────────────────────
-
-function ScoreDigit({ score }) {
-  const color = score >= 4 ? "text-green-600" : score >= 3 ? "text-amber-500" : "text-red-500";
-  return (
-    <span className={`text-2xl font-extrabold tabular-nums leading-none ${color}`}>
-      {score}
-      <span className="text-sm font-normal text-gray-300">/5</span>
-    </span>
-  );
-}
-
-function PolicyCard({ policy, rank }) {
-  const [showFilters, setShowFilters] = useState(true);
-  const [showScores, setShowScores] = useState(rank === 1);
-  const [showCtx, setShowCtx] = useState(false);
-
-  const passes = policy.fulfil_filters[0];
-  const filterNote = policy.fulfil_filters[1];
-  const totalScore = policy.scoring.reduce(
-    (s, [score, crit]) => s + score * (crit.weight / 100), 0
-  );
-
-  const totalColor = totalScore >= 4 ? "text-green-600" : totalScore >= 3 ? "text-amber-500" : "text-red-500";
-
-  const filterEvidence = policy.retrieved_context?.filters || [];
-  const criteriaEvidence = policy.retrieved_context?.criteria || [];
-
-  return (
-    <div className={`bg-white rounded-xl border overflow-hidden ${rank === 1 && passes ? "border-blue-200 shadow-md" : "border-gray-100"
-      }`}>
-      {/* Header */}
-      <div className="p-4 flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            {rank === 1 && passes && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-600 text-white font-semibold tracking-wide">
-                TOP PICK
-              </span>
-            )}
-            {passes ? (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 font-medium">
-                ✓ All filters passed
-              </span>
-            ) : (
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-50 text-red-700 border border-red-100 font-medium">
-                ✗ Filtered out
-              </span>
-            )}
-          </div>
-          <span className="font-semibold text-gray-900">{policy.policy_name}</span>
-          {policy.basic_info && (policy.basic_info.sub_type || policy.basic_info.sub_information) && (
-            <div className="text-[13px] text-gray-600 mt-1 mb-1">
-              {policy.basic_info.sub_type && <span className="font-medium mr-2">{policy.basic_info.sub_type}</span>}
-              {policy.basic_info.sub_information && <span>{policy.basic_info.sub_information}</span>}
-            </div>
-          )}
-          {/* Basic info row */}
-          {policy.basic_info && (
-            <div className="flex items-center gap-3 mt-1.5 flex-wrap text-xs text-gray-500">
-              {policy.basic_info.annual_premium && policy.basic_info.annual_premium !== "N/A" && (
-                <span className="font-medium text-blue-700">{policy.basic_info.annual_premium} / yr</span>
-              )}
-              {policy.basic_info.coverage_term_years && policy.basic_info.coverage_term_years !== "N/A" && (
-                <span>Cover: {policy.basic_info.coverage_term_years} yr</span>
-              )}
-              {policy.basic_info.premium_term_years && policy.basic_info.premium_term_years !== "N/A" && (
-                <span>Pay: {policy.basic_info.premium_term_years} yr</span>
-              )}
-              {policy.basic_info.credit_rating && policy.basic_info.credit_rating !== "N/A" && (
-                <span className="px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">{policy.basic_info.credit_rating}</span>
-              )}
-              {policy.basic_info.product_summary_url && (
-                <a href={policy.basic_info.product_summary_url} target="_blank" rel="noreferrer"
-                  className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded border border-blue-100 hover:bg-blue-100 transition-colors">
-                  Summary ↗
-                </a>
-              )}
-              {policy.basic_info.brochure_url && (
-                <a href={policy.basic_info.brochure_url} target="_blank" rel="noreferrer"
-                  className="px-1.5 py-0.5 bg-gray-50 text-gray-600 rounded border border-gray-100 hover:bg-gray-100 transition-colors">
-                  Brochure ↗
-                </a>
-              )}
-              {policy.return_rate !== undefined && (
-                <span className="font-medium text-purple-700 ml-1">ROI: {(policy.return_rate * 100).toFixed(2)}%</span>
-              )}
-            </div>
-          )}
-        </div>
-        {/* Overall score — large digits, no bar */}
-        <div className="text-right flex-shrink-0">
-          <div className="text-[10px] text-gray-400 mb-0.5">Overall</div>
-          <span className={`text-3xl font-extrabold tabular-nums leading-none ${totalColor}`}>
-            {totalScore.toFixed(1)}
-            <span className="text-sm font-normal text-gray-300">/5</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Hard filter evaluation */}
-      <div className="border-t border-gray-50">
-        <button
-          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-gray-500 flex justify-between items-center hover:bg-gray-50 transition-colors"
-          onClick={() => setShowFilters(!showFilters)}
-        >
-          <span className="flex items-center gap-1.5">
-            <span className={passes ? "text-green-500" : "text-red-400"}>■</span>
-            Hard Filter Evaluation
-          </span>
-          <span className="text-gray-300">{showFilters ? "▲" : "▼"}</span>
-        </button>
-        {showFilters && (
-          <div className="px-4 pb-4 space-y-3 expand-enter">
-            {/* Overall filter verdict */}
-            {filterNote && (
-              <div className={`rounded-lg p-3 text-sm leading-relaxed ${passes
-                ? "bg-green-50 text-green-800 border border-green-100"
-                : "bg-red-50 text-red-800 border border-red-100"
-                }`}>
-                <div className="text-[10px] uppercase font-semibold mb-1 opacity-60">Verdict</div>
-                {filterNote}
-              </div>
-            )}
-            {/* Per-filter evidence */}
-            {filterEvidence.length > 0 && (
-              <div className="space-y-2">
-                <div className="text-[10px] uppercase font-semibold text-gray-300">Filter Evidence</div>
-                {filterEvidence.map((ctx, j) => (
-                  <div key={j} className="bg-slate-50 border border-gray-100 rounded-lg p-3 text-xs text-gray-600 leading-relaxed">
-                    {ctx}
-                  </div>
-                ))}
-              </div>
-            )}
-            {filterEvidence.length === 0 && !filterNote && (
-              <p className="text-xs text-gray-400 italic">No filter evidence retrieved.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Criteria scores */}
-      <div className="border-t border-gray-50">
-        <button
-          className="w-full px-4 py-2.5 text-left text-xs font-semibold text-gray-500 flex justify-between items-center hover:bg-gray-50 transition-colors"
-          onClick={() => setShowScores(!showScores)}
-        >
-          <span className="flex items-center gap-1.5">
-            <span className="text-blue-400">■</span>
-            Criterion Scores
-          </span>
-          <span className="text-gray-300">{showScores ? "▲" : "▼"}</span>
-        </button>
-        {showScores && (
-          <div className="px-4 pb-4 space-y-4 expand-enter">
-            {policy.scoring.map(([score, crit, reason], j) => (
-              <div key={j} className="flex gap-3">
-                {/* Score digit column */}
-                <div className="flex-shrink-0 w-14 flex flex-col items-center justify-start pt-0.5">
-                  <ScoreDigit score={score} />
-                  <span className="text-[10px] text-gray-300 mt-0.5">w: {crit.weight}%</span>
-                </div>
-                {/* Label + reason */}
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-semibold text-gray-800 mb-1">{crit.item}</div>
-                  <p className="text-xs text-gray-500 leading-relaxed">{reason}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Source evidence */}
-      {criteriaEvidence.length > 0 && (
-        <div className="border-t border-gray-50">
-          <button
-            className="w-full px-4 py-2.5 text-left text-xs font-semibold text-gray-500 flex justify-between items-center hover:bg-gray-50 transition-colors"
-            onClick={() => setShowCtx(!showCtx)}
-          >
-            <span className="flex items-center gap-1.5">
-              <span className="text-purple-400">■</span>
-              Criteria Evidence ({criteriaEvidence.length})
+    <div className={`bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm transition-all duration-500 mb-6 group relative ring-offset-2 hover:ring-2 ${isExpanded ? 'ring-blue-200 shadow-2xl scale-[1.02]' : 'ring-blue-50 shadow-sm hover:shadow-xl'}`}>
+      <div className="flex items-start justify-between gap-6 mb-6">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="w-10 h-10 rounded-2xl bg-slate-950 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-slate-200">{rank}</span>
+            <span className={`text-[10px] px-3 py-1.5 rounded-xl font-black uppercase tracking-wider border ${policy.fulfil_filters[0] ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+              {policy.fulfil_filters[0] ? '✓ Eligible' : '✗ Ineligible'}
             </span>
-            <span className="text-gray-300">{showCtx ? "▲" : "▼"}</span>
-          </button>
-          {showCtx && (
-            <div className="px-4 pb-4 space-y-2 expand-enter">
-              {criteriaEvidence.map((ctx, j) => (
-                <div key={j} className="text-[11px] font-mono text-gray-600 bg-slate-50 rounded-lg p-3 border border-gray-100 leading-relaxed">
-                  {ctx}
+          </div>
+          <h4 className="font-black text-gray-900 text-xl tracking-tight leading-tight mb-2">{policy.policy_name}</h4>
+          {!policy.fulfil_filters[0] && (
+            <p className="text-[11px] text-red-400 font-bold leading-tight decoration-red-200 decoration-2 underline-offset-4 mb-2 italic">
+               Reason: {policy.fulfil_filters[1]}
+            </p>
+          )}
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Match</div>
+          <div className={`text-5xl font-black tabular-nums transition-colors duration-500 ${colorClass}`}>{totalScore.toFixed(1)}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-8 py-6 border-y border-gray-50 bg-slate-50/30 -mx-8 px-8 mb-4">
+        <div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Estimated Premium</div>
+          <div className="text-lg font-black text-blue-600 tabular-nums">{policy.basic_info.annual_premium}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">ROI / Return Rate</div>
+          <div className="flex items-center gap-3">
+            <div className="text-lg font-black text-purple-600 tabular-nums">{(policy.return_rate * 100).toFixed(2)}%</div>
+            {(policy.basic_info.product_summary_url || policy.basic_info.brochure_url) && (
+              <div className="flex gap-2 ml-1">
+                {policy.basic_info.product_summary_url && (
+                  <a href={policy.basic_info.product_summary_url} target="_blank" className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Product Summary">📄</a>
+                )}
+                {policy.basic_info.brochure_url && (
+                  <a href={policy.basic_info.brochure_url} target="_blank" className="w-6 h-6 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-[10px] hover:bg-purple-600 hover:text-white transition-all shadow-sm" title="Brochure">📖</a>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="animate-slideDown space-y-8 pt-4">
+          <div>
+            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+               <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
+               Scoring Breakdown
+            </div>
+            <div className="space-y-3">
+              {policy.scoring.map(([score, crit, reasoning], i) => (
+                <div key={i} className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100 ring-1 ring-white">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[11px] font-black text-gray-900 tracking-tight">{crit.item}</span>
+                    <span className={`text-sm font-black ${score >= 4 ? 'text-green-600' : score >= 3 ? 'text-amber-500' : 'text-red-500'}`}>{score}/5</span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic">{reasoning}</p>
                 </div>
               ))}
             </div>
+          </div>
+
+          {(policy.context_summary && Object.keys(policy.context_summary).length > 0) && (
+            <div>
+              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                 <span className="w-1 h-1 bg-purple-600 rounded-full"></span>
+                 Deep Dive Summaries
+              </div>
+              <div className="space-y-4">
+                {Object.entries(policy.context_summary).map(([title, text], i) => (
+                  <div key={i} className="pl-4 border-l-2 border-slate-100">
+                    <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-1.5">{title}</h5>
+                    <p className="text-[11px] text-gray-500 font-bold leading-relaxed">{text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
+
+
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className={`w-full mt-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${isExpanded ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 ring-4 ring-slate-100' : 'bg-slate-50 text-gray-400 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100'}`}
+      >
+        <span>{isExpanded ? 'Collapse Analysis' : 'Review Evaluation Details'}</span>
+        <span className={`text-xs transition-transform duration-500 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
+      </button>
     </div>
   );
 }
 
-function PoliciesView({ data, phase, availablePolicies, retrievalPolicies, crawledPolicies }) {
-  const [, setTick] = useState(0);
+function PoliciesView({ data }) {
+  if (!data?.length) return (
+    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 grayscale opacity-50">
+      <div className="text-6xl mb-4">📊</div>
+      <p className="font-bold text-sm">Analyzing market options...</p>
+    </div>
+  );
 
-  // Auto-refresh every 10 s during retrieval to keep the UI feeling live
-  useEffect(() => {
-    if (phase !== "retrieval" && phase !== "scoring") return;
-    const id = setInterval(() => setTick((t) => t + 1), 10000);
-    return () => clearInterval(id);
-  }, [phase]);
+  return (
+    <div className="p-6 overflow-y-auto h-full bg-slate-50/50">
+      {data.map((p, i) => <PolicyRankEntry key={i} policy={p} rank={i+1} />)}
+    </div>
+  );
+}
 
-  // During retrieval phase show skeleton cards for all known policies
-  if ((phase === "retrieval" || phase === "scoring") && (!data || data.length === 0)) {
-    const retrieved = retrievalPolicies ? retrievalPolicies.length : 0;
-    const total = availablePolicies ? availablePolicies.length : 0;
-    return (
-      <div className="p-5 space-y-4 overflow-y-auto h-full">
-        <div className="flex items-center justify-between text-xs text-gray-400">
-          <span>{retrieved} / {total} policies contexts retrieved</span>
-          <span className="flex items-center gap-1.5">
-            <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
-            {phase === "retrieval" ? "Retrieving…" : "Scoring…"}
-          </span>
+// ─── Dashboard Components ────────────────────────────────────────────────────
+
+function ProfileModal({ user, onClose, onSave }) {
+  const [formData, setFormData] = useState({
+    name: user.name || "",
+    dob: user.dob || "",
+    gender: user.gender || "",
+    smoking_status: user.smoking_status || "non-smoker",
+    marital_status: user.marital_status || "single",
+    num_children: user.num_children || 0
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
+      <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
+        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
+          <h3 className="font-black text-gray-900 text-lg">Personal Profile</h3>
+          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
         </div>
-        {(availablePolicies || []).map((name, idx) => {
-          const partial = (retrievalPolicies || []).find((p) => p.policy_name === name);
-          const filterCount = partial?.retrieved_context?.filters?.length ?? 0;
-          const criteriaCount = partial?.retrieved_context?.criteria?.length ?? 0;
-          return (
-            <div key={`${name}-${idx}`} className={`bg-white rounded-xl border p-4 transition-all ${partial ? "border-green-100" : "border-gray-100"}`}>
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-gray-900 text-sm">{name}</span>
-                {partial ? (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100 flex-shrink-0">
-                    ✓ Retrieved
-                  </span>
-                ) : (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-100 flex items-center gap-1 flex-shrink-0">
-                    <span className="pulse-dot w-1 h-1 rounded-full bg-blue-400 inline-block" />
-                    Retrieving…
-                  </span>
-                )}
-              </div>
-              
-              {(() => {
-                const crawled = (crawledPolicies || [])[idx];
-                if (!crawled) return null;
-                return (
-                  <div className="mt-1">
-                    {(crawled.sub_type || crawled.sub_information) && (
-                      <div className="text-[13px] text-gray-600 mb-1">
-                        {crawled.sub_type && <span className="font-medium mr-2">{crawled.sub_type}</span>}
-                        {crawled.sub_information && <span>{crawled.sub_information}</span>}
-                      </div>
-                    )}
-                    <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-gray-500">
-                      {crawled.annual_premium && crawled.annual_premium !== "N/A" && (
-                        <span className="font-medium text-blue-700">{crawled.annual_premium} / yr</span>
-                      )}
-                      {crawled.coverage_term_years && crawled.coverage_term_years !== "N/A" && (
-                        <span>Cover: {crawled.coverage_term_years} yr</span>
-                      )}
-                      {crawled.premium_term_years && crawled.premium_term_years !== "N/A" && (
-                        <span>Pay: {crawled.premium_term_years} yr</span>
-                      )}
-                      {crawled.credit_rating && crawled.credit_rating !== "N/A" && (
-                        <span className="px-1.5 py-0.5 bg-gray-50 rounded border border-gray-100">{crawled.credit_rating}</span>
-                      )}
-                      {crawled.return_rate !== undefined && (
-                        <span className="font-medium text-purple-700 ml-1">ROI: {(crawled.return_rate * 100).toFixed(2)}%</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-              {partial && (filterCount > 0 || criteriaCount > 0) && (
-                <div className="mt-2 flex gap-3 text-[11px] text-gray-400">
-                  {filterCount > 0 && <span>{filterCount} filter snippet{filterCount > 1 ? "s" : ""}</span>}
-                  {criteriaCount > 0 && <span>{criteriaCount} criteria snippet{criteriaCount > 1 ? "s" : ""}</span>}
+        <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-6">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+            <div className="col-span-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
+              <input 
+                required
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
+                value={formData.name}
+                onChange={e => setFormData({...formData, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date of Birth</label>
+              <input type="date" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Gender</label>
+              <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
+                <option value="">Select...</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Smoking Status</label>
+              <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.smoking_status} onChange={e => setFormData({...formData, smoking_status: e.target.value})}>
+                <option value="non-smoker">Non-Smoker</option>
+                <option value="smoker">Smoker</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Marital Status</label>
+              <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.marital_status} onChange={e => setFormData({...formData, marital_status: e.target.value})}>
+                <option value="single">Single</option>
+                <option value="married">Married</option>
+                <option value="divorced">Divorced</option>
+                <option value="widowed">Widowed</option>
+              </select>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Number of Children</label>
+              <input type="number" min="0" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.num_children} onChange={e => setFormData({...formData, num_children: parseInt(e.target.value)})} />
+            </div>
+          </div>
+          <div className="flex gap-4 pt-4">
+            <button type="submit" className="flex-1 bg-blue-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all">Save Profile</button>
+            <button type="button" onClick={onClose} className="px-8 h-14 bg-slate-100 text-gray-500 rounded-2xl font-black text-sm uppercase tracking-widest transition-all">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function PolicyModal({ policy, onClose, onSave }) {
+  const [formData, setFormData] = useState(policy || {
+    insurance_name: "",
+    status: "in_effect",
+    policy_document_url: "",
+    starting_year: new Date().getFullYear(),
+    payment_years: 20,
+    coverage_years: 99,
+    annual_premium: 0,
+    coverage_amount: 0
+  });
+
+  const [isParsing, setIsParsing] = useState(false);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsParsing(true);
+    const body = new FormData();
+    body.append("file", file);
+
+    try {
+      const resp = await fetch("/api/policies/parse", {
+        method: "POST",
+        body
+      });
+      const res = await resp.json();
+      if (res.success && res.data) {
+        const d = res.data;
+        setFormData(prev => ({
+          ...prev,
+          insurance_name: d.insurance_name || prev.insurance_name,
+          payment_years: d.payment_years || prev.payment_years,
+          coverage_years: d.coverage_years || prev.coverage_years,
+          annual_premium: d.annual_premium || prev.annual_premium,
+          coverage_amount: d.coverage_amount || prev.coverage_amount,
+          policy_document_url: res.document_url || prev.policy_document_url
+        }));
+      } else {
+        alert(res.error || "Failed to parse document");
+      }
+    } catch (err) {
+      alert("Error uploading file");
+    } finally {
+      setIsParsing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
+      <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
+        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
+          <h3 className="font-black text-gray-900 text-lg">{policy ? "Edit Policy" : "Protect New Asset"}</h3>
+          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
+        </div>
+
+        <div className="px-8 pt-6">
+          <div className={`relative border-2 border-dashed rounded-3xl p-6 transition-all ${isParsing ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200 hover:border-blue-300'}`}>
+            <input 
+              type="file" 
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+              onChange={handleFileUpload}
+              disabled={isParsing}
+              accept=".pdf"
+            />
+            <div className="text-center">
+              {isParsing ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  <p className="text-xs font-black text-blue-600 uppercase tracking-widest">AI is parsing document...</p>
                 </div>
+              ) : (
+                <>
+                  <p className="text-sm font-black text-gray-900 mb-1">Upload Policy Summary</p>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Drag & drop or click to auto-fill details via AI</p>
+                </>
               )}
             </div>
-          );
-        })}
-      </div>
-    );
-  }
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-6 text-gray-400">
-        <div className="text-4xl mb-3">📊</div>
-        <p className="text-sm">Policy evaluations will appear once the analysis is complete.</p>
-      </div>
-    );
-  }
-
-  const ranked = data
-    .map((p) => {
-      const score = p.scoring.reduce(
-        (s, [sc, crit]) => s + sc * (crit.weight / 100), 0
-      );
-      return { ...p, _score: score };
-    })
-    .sort((a, b) => {
-      if (a.fulfil_filters[0] !== b.fulfil_filters[0])
-        return b.fulfil_filters[0] - a.fulfil_filters[0];
-      return b._score - a._score;
-    });
-
-  const passing = ranked.filter((p) => p.fulfil_filters[0]).length;
-
-  return (
-    <div className="p-5 space-y-4 overflow-y-auto h-full">
-      <div className="flex items-center justify-between text-xs text-gray-400">
-        <span>{data.length} policies evaluated — {passing} passed all filters</span>
-        <span>Sorted by weighted score</span>
-      </div>
-      {ranked.map((p, i) => (
-        <PolicyCard key={i} policy={p} rank={i + 1} />
-      ))}
-    </div>
-  );
-}
-
-function ComparisonView({ criteria, policies }) {
-  if (!policies || policies.length === 0 || !criteria || !criteria.criteria) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-center px-6 text-gray-400">
-        <div className="text-4xl mb-3">⚖️</div>
-        <p className="text-sm">Comparison will be available once policies are evaluated.</p>
-      </div>
-    );
-  }
-
-  const criteriaItems = criteria.criteria;
-
-  return (
-    <div className="p-0 overflow-auto h-full bg-white relative">
-      <table className="w-full text-left border-collapse text-sm">
-        <thead>
-          <tr>
-            <th className="p-4 border-b-2 border-slate-200 bg-slate-50 font-semibold text-slate-700 min-w-[200px] sticky top-0 left-0 z-20 shadow-[1px_0_0_0_#e2e8f0]">
-              Policy
-            </th>
-            {criteriaItems.map((c, i) => (
-              <th key={i} className="p-4 border-b-2 border-slate-200 bg-slate-50 font-semibold text-slate-700 min-w-[300px] sticky top-0 z-10 shadow-[0_1px_0_0_#e2e8f0]">
-                <div className="flex items-center justify-between">
-                  <span>{c.item}</span>
-                  <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{c.weight}%</span>
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {policies.map((p, i) => (
-            <tr key={i} className="hover:bg-slate-50/50 transition-colors">
-              <td className="p-4 border-b border-slate-100 font-medium text-slate-900 bg-white sticky left-0 z-10 align-top shadow-[1px_0_0_0_#f1f5f9]">
-                <div className="font-semibold text-sm mb-1">{p.policy_name}</div>
-                {p.basic_info && (p.basic_info.sub_type || p.basic_info.sub_information) && (
-                  <div className="text-xs text-gray-600 mb-1">
-                    {p.basic_info.sub_type && <span className="font-medium block">{p.basic_info.sub_type}</span>}
-                    {p.basic_info.sub_information && <span className="block">{p.basic_info.sub_information}</span>}
-                  </div>
-                )}
-                {p.basic_info && p.basic_info.annual_premium && p.basic_info.annual_premium !== "N/A" && (
-                  <div className="text-xs font-normal text-blue-600 mb-2">
-                    {p.basic_info.annual_premium}/yr
-                  </div>
-                )}
-                <div className="inline-flex items-baseline gap-1 mt-2 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-100">
-                  <span className="text-xs text-slate-400 font-medium">Score</span>
-                  <span className="text-lg font-bold text-slate-700">
-                    {p.scoring ? p.scoring.reduce((s, [sc, crit]) => s + sc * (crit.weight / 100), 0).toFixed(1) : "-"}
-                  </span>
-                </div>
-              </td>
-              {criteriaItems.map((c, j) => {
-                const summary = p.context_summary?.[c.item] || "No summary available.";
-                const scoreData = p.scoring?.find(([_, crit]) => crit.item === c.item);
-                const score = scoreData ? scoreData[0] : 0;
-                return (
-                  <td key={j} className="p-4 border-b border-slate-100 text-slate-600 align-top text-xs leading-relaxed">
-                    <div className="mb-2">
-                      <span className={`inline-flex items-center justify-center w-5 h-5 rounded flex-shrink-0 font-bold ${score >= 4 ? 'bg-green-100 text-green-700' : score >= 3 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-                        {score}
-                      </span>
-                    </div>
-                    {summary}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── Data panel (tabs) ───────────────────────────────────────────────────────
-
-function DataPanel({ requirements, criteria, policies, crawledPolicies, phase, availablePolicies, retrievalPolicies, activeTab, setActiveTab }) {
-  const TABS = [
-    { id: "requirements", label: "Requirements", icon: "👤", hasData: !!requirements },
-    { id: "criteria", label: "Criteria", icon: "📋", hasData: !!criteria },
-    { id: "policies", label: "Policies", icon: "📊", hasData: (crawledPolicies && crawledPolicies.length > 0) || (policies && policies.length > 0) || (availablePolicies && availablePolicies.length > 0) },
-    { id: "comparison", label: "Comparison", icon: "⚖️", hasData: policies && policies.length > 0 },
-  ];
-
-  return (
-    <div className="flex flex-col h-full bg-slate-50">
-      {/* Tab bar */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-3 flex-shrink-0">
-        <div className="flex gap-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative px-4 py-2 text-sm font-medium rounded-t-lg transition-colors flex items-center gap-1.5 ${activeTab === tab.id
-                ? "bg-slate-50 text-blue-600 border-b-2 border-blue-600 -mb-px"
-                : "text-gray-500 hover:text-gray-700"
-                }`}
-            >
-              <span>{tab.icon}</span>
-              {tab.label}
-              {tab.hasData && (
-                <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${activeTab === tab.id ? "bg-blue-400" : "bg-green-400"
-                  }`} />
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-hidden">
-        {activeTab === "requirements" && <RequirementsView data={requirements} />}
-        {activeTab === "criteria" && <CriteriaView data={criteria} />}
-        {activeTab === "policies" && (
-          (phase === "retrieval" || phase === "scoring" || phase === "complete")
-            ? <PoliciesView data={policies} phase={phase} availablePolicies={availablePolicies} retrievalPolicies={retrievalPolicies} crawledPolicies={crawledPolicies} />
-            : <CrawledPoliciesView data={crawledPolicies} phase={phase} />
-        )}
-        {activeTab === "comparison" && <ComparisonView criteria={criteria} policies={policies} />}
-      </div>
-    </div>
-  );
-}
-
-// ─── Root App ────────────────────────────────────────────────────────────────
-
-function App() {
-  const [sessionId, setSessionId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [phase, setPhase] = useState("idle");
-  const [isWaiting, setIsWaiting] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [requirements, setRequirements] = useState(null);
-  const [criteria, setCriteria] = useState(null);
-  const [crawledPolicies, setCrawledPolicies] = useState([]);
-  const [policies, setPolicies] = useState([]);
-  const [availablePolicies, setAvailablePolicies] = useState([]);
-  const [retrievalPolicies, setRetrievalPolicies] = useState([]);
-  const [activeTab, setActiveTab] = useState("requirements");
-  const wsRef = useRef(null);
-  const sessionIdRef = useRef(null);
-
-  const addMsg = useCallback((type, content) => {
-    setMessages((prev) => [...prev, mkMsg(type, content)]);
-  }, []);
-
-  // WebSocket message dispatcher
-  const handleWsMsg = useCallback((raw) => {
-    const d = JSON.parse(raw);
-    switch (d.type) {
-      case "question":
-        setIsTyping(false);
-        addMsg("agent", d.content);
-        setIsWaiting(true);
-        break;
-      case "status":
-        if (d.phase) setPhase(d.phase);
-        setMessages((prev) => {
-          const filtered = prev.filter(m => m.type !== "status");
-          return [...filtered, mkMsg("status", d.message, d.phase)];
-        });
-        break;
-      case "requirements":
-        setRequirements(d.data);
-        setActiveTab("requirements");
-        setMessages((prev) => {
-          const filtered = prev.filter(m => m.type !== "status");
-          return [...filtered, mkMsg("milestone", "Profile captured successfully")];
-        });
-        break;
-      case "criteria":
-        setCriteria(d.data);
-        setActiveTab("criteria");
-        setMessages((prev) => {
-          const filtered = prev.filter(m => m.type !== "status");
-          return [...filtered, mkMsg("milestone", `${d.data.criteria?.length ?? 0} scoring criteria generated`)];
-        });
-        break;
-      case "crawled_policy":
-        // Incremental: one policy arrives at a time during fetching
-        setCrawledPolicies((prev) => {
-          const exists = prev.some((p) => p.policy_name === d.data.policy_name);
-          return exists ? prev : [...prev, d.data];
-        });
-        setActiveTab("policies");
-        break;
-      case "crawled_policies":
-        // Full list arrives when fetching is done
-        setCrawledPolicies(d.data || []);
-        setActiveTab("policies");
-        setMessages((prev) => {
-          const filtered = prev.filter(m => m.type !== "status");
-          return [...filtered, mkMsg("milestone", `${(d.data || []).length} policies fetched from comparefirst.sg`)];
-        });
-        break;
-      case "policies_list":
-        setAvailablePolicies(d.data || []);
-        setRetrievalPolicies([]);
-        setActiveTab("policies");
-        break;
-      case "policy_partial":
-        setRetrievalPolicies((prev) => {
-          const exists = prev.some((p) => p.policy_name === d.data.policy_name);
-          return exists
-            ? prev.map((p) => p.policy_name === d.data.policy_name ? d.data : p)
-            : [...prev, d.data];
-        });
-        break;
-      case "policies":
-        setPolicies(d.data);
-        setRetrievalPolicies([]);
-        setActiveTab("comparison");
-        setMessages((prev) => {
-          const filtered = prev.filter(m => m.type !== "status");
-          return [...filtered, mkMsg("milestone", `${d.data.length} policies evaluated`)];
-        });
-        break;
-      case "complete":
-        setPhase("complete");
-        setMessages((prev) => {
-          const filtered = prev.filter(m => m.type !== "status");
-          return [...filtered, mkMsg("milestone", d.message || "Analysis complete!")];
-        });
-        break;
-      case "error":
-        addMsg("error", d.message);
-        break;
-      case "ping":
-        break; // heartbeat, ignore
-      default:
-        break;
-    }
-  }, [addMsg]);
-
-  const handleSend = useCallback(async (text) => {
-    addMsg("user", text);
-
-    if (!sessionIdRef.current) {
-      // First message — create session + open WebSocket
-      try {
-        const resp = await fetch("/api/sessions", { method: "POST" });
-        const { session_id } = await resp.json();
-        sessionIdRef.current = session_id;
-        setSessionId(session_id);
-
-        const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const ws = new WebSocket(`${proto}//${window.location.host}/ws/${session_id}`);
-        wsRef.current = ws;
-
-        ws.onopen = () => { setIsTyping(true); ws.send(JSON.stringify({ type: "start", message: text })); };
-        ws.onmessage = (e) => handleWsMsg(e.data);
-        ws.onerror = () => addMsg("error", "Connection error. Please refresh.");
-      } catch {
-        addMsg("error", "Failed to connect to the API server.");
-      }
-    } else {
-      // Subsequent message — answer to agent question
-      setIsWaiting(false);
-      setIsTyping(true);
-      wsRef.current?.send(JSON.stringify({ type: "answer", content: text }));
-    }
-  }, [addMsg, handleWsMsg]);
-
-  const handleReset = useCallback(() => {
-    wsRef.current?.close();
-    wsRef.current = null;
-    sessionIdRef.current = null;
-    setSessionId(null);
-    setMessages([]);
-    setPhase("idle");
-    setIsWaiting(false);
-    setIsTyping(false);
-    setRequirements(null);
-    setCriteria(null);
-    setCrawledPolicies([]);
-    setPolicies([]);
-    setAvailablePolicies([]);
-    setRetrievalPolicies([]);
-    setActiveTab("requirements");
-  }, []);
-
-  const isStarted = !!sessionId || messages.length > 0;
-
-  return (
-    <div className="flex flex-col h-screen">
-      {/* Global header */}
-      <header className="bg-white border-b border-gray-100 px-5 py-3 flex items-center justify-between flex-shrink-0 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center text-white">🛡️</div>
-          <div>
-            <h1 className="text-sm font-bold text-gray-900 leading-tight">AI Insurance Consultant</h1>
-            <p className="text-[11px] text-gray-400">GPT-4o · LangGraph · RAG</p>
           </div>
         </div>
+        <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-6">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+            <div className="col-span-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Identifier</label>
+              <input 
+                required
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all placeholder:text-gray-300"
+                placeholder="e.g. AIA Pro Lifetime Protector"
+                value={formData.insurance_name}
+                onChange={e => setFormData({...formData, insurance_name: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Current Status</label>
+              <select 
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                value={formData.status}
+                onChange={e => setFormData({...formData, status: e.target.value})}
+              >
+                <option value="in_effect">✓ In Effect</option>
+                <option value="lapsed">⚠ Lapsed</option>
+                <option value="surrendered">✗ Surrendered</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Inception Year</label>
+              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.starting_year} onChange={e => setFormData({...formData, starting_year: parseInt(e.target.value)})} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pay Term (Y)</label>
+              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.payment_years} onChange={e => setFormData({...formData, payment_years: parseInt(e.target.value)})} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cover Term (Y)</label>
+              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_years} onChange={e => setFormData({...formData, coverage_years: parseInt(e.target.value)})} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Annual (S$)</label>
+              <input type="number" step="0.01" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.annual_premium} onChange={e => setFormData({...formData, annual_premium: parseFloat(e.target.value)})} />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Sum Assured (S$)</label>
+              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_amount} onChange={e => setFormData({...formData, coverage_amount: parseInt(e.target.value)})} />
+            </div>
+          </div>
+          <div className="flex gap-4 pt-4">
+            <button type="submit" className="flex-1 bg-blue-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all">Confirm Data</button>
+            <button type="button" onClick={onClose} className="px-8 h-14 bg-slate-100 text-gray-500 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
-        <div className="flex items-center gap-4">
-          {phase !== "idle" && <PhaseBar phase={phase} />}
-          {isStarted && (
-            <button
-              onClick={handleReset}
-              className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
-            >
-              New session
-            </button>
-          )}
+function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePolicy, onStartAdvice, onLogout }) {
+  return (
+    <div className="h-full flex flex-col bg-slate-100/50">
+      <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 ring-1 ring-slate-100">
+        <div className="flex items-center gap-5">
+          <div className="w-12 h-12 rounded-3xl bg-blue-600 flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-100 ring-4 ring-blue-50">🛡️</div>
+          <div>
+            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-1">Portfolio</h1>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Insurance Management Assistant</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-8">
+          <button onClick={onStartAdvice} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 hover:shadow-xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center gap-2">
+            ✨ New Advice
+          </button>
+          <div className="h-10 w-px bg-slate-100" />
+          <div className="flex items-center gap-4">
+             <div className="text-right">
+               <div className="text-sm font-black text-gray-900 leading-none mb-1">{user.name}</div>
+               <div className="flex gap-3 justify-end items-center">
+                 <button onClick={() => window.showProfileModal()} className="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest transition-colors">Edit Profile</button>
+                 <span className="text-[10px] text-slate-300">•</span>
+                 <button onClick={onLogout} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Sign Out</button>
+               </div>
+             </div>
+             <img src={user.picture} className="w-11 h-11 rounded-3xl border-2 border-white shadow-md shadow-blue-50" />
+          </div>
         </div>
       </header>
 
-      {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left — chat */}
-        <div className="w-1/2 flex-shrink-0 border-r border-gray-100 bg-white flex flex-col">
-          <ChatPanel
-            messages={messages}
-            isWaitingAnswer={isWaiting}
-            isTyping={isTyping}
-            phase={phase}
-            onSend={handleSend}
-            isStarted={isStarted}
-          />
+      <main className="flex-1 overflow-y-auto p-10 max-w-7xl mx-auto w-full">
+        <div className="flex items-center justify-between mb-10">
+          <h2 className="text-3xl font-black text-gray-950 tracking-tight">Active Coverage</h2>
+          <button onClick={() => onAddPolicy()} className="bg-white text-blue-600 border-2 border-blue-50 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-blue-200 hover:bg-slate-50 transition-all shadow-sm">
+            + Add Asset
+          </button>
         </div>
 
-        {/* Right — data panels */}
-        <div className="flex-1 overflow-hidden">
-          <DataPanel
-            requirements={requirements}
-            criteria={criteria}
-            crawledPolicies={crawledPolicies}
-            policies={policies}
-            phase={phase}
-            availablePolicies={availablePolicies}
-            retrievalPolicies={retrievalPolicies}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
-        </div>
-      </div>
+        {policies.length === 0 ? (
+          <div className="bg-white rounded-[3rem] p-20 text-center border-4 border-dashed border-slate-100/50 flex flex-col items-center">
+            <div className="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center text-5xl mb-6 grayscale opacity-50">📄</div>
+            <h3 className="text-2xl font-black text-gray-900 mb-3">Your portfolio is empty</h3>
+            <p className="text-gray-400 text-sm max-w-sm mb-10 font-medium">Record your existing insurance plans here to keep track of premium dates and coverage gaps.</p>
+            <button onClick={() => onAddPolicy()} className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-100 hover:translate-y-[-2px] transition-all">Add Your First Policy</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {policies.map(p => (
+              <div key={p.id} className="bg-white rounded-[3rem] p-8 border border-gray-50 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 group relative ring-offset-2 hover:ring-2 ring-blue-100">
+                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 flex gap-2">
+                  <button onClick={() => onEditPolicy(p)} className="w-10 h-10 bg-slate-50 rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 font-black flex items-center justify-center transition-all">✎</button>
+                  <button onClick={() => onDeletePolicy(p.id)} className="w-10 h-10 bg-slate-50 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 font-black flex items-center justify-center transition-all">&times;</button>
+                </div>
+
+                <div className={`text-[10px] inline-flex mb-6 px-3 py-1 rounded-full font-black uppercase tracking-widest border ${
+                  p.status === 'in_effect' ? 'bg-green-50 text-green-700 border-green-100' : 
+                  p.status === 'lapsed' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-red-50 text-red-700 border-red-100'
+                }`}>
+                  {p.status.replace('_', ' ')}
+                </div>
+
+                <h3 className="text-xl font-black text-gray-900 mb-8 leading-tight line-clamp-2 min-h-[3rem]">{p.insurance_name}</h3>
+
+                <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div>
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sum Assured</div>
+                    <div className="text-lg font-black text-gray-900">S$ {p.coverage_amount.toLocaleString()}</div>
+                    <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">Until {p.starting_year + p.coverage_years}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Premium</div>
+                    <div className="text-lg font-black text-blue-600">S$ {p.annual_premium.toLocaleString()}</div>
+                    <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">{p.payment_years}y Tenure</div>
+                  </div>
+                </div>
+
+                {p.policy_document_url && (
+                  <div className="pt-6 border-t border-slate-50">
+                    <a href={p.policy_document_url} target="_blank" className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-transform">
+                      <span>📄</span> View Document &rarr;
+                    </a>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
-// Mount
+// ─── Main Controller ─────────────────────────────────────────────────────────
+
+function App() {
+  const [user, setUser] = useState(null);
+  const [view, setView] = useState("dashboard");
+  const [policies, setPolicies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null);
+  const [profileModal, setProfileModal] = useState(false);
+
+  // Expose to dashboard header
+  window.showProfileModal = () => setProfileModal(true);
+
+  const [consultantData, setConsultantData] = useState({
+    sessionId: null, messages: [], phase: "idle", isWaiting: false, isTyping: false,
+    requirements: null, criteria: null, policies: [], activeTab: "requirements"
+  });
+
+  const wsRef = useRef(null);
+
+  useEffect(() => { fetchUser(); }, []);
+
+  const fetchUser = async () => {
+    try {
+      const resp = await fetch("/api/auth/me");
+      const data = await resp.json();
+      if (data.logged_in) {
+        setUser(data.user);
+        fetchPolicies();
+      }
+    } catch (e) {} finally { setLoading(false); }
+  };
+
+  const fetchPolicies = async () => {
+    try {
+      const resp = await fetch("/api/policies");
+      const data = await resp.json();
+      setPolicies(data.policies || []);
+    } catch (e) {}
+  };
+
+  const savePolicy = async (data) => {
+    const isEdit = !!data.id;
+    const resp = await fetch(isEdit ? `/api/policies/${data.id}` : "/api/policies", {
+      method: isEdit ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if (resp.ok) { setModal(null); fetchPolicies(); }
+  };
+
+  const saveProfile = async (data) => {
+    const resp = await fetch("/api/auth/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+    if (resp.ok) {
+      const res = await resp.json();
+      setUser(res.user);
+      setProfileModal(false);
+    }
+  };
+
+  const deletePolicy = async (id) => {
+    if (confirm("Permanently remove this record?")) {
+      await fetch(`/api/policies/${id}`, { method: "DELETE" });
+      fetchPolicies();
+    }
+  };
+
+  const handleConsultantMsg = (raw) => {
+    const d = JSON.parse(raw);
+    setConsultantData(prev => {
+      const next = { ...prev };
+      switch (d.type) {
+        case "question": next.isTyping = false; next.messages = [...next.messages, mkMsg("agent", d.content)]; next.isWaiting = true; break;
+        case "status": if (d.phase) next.phase = d.phase; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("status", d.message, d.phase)]; break;
+        case "requirements": next.requirements = d.data; next.activeTab = "requirements"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Profile captured")]; break;
+        case "criteria": next.criteria = d.data; next.activeTab = "criteria"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
+        case "policies": next.policies = d.data; next.activeTab = "policies"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
+        case "complete": next.phase = "complete"; break;
+      }
+      return next;
+    });
+  };
+
+  const handleSend = async (text) => {
+    setConsultantData(prev => ({...prev, messages: [...prev.messages, mkMsg("user", text)]}));
+    if (!consultantData.sessionId) {
+      const resp = await fetch("/api/sessions", { method: "POST" });
+      const { session_id } = await resp.json();
+      setConsultantData(prev => ({...prev, sessionId: session_id}));
+      const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const ws = new WebSocket(`${proto}//${window.location.host}/ws/${session_id}`);
+      wsRef.current = ws;
+      ws.onopen = () => { setConsultantData(prev => ({...prev, isTyping: true})); ws.send(JSON.stringify({ type: "start", message: text })); };
+      ws.onmessage = (e) => handleConsultantMsg(e.data);
+    } else {
+      setConsultantData(prev => ({...prev, isWaiting: false, isTyping: true}));
+      wsRef.current?.send(JSON.stringify({ type: "answer", content: text }));
+    }
+  };
+
+  if (loading) return (
+    <div className="h-screen flex items-center justify-center bg-slate-50">
+      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin shadow-xl"></div>
+    </div>
+  );
+
+  if (!user) return (
+    <div className="h-screen flex items-center justify-center bg-slate-100 p-8">
+      <div className="bg-white p-14 rounded-[4rem] shadow-2xl max-w-sm w-full text-center border border-white ring-1 ring-slate-200">
+        <div className="w-24 h-24 rounded-[3rem] bg-blue-600 flex items-center justify-center text-white text-5xl mx-auto mb-10 shadow-2xl shadow-blue-100 ring-8 ring-blue-50 transition-transform hover:scale-110">🛡️</div>
+        <h1 className="text-3xl font-black text-gray-950 mb-4 tracking-tighter">Insurance Central</h1>
+        <p className="text-slate-400 text-sm mb-12 font-bold uppercase tracking-widest leading-relaxed">Secure. Smart. AI-Powered.</p>
+        <a href="/api/auth/login" className="block w-full bg-blue-600 text-white py-5 rounded-3xl font-black hover:bg-black hover:shadow-2xl transition-all uppercase tracking-widest text-xs shadow-xl shadow-blue-100">
+          Connect Google Account
+        </a>
+      </div>
+    </div>
+  );
+
+  if (view === "consultant") return (
+    <div className="h-screen flex flex-col bg-slate-50/50">
+      <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 transition-all">
+        <div className="flex items-center gap-6">
+          <button onClick={() => setView("dashboard")} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-gray-950 flex items-center justify-center transition-all">←</button>
+          <div>
+            <h1 className="font-black text-gray-950 text-base tracking-tight leading-none mb-1">Expert Advice</h1>
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Consultation Session</p>
+          </div>
+        </div>
+        <PhaseBar phase={consultantData.phase} />
+      </header>
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-1/2 border-r border-slate-100 flex flex-col shadow-2xl shadow-slate-200/50 z-10">
+          <ChatPanel 
+             messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
+             isTyping={consultantData.isTyping} phase={consultantData.phase}
+             onSend={handleSend} isStarted={!!consultantData.sessionId}
+          />
+        </div>
+        <div className="flex-1 overflow-hidden flex flex-col bg-white/50 backdrop-blur-3xl">
+           <div className="bg-white border-b border-slate-50 flex gap-1 px-8 pt-5">
+              {['requirements', 'criteria', 'policies'].map(t => (
+                <button 
+                  key={t} onClick={() => setConsultantData(prev => ({...prev, activeTab: t}))}
+                  className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-2xl transition-all ${consultantData.activeTab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                >
+                  {t}
+                </button>
+              ))}
+           </div>
+           <div className="flex-1 overflow-hidden">
+             {consultantData.activeTab === 'requirements' && <RequirementsView data={consultantData.requirements} />}
+             {consultantData.activeTab === 'criteria' && <CriteriaView data={consultantData.criteria} />}
+             {consultantData.activeTab === 'policies' && <PoliciesView data={consultantData.policies} />}
+           </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-screen w-full relative overflow-hidden">
+      <DashboardView 
+        user={user} policies={policies} 
+        onAddPolicy={() => setModal({})} onEditPolicy={(p) => setModal(p)}
+        onDeletePolicy={deletePolicy} onStartAdvice={() => setView("consultant")}
+        onLogout={() => window.location.href = "/api/auth/logout"}
+      />
+      {modal && <PolicyModal policy={modal.id ? modal : null} onClose={() => setModal(null)} onSave={savePolicy} />}
+      {profileModal && <ProfileModal user={user} onClose={() => setProfileModal(false)} onSave={saveProfile} />}
+    </div>
+  );
+}
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(<App />);

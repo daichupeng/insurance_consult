@@ -6,6 +6,8 @@ class AgentState(TypedDict):
     """
     State defining the data passed between nodes in the LangGraph workflow.
     """
+    user_profile: Optional[dict]
+    existing_policies: List[dict]
     user_requirements: Optional[UserRequirements]
     criteria: ScoringCriteria
     is_good_recommendation: bool

@@ -17,6 +17,8 @@ class Session:
         self._answer_value: Optional[str] = None
         self.phase = "idle"
         self.user_requirements: Optional[dict] = None
+        self.user_profile: Optional[dict] = None
+        self.existing_policies: list = []
         self.criteria: Optional[dict] = None
         self.crawled_policies: list = []
         self.policies: list = []
@@ -51,6 +53,8 @@ class SessionManager:
         session_id: str,
         user_message: str,
         loop: asyncio.AbstractEventLoop,
+        user_profile: Optional[dict] = None,
+        existing_policies: Optional[list] = None,
     ):
         session = self.get_session(session_id)
         if not session:
@@ -93,11 +97,20 @@ class SessionManager:
                 summarizer_agent = PolicySummarizer()
                 policy_scorer = PolicyScorer()
 
+                session.user_profile = user_profile
+                session.existing_policies = existing_policies or []
+                
                 # Phase 1: Profile
                 session.phase = "profile"
+                print(f"[DEBUG] [Session {session_id}] Phase 1: profile start")
                 send({"type": "status", "phase": "profile", "message": "Gathering your insurance requirements..."})
                 t0 = time.perf_counter()
-                profile, _ = profile_analyzer.analyze_profile(user_message)
+                profile, _ = profile_analyzer.analyze_profile(
+                    user_message, 
+                    user_profile=user_profile,
+                    existing_policies=existing_policies
+                )
+                print(f"[DEBUG] [Session {session_id}] Phase 1: profile complete")
                 logger.info("[Session %s] Phase 1 profile: %.2fs", session_id, time.perf_counter() - t0)
                 session.user_requirements = profile.model_dump()
                 send({"type": "requirements", "data": session.user_requirements})

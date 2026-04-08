@@ -40,9 +40,10 @@ class CriteriaGenerator:
             "- MECE Framework: Ensure criteria are Mutually Exclusive and Collectively Exhaustive. There should be zero overlapping."
             "- Focus on the non-monetary factors. Do not consider the premium cost and payouts."
             "Output Requirements:"
-            "- Hard Filters: Essential 'must-haves' that disqualify a policy immediately. The hard filters should not include the basic search conditions: coverage sum, smoker status, age, gender, insurance type, critical illness option."
+            "- Hard Filters: Essential 'must-haves' that disqualify a policy immediately."
             "- Scoring Criteria: 2-4 most important variables with weights totaling exactly 100."
             "- Explanation: Briefly describe the criterion and justification."
+            "The hard filters should not include the basic search conditions: sum insured, smoker status, age, gender, insurance type, critical illness option. It should only include the user's specific requirements such as terminal illness coverage, credibility, etc."
         )
         
         self.prompt = ChatPromptTemplate.from_messages([
@@ -59,6 +60,7 @@ class CriteriaGenerator:
             "Requirements Matching: Do the filters and scoring criteria align with the user's requirements and background? Do the weights reflect the user's priorities?"
             "Quantifiability: The scoring criteria should be quantifiable and objective. Avoid subjective judgments and vague criteria as much as possible."
             "The framework focuses purely on non-monetary factors. Do not consider the premium cost and payouts."
+            "The hard filters should not include the basic search conditions: sum insured, smoker status, age, gender, insurance type, critical illness option."
             "Action:"
             "If the framework has flaws and needs to be improved, set is_perfect to False and explain the professional reasoning behind the critique. Otherwise, set is_perfect to True."
         )
