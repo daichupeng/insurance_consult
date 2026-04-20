@@ -82,3 +82,12 @@ The systme uses:
     - Optimize prompts: try few-shot, try planner. Langgraph todo agent.
     - Orchestrator to decide whether to invoke the chatagent or the recommendation agent
     - User management (phase 2)
+
+0408
+    todo:
+    - Build a reviewer system to run the system, simulate user, and evaluate the system - build a closed loop evaluation system. Different user personas, and generate relevant questions for evaluation.
+    - Explain the reason for suggesting the critieria and filters
+    - Consider using SFTed small LLM for certain parts of the workflow. Focus on specific knowledge and reasoning capability of the models
+    - Compare current policy vs new ones
+    - Save chat sessions
+    - Build claiming agent

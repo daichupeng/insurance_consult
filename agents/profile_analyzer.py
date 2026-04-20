@@ -117,7 +117,7 @@ Start there if this is the first round. Everything else follows naturally.
 - **Transparency**: When recommending a coverage amount, show your math.
 
 ## Insured Sum & "The Gap" Logic
-- **Step 1**: Identify Total Needs (Education costs + Mortgage + Loans + Income Replacement).
+- **Step 1**: Identify Total Needs (Costs to cover + Mortgage + Loans + Income Replacement). If not sure what costs the user intends to cover, ask them explicitly based on their profile information.
 - **Step 2**: Total Existing Coverage = Sum of all 'In Effect' policies in the Portfolio.
 - **Step 3**: **The Gap = Total Needs - Total Existing Coverage**.
 - **Step 4**: Recommend the **Gap** amount as the new policy target. 
@@ -138,6 +138,11 @@ Always explain every step of the calculation to the user clearly, before proceed
 - When calculating the gap, do not make any assumptions. Gather as much information as you need.
 - Make sure the budget and the coverage amount are explicitly confirmed with user before calling FinalizeRound. Explain the calculation with user clearly.
 - When user asks a question, answer their question first, then ask for the information you need.
+
+## Transparency & Visibility
+- **CRITICAL**: The text you pass to `respond_to_user` is the **ONLY** thing the user sees.
+- If you have calculated a Coverage Gap, you **MUST** include the math (e.g. S$ 1M Total - S$ 400k Existing = S$ 600k Gap) in the `question` argument of the tool.
+- Never refer to "the calculation above" if you haven't just output it in the current message.
 
 ## When to call FinalizeRound
 Call FinalizeRound when the Reviewer's feedback is addressed or you have a clear "Gap" and "Budget" confirmed.
@@ -170,13 +175,19 @@ class ProfileAnalyzer:
             cb = confirm_callback
 
             @tool
-            def respond_to_user(question: str) -> str:
+            def respond_to_user(response: str) -> str:
                 """
-                Send a message to the user and wait for their response.
-                Always answer user's question first, then ask for the information you need.
-                Use this to ask follow-up questions, request clarification, answer user's question, present a recommendation for confirmation, or flag a concern.
+                Send a message to the user and wait for their reply.
+                
+                IMPORTANT: This 'response' field is the ONLY text the user sees. 
+                If you have performed a calculation (like a coverage gap), YOU MUST INCLUDE THE MATH AND EXPLANATION IN THIS FIELD.
+                
+                Usage:
+                1. Answer user's question first.
+                2. Show your work (math for gap calculation).
+                3. Ask for the information you still need or for the user's confirmation.
                 """
-                return cb(question) or ""
+                return cb(response) or ""
 
             self._ask_tool = respond_to_user
         else:

@@ -265,7 +265,7 @@ function CriteriaView({ data }) {
     <div className="p-6 space-y-6 overflow-y-auto h-full bg-slate-50/50">
       {data.filters?.length > 0 && (
         <div className="mb-4">
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
              <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.4)]"></span>
              Mandatory Filters (Must-Haves)
           </div>
@@ -273,7 +273,7 @@ function CriteriaView({ data }) {
             {data.filters.map((f, i) => (
               <div key={i} className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm shadow-blue-50/10">
                 <span className="text-blue-500 text-base">🛡️</span>
-                <span className="text-xs font-black text-gray-800 tracking-tight leading-tight">{f}</span>
+                <span className="text-sm font-black text-gray-800 tracking-tight leading-tight">{f}</span>
               </div>
             ))}
           </div>
@@ -281,7 +281,7 @@ function CriteriaView({ data }) {
       )}
 
       <div>
-        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+        <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
            <span className="w-1.5 h-1.5 bg-purple-600 rounded-full"></span>
            Weighted Scoring Criteria
         </div>
@@ -303,31 +303,31 @@ function PolicyRankEntry({ policy, rank }) {
       <div className="flex items-start justify-between gap-6 mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-3">
-            <span className="w-10 h-10 rounded-2xl bg-slate-950 text-white flex items-center justify-center text-xs font-black shadow-lg shadow-slate-200">{rank}</span>
-            <span className={`text-[10px] px-3 py-1.5 rounded-xl font-black uppercase tracking-wider border ${policy.fulfil_filters[0] ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+            <span className="w-10 h-10 rounded-2xl bg-slate-950 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-slate-200">{rank}</span>
+            <span className={`text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-wider border ${policy.fulfil_filters[0] ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
               {policy.fulfil_filters[0] ? '✓ Eligible' : '✗ Ineligible'}
             </span>
           </div>
           <h4 className="font-black text-gray-900 text-xl tracking-tight leading-tight mb-2">{policy.policy_name}</h4>
           {!policy.fulfil_filters[0] && (
-            <p className="text-[11px] text-red-400 font-bold leading-tight decoration-red-200 decoration-2 underline-offset-4 mb-2 italic">
+            <p className="text-xs text-red-400 font-bold leading-tight decoration-red-200 decoration-2 underline-offset-4 mb-2 italic">
                Reason: {policy.fulfil_filters[1]}
             </p>
           )}
         </div>
         <div className="text-right">
-          <div className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Match</div>
+          <div className="text-xs font-black text-gray-300 uppercase tracking-widest mb-1">Match</div>
           <div className={`text-5xl font-black tabular-nums transition-colors duration-500 ${colorClass}`}>{totalScore.toFixed(1)}</div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-8 py-6 border-y border-gray-50 bg-slate-50/30 -mx-8 px-8 mb-4">
         <div>
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Estimated Premium</div>
+          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Estimated Premium</div>
           <div className="text-lg font-black text-blue-600 tabular-nums">{policy.basic_info.annual_premium}</div>
         </div>
         <div>
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">ROI / Return Rate</div>
+          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">ROI / Return Rate</div>
           <div className="flex items-center gap-3">
             <div className="text-lg font-black text-purple-600 tabular-nums">{(policy.return_rate * 100).toFixed(2)}%</div>
             {(policy.basic_info.product_summary_url || policy.basic_info.brochure_url) && (
@@ -347,7 +347,7 @@ function PolicyRankEntry({ policy, rank }) {
       {isExpanded && (
         <div className="animate-slideDown space-y-8 pt-4">
           <div>
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
                Scoring Breakdown
             </div>
@@ -355,10 +355,10 @@ function PolicyRankEntry({ policy, rank }) {
               {policy.scoring.map(([score, crit, reasoning], i) => (
                 <div key={i} className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100 ring-1 ring-white">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-[11px] font-black text-gray-900 tracking-tight">{crit.item}</span>
+                    <span className="text-sm font-black text-gray-900 tracking-tight">{crit.item}</span>
                     <span className={`text-sm font-black ${score >= 4 ? 'text-green-600' : score >= 3 ? 'text-amber-500' : 'text-red-500'}`}>{score}/5</span>
                   </div>
-                  <p className="text-[11px] text-gray-500 font-medium leading-relaxed italic">{reasoning}</p>
+                  <p className="text-sm text-gray-500 font-medium leading-relaxed italic">{reasoning}</p>
                 </div>
               ))}
             </div>
@@ -366,15 +366,15 @@ function PolicyRankEntry({ policy, rank }) {
 
           {(policy.context_summary && Object.keys(policy.context_summary).length > 0) && (
             <div>
-              <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
                  <span className="w-1 h-1 bg-purple-600 rounded-full"></span>
                  Deep Dive Summaries
               </div>
               <div className="space-y-4">
                 {Object.entries(policy.context_summary).map(([title, text], i) => (
                   <div key={i} className="pl-4 border-l-2 border-slate-100">
-                    <h5 className="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-1.5">{title}</h5>
-                    <p className="text-[11px] text-gray-500 font-bold leading-relaxed">{text}</p>
+                    <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-1.5">{title}</h5>
+                    <p className="text-sm text-gray-500 font-bold leading-relaxed">{text}</p>
                   </div>
                 ))}
               </div>
@@ -386,7 +386,7 @@ function PolicyRankEntry({ policy, rank }) {
 
       <button 
         onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full mt-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${isExpanded ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 ring-4 ring-slate-100' : 'bg-slate-50 text-gray-400 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100'}`}
+        className={`w-full mt-6 py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${isExpanded ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 ring-4 ring-slate-100' : 'bg-slate-50 text-gray-400 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100'}`}
       >
         <span>{isExpanded ? 'Collapse Analysis' : 'Review Evaluation Details'}</span>
         <span className={`text-xs transition-transform duration-500 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
