@@ -216,6 +216,12 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         update_task.cancel()
 
 
+# Serve static files for policy documents
+_raw_policies_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "raw_policies"
+)
+app.mount("/raw_policies", StaticFiles(directory=_raw_policies_dir), name="raw_policies")
+
 # Serve frontend - must be registered last
 _frontend_dir = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend"

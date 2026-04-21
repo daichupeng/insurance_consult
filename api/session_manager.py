@@ -25,6 +25,15 @@ class Session:
         self.query_agent: Optional[Any] = None
         self.active_agent: Optional[str] = None
         self.cancel_event = threading.Event()
+        self.claim_state: dict = {
+            "messages": [],
+            "claim_scenario": "",
+            "claim_details": {},
+            "relevant_policies": [],
+            "claim_strategy": "",
+            "missing_info": True,
+            "review_status": ""
+        }
         
         # Lazy load orchestrator
         self._orchestrator = None
@@ -258,6 +267,63 @@ class SessionManager:
         thread = threading.Thread(target=run, daemon=True)
         thread.start()
 
+    async def run_claim_workflow(
+        self,
+        session_id: str,
+        user_message: str,
+        loop: asyncio.AbstractEventLoop,
+    ):
+        session = self.get_session(session_id)
+        if not session:
+            return
+
+        def send(update: dict):
+            asyncio.run_coroutine_threadsafe(
+                session.updates_queue.put(update), loop
+            ).result()
+
+        def run():
+            from graphs.claim_agent.workflow import claim_agent_workflow
+            from langchain_core.messages import HumanMessage
+            
+            t_workflow = time.perf_counter()
+            send({"type": "status", "phase": "processing", "message": "Analyzing claim details..."})
+            try:
+                session.claim_state["messages"].append(HumanMessage(content=user_message))
+                
+                # Execute graph
+                final_state = claim_agent_workflow.invoke(session.claim_state)
+                
+                # Sync state back
+                session.claim_state.update(final_state)
+                
+                if final_state.get("missing_info"):
+                    # The graph output a clarification message
+                    last_msg = final_state["messages"][-1]
+                    # We expect dict from state, extract content correctly whether it's dict or object
+                    content = last_msg.get("content", "") if isinstance(last_msg, dict) else last_msg.content
+                    send({"type": "question", "content": content})
+                    session.phase = "processing"
+                else:
+                    strategy = final_state.get("claim_strategy", "No strategy was generated.")
+                    send({"type": "status", "phase": "complete", "message": "Claim analysis complete."})
+                    send({"type": "question", "content": f"Here is your recommended claiming strategy:\n\n{strategy}"})
+                    session.phase = "idle"
+                    # reset state for next claim
+                    session.claim_state = {
+                        "messages": [], "claim_scenario": "", "claim_details": {},
+                        "relevant_policies": [], "claim_strategy": "",
+                        "missing_info": True, "review_status": ""
+                    }
+                    
+            except Exception as e:
+                import traceback
+                logger.error("[Session %s] Claim Error: %s", session_id, e, exc_info=True)
+                send({"type": "error", "message": str(e), "detail": traceback.format_exc()})
+                
+        thread = threading.Thread(target=run, daemon=True)
+        thread.start()
+
     async def handle_message(
         self,
         session_id: str,
@@ -312,7 +378,7 @@ class SessionManager:
             if session.active_agent == "new_life_insurance":
                 asyncio.create_task(self.run_workflow(session_id, user_message, loop, user_profile, existing_policies))
             elif session.active_agent == "claiming_strategy":
-                await async_send({"type": "question", "content": "The claiming strategy agent is not yet implemented, but I will be able to help you file a claim soon."})
+                asyncio.create_task(self.run_claim_workflow(session_id, user_message, loop))
             else:
                 asyncio.create_task(self.run_query(session_id, user_message, loop))
             return
@@ -353,15 +419,8 @@ class SessionManager:
                     asyncio.create_task(self.run_workflow(session_id, user_message, loop, user_profile, existing_policies))
                 else:
                     session.set_answer(user_message)
-            else:
-                asyncio.create_task(self.run_query(session_id, user_message, loop))
-
-        # Step 6: Continue Flow
-        if result.intent_type == "continue_flow":
-            if session.phase == "idle" or result.target_agent == "new_life_insurance":
-                if session.phase in ["idle", "complete", "error", "interrupted"]:
-                    asyncio.create_task(self.run_workflow(session_id, user_message, loop, user_profile, existing_policies))
-                else:
-                    session.set_answer(user_message)
+            elif result.target_agent == "claiming_strategy":
+                session.phase = "processing"
+                asyncio.create_task(self.run_claim_workflow(session_id, user_message, loop))
             else:
                 asyncio.create_task(self.run_query(session_id, user_message, loop))
