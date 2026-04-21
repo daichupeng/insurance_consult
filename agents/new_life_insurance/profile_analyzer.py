@@ -191,7 +191,7 @@ class ProfileAnalyzer:
 
             self._ask_tool = respond_to_user
         else:
-            from tools.interactive_tools import confirm_requirements as cli_tool
+            from tools.new_life_insurance.interactive_tools import confirm_requirements as cli_tool
             self._ask_tool = cli_tool
 
         self._reviewer_llm = _llm.with_structured_output(ReviewerOutput)

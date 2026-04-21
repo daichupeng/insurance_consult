@@ -48,8 +48,8 @@ from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 
 from schema.models import Policy, PolicyBasicInfo, ScoringCriteria, ScoringItem
-from tools.search_tools import query_expansion, remove_context, list_available_policies
-from tools.cache_manager import CacheManager
+from tools.new_life_insurance.search_tools import query_expansion, remove_context, list_available_policies
+from tools.new_life_insurance.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
 load_dotenv()

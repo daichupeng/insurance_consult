@@ -33,7 +33,7 @@ from langchain_core.tools import tool
 
 import graphrag.api as api
 from graphrag.config.load_config import load_config
-from tools.cache_manager import CacheManager
+from tools.new_life_insurance.cache_manager import CacheManager
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,7 @@ _cache = CacheManager()
 
 # ── One-time initialisation ───────────────────────────────────────────────────
 
-_PROJECT_ROOT  = Path(__file__).parent.parent
+_PROJECT_ROOT  = Path(__file__).parent.parent.parent
 _GRAPHRAG_ROOT = _PROJECT_ROOT / "graphrag"
 _OUTPUT_DIR    = _GRAPHRAG_ROOT / "output"
 
@@ -183,7 +183,7 @@ def graphrag_global_search(query: str) -> str:
 
 
 # Re-export shared tools so callers only need one import
-from tools.search_tools import list_available_policies, remove_context, query_expansion
+from tools.new_life_insurance.search_tools import list_available_policies, remove_context, query_expansion
 
 __all__ = [
     "graphrag_local_search",

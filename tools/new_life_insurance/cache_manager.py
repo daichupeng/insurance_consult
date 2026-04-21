@@ -15,9 +15,9 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 logger = logging.getLogger(__name__)
 load_dotenv()
 
-_PROJECT_ROOT = Path(__file__).parent.parent
-_DB_PATH = _PROJECT_ROOT / "tools" / "cache.db"
-_POLICIES_DIR = _PROJECT_ROOT / "raw_policies"
+_PROJECT_ROOT = Path(__file__).parent.parent.parent
+_DB_PATH = _PROJECT_ROOT / "databases" / "cache.db"
+_POLICIES_DIR = _PROJECT_ROOT / "raw_policies" / "crawled"
 
 class CacheManager:
     """

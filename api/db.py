@@ -2,7 +2,7 @@ import sqlite3
 import os
 from typing import List, Optional, Dict, Any
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "insurance.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "databases", "insurance.db")
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -56,9 +56,23 @@ def init_db():
         coverage_years INTEGER, 
         annual_premium FLOAT, 
         coverage_amount FLOAT, 
+        category VARCHAR DEFAULT 'life',
+        type VARCHAR DEFAULT 'personal',
         FOREIGN KEY(user_id) REFERENCES users (id)
     )
     """)
+    
+    # Auto-migration for policies table
+    cursor.execute("PRAGMA table_info(policies)")
+    existing_policy_columns = [row[1] for row in cursor.fetchall()]
+    new_policy_columns = [
+        ("category", "VARCHAR DEFAULT 'life'"),
+        ("type", "VARCHAR DEFAULT 'personal'")
+    ]
+    for col_name, col_type in new_policy_columns:
+        if col_name not in existing_policy_columns:
+            cursor.execute(f"ALTER TABLE policies ADD COLUMN {col_name} {col_type}")
+
     conn.commit()
     conn.close()
 
@@ -120,12 +134,13 @@ def create_policy(user_id: int, data: Dict[str, Any]) -> Dict[str, Any]:
         INSERT INTO policies (
             user_id, insurance_name, status, policy_document_url, 
             starting_year, payment_years, coverage_years, 
-            annual_premium, coverage_amount
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            annual_premium, coverage_amount, category, type
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         user_id, data["insurance_name"], data["status"], data.get("policy_document_url"),
         data.get("starting_year"), data.get("payment_years"), data.get("coverage_years"),
-        data.get("annual_premium"), data.get("coverage_amount")
+        data.get("annual_premium"), data.get("coverage_amount"),
+        data.get("category", "life"), data.get("type", "personal")
     ))
     policy_id = cursor.lastrowid
     conn.commit()
@@ -141,12 +156,13 @@ def update_policy(policy_id: int, user_id: int, data: Dict[str, Any]) -> bool:
         UPDATE policies SET 
             insurance_name = ?, status = ?, policy_document_url = ?, 
             starting_year = ?, payment_years = ?, coverage_years = ?, 
-            annual_premium = ?, coverage_amount = ?
+            annual_premium = ?, coverage_amount = ?, category = ?, type = ?
         WHERE id = ? AND user_id = ?
     """, (
         data["insurance_name"], data["status"], data.get("policy_document_url"),
         data.get("starting_year"), data.get("payment_years"), data.get("coverage_years"),
         data.get("annual_premium"), data.get("coverage_amount"),
+        data.get("category", "life"), data.get("type", "personal"),
         policy_id, user_id
     ))
     rows = cursor.rowcount

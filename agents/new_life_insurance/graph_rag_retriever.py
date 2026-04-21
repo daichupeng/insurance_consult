@@ -38,7 +38,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from schema.models import Policy, PolicyBasicInfo, ScoringCriteria, ScoringItem, RetrieverState
-from tools.graphrag_tools import (
+from tools.new_life_insurance.graphrag_tools import (
     graphrag_global_search,
     graphrag_local_search,
     list_available_policies,

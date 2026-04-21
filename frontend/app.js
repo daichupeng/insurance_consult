@@ -493,7 +493,9 @@ function PolicyModal({ policy, onClose, onSave }) {
     payment_years: 20,
     coverage_years: 99,
     annual_premium: 0,
-    coverage_amount: 0
+    coverage_amount: 0,
+    category: "life",
+    type: "personal"
   });
 
   const [isParsing, setIsParsing] = useState(false);
@@ -568,6 +570,31 @@ function PolicyModal({ policy, onClose, onSave }) {
         <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-6">
           <div className="grid grid-cols-2 gap-x-6 gap-y-5">
             <div className="col-span-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Category</label>
+              <select 
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                value={formData.category}
+                onChange={e => setFormData({...formData, category: e.target.value})}
+              >
+                <option value="life">Life Insurance</option>
+                <option value="medical">Medical Insurance</option>
+                <option value="accident">Accident Insurance</option>
+              </select>
+            </div>
+            {formData.category === 'medical' && (
+              <div className="col-span-2">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Type</label>
+                <select 
+                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
+                  value={formData.type}
+                  onChange={e => setFormData({...formData, type: e.target.value})}
+                >
+                  <option value="personal">Personal</option>
+                  <option value="corporate">Corporate</option>
+                </select>
+              </div>
+            )}
+            <div className="col-span-2">
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Identifier</label>
               <input 
                 required
@@ -593,22 +620,26 @@ function PolicyModal({ policy, onClose, onSave }) {
               <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Inception Year</label>
               <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.starting_year} onChange={e => setFormData({...formData, starting_year: parseInt(e.target.value)})} />
             </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pay Term (Y)</label>
-              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.payment_years} onChange={e => setFormData({...formData, payment_years: parseInt(e.target.value)})} />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cover Term (Y)</label>
-              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_years} onChange={e => setFormData({...formData, coverage_years: parseInt(e.target.value)})} />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Annual (S$)</label>
-              <input type="number" step="0.01" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.annual_premium} onChange={e => setFormData({...formData, annual_premium: parseFloat(e.target.value)})} />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Sum Assured (S$)</label>
-              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_amount} onChange={e => setFormData({...formData, coverage_amount: parseInt(e.target.value)})} />
-            </div>
+            {formData.category === 'life' && (
+              <>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pay Term (Y)</label>
+                  <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.payment_years} onChange={e => setFormData({...formData, payment_years: parseInt(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cover Term (Y)</label>
+                  <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_years} onChange={e => setFormData({...formData, coverage_years: parseInt(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Annual (S$)</label>
+                  <input type="number" step="0.01" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.annual_premium} onChange={e => setFormData({...formData, annual_premium: parseFloat(e.target.value)})} />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Sum Assured (S$)</label>
+                  <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_amount} onChange={e => setFormData({...formData, coverage_amount: parseInt(e.target.value)})} />
+                </div>
+              </>
+            )}
           </div>
           <div className="flex gap-4 pt-4">
             <button type="submit" className="flex-1 bg-blue-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all">Confirm Data</button>
@@ -683,18 +714,33 @@ function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePoli
 
                 <h3 className="text-xl font-black text-gray-900 mb-8 leading-tight line-clamp-2 min-h-[3rem]">{p.insurance_name}</h3>
 
-                <div className="grid grid-cols-2 gap-8 mb-8">
-                  <div>
-                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sum Assured</div>
-                    <div className="text-lg font-black text-gray-900">S$ {p.coverage_amount.toLocaleString()}</div>
-                    <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">Until {p.starting_year + p.coverage_years}</div>
+                {p.category === 'life' && (
+                  <div className="grid grid-cols-2 gap-8 mb-8">
+                    <div>
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sum Assured</div>
+                      <div className="text-lg font-black text-gray-900">S$ {(p.coverage_amount || 0).toLocaleString()}</div>
+                      <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">Until {p.starting_year + (p.coverage_years || 0)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Premium</div>
+                      <div className="text-lg font-black text-blue-600">S$ {(p.annual_premium || 0).toLocaleString()}</div>
+                      <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">{p.payment_years || 0}y Tenure</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Premium</div>
-                    <div className="text-lg font-black text-blue-600">S$ {p.annual_premium.toLocaleString()}</div>
-                    <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">{p.payment_years}y Tenure</div>
+                )}
+                {p.category === 'medical' && (
+                  <div className="mb-8">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Policy Type</div>
+                    <div className="text-lg font-black text-purple-600 capitalize">{p.type || 'Personal'}</div>
+                    <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">Inception: {p.starting_year}</div>
                   </div>
-                </div>
+                )}
+                {p.category === 'accident' && (
+                  <div className="mb-8">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Inception Year</div>
+                    <div className="text-lg font-black text-gray-900">{p.starting_year}</div>
+                  </div>
+                )}
 
                 {p.policy_document_url && (
                   <div className="pt-6 border-t border-slate-50">

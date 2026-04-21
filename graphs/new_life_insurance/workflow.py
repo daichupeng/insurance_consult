@@ -1,15 +1,15 @@
 from langgraph.graph import StateGraph, START, END
-from graphs.state import AgentState
+from graphs.new_life_insurance.state import AgentState
 from schema.models import ScoringCriteria
 
 # Import nodes (agents)
-from agents.profile_analyzer import ProfileAnalyzer
-from agents.criteria_generator import CriteriaGenerator
-from agents.policy_fetcher import PolicyFetcher
-from agents.policy_scorer import PolicyScorer
-from agents.scoring_reviewer import ScoringReviewer
-from agents.report_writer import ReportWriter
-from agents.summarizer import PolicySummarizer
+from agents.new_life_insurance.profile_analyzer import ProfileAnalyzer
+from agents.new_life_insurance.criteria_generator import CriteriaGenerator
+from agents.new_life_insurance.policy_fetcher import PolicyFetcher
+from agents.new_life_insurance.policy_scorer import PolicyScorer
+from agents.new_life_insurance.scoring_reviewer import ScoringReviewer
+from agents.new_life_insurance.report_writer import ReportWriter
+from agents.new_life_insurance.summarizer import PolicySummarizer
 
 import logging
 import os
@@ -25,11 +25,11 @@ logger = logging.getLogger(__name__)
 _RETRIEVER_BACKEND = os.getenv("RETRIEVER_BACKEND", "md").lower()
 
 if _RETRIEVER_BACKEND == "graphrag":
-    from agents.graph_rag_retriever import GraphRAGRetriever as _RetrieverClass
+    from agents.new_life_insurance.graph_rag_retriever import GraphRAGRetriever as _RetrieverClass
     logger.info("[Workflow] Using GraphRAG retriever backend.")
     print("[Workflow] Using GraphRAG retriever backend.")
 else:
-    from agents.md_retriever import MDRetriever as _RetrieverClass
+    from agents.new_life_insurance.md_retriever import MDRetriever as _RetrieverClass
     logger.info("[Workflow] Using MD retriever backend.")
     print("[Workflow] Using MD retriever backend.")
 

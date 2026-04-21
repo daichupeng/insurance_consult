@@ -57,7 +57,7 @@ def list_available_policies() -> str:
     """
     print(f"\n[Tool Execution]: Listing available policies")
     
-    policies_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'raw_policies', 'aia'))
+    policies_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'raw_policies', 'crawled', 'aia'))
     available_policies = []
     
     if os.path.exists(policies_dir):

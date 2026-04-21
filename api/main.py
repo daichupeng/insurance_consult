@@ -180,36 +180,36 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     try:
         async for text in websocket.iter_text():
             data = json.loads(text)
+            
+            # Fetch user context for the workflow
+            user_profile = None
+            existing_policies = []
+            from api.db import get_user_by_email, get_user_policies
+            user_session = websocket.session.get("user")
+            if user_session and user_session.get("email"):
+                full_user = get_user_by_email(user_session["email"])
+                if full_user:
+                    user_profile = dict(full_user)
+                    existing_policies = get_user_policies(full_user["id"])
+                    
+            # Extract content based on legacy frontend payload structure
             if data["type"] == "start":
-                # Fetch user context for the workflow
-                user_profile = None
-                existing_policies = []
-                
-                # Check for user in request session
-                from api.db import get_user_by_email, get_user_policies
-                user_session = websocket.session.get("user")
-                if user_session and user_session.get("email"):
-                    full_user = get_user_by_email(user_session["email"])
-                    if full_user:
-                        user_profile = dict(full_user)
-                        existing_policies = get_user_policies(full_user["id"])
-                
-                asyncio.create_task(
-                    session_manager.run_workflow(
-                        session_id, 
-                        data["message"], 
-                        loop,
-                        user_profile=user_profile,
-                        existing_policies=existing_policies
-                    )
-                )
+                message_content = data.get("message", "")
             elif data["type"] == "answer":
-                if session.phase == "complete":
-                    asyncio.create_task(
-                        session_manager.run_query(session_id, data["content"], loop)
-                    )
-                else:
-                    session.set_answer(data["content"])
+                message_content = data.get("content", "")
+            else:
+                message_content = data.get("message", data.get("content", ""))
+
+            # Pass to orchestrator instead of hardcoded routing
+            asyncio.create_task(
+                session_manager.handle_message(
+                    session_id, 
+                    message_content, 
+                    loop,
+                    user_profile=user_profile,
+                    existing_policies=existing_policies
+                )
+            )
     except WebSocketDisconnect:
         pass
     finally:

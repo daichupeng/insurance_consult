@@ -28,8 +28,8 @@ from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from schema.models import UserRequirements
-from tools.policy_tools import check_policy_exists, download_policy_pdf
-from tools.calculator import life_insurance_roi
+from tools.new_life_insurance.policy_tools import check_policy_exists, download_policy_pdf
+from tools.new_life_insurance.calculator import life_insurance_roi
 
 logger = logging.getLogger(__name__)
 load_dotenv()
@@ -132,7 +132,7 @@ def crawl_comparefirst(
         premium_term:   Premium payment term in years (whole life).
         premium_amount: Annual premium amount in SGD (endowment only).
     """
-    from tools.policyCrawler.crawler import crawl_policies
+    from tools.new_life_insurance.policyCrawler.crawler import crawl_policies
     try:
         print("[Fetching Policies]: Searching for " + product_type + " policies for " + dob + " " + gender + " " + str(smoker) + " " + str(ci) + " " + str(sum_assured) + " " + str(coverage_term) + " " + str(premium_term) + " " + str(premium_amount))
         results = crawl_policies(
@@ -270,7 +270,7 @@ class PolicyFetcher:
                     from langchain_core.tools import tool
                     from langchain_core.messages import HumanMessage
                     import json
-                    from tools.calculator import life_insurance_roi
+                    from tools.new_life_insurance.calculator import life_insurance_roi
                     
                     calc_tool = tool(life_insurance_roi)
                     # Force the model to use the tool
@@ -481,7 +481,7 @@ class PolicyFetcher:
 
         # ── MD conversion for each newly downloaded PDF ──────────────────────
         try:
-            from tools.policyCrawler.convert_to_md import convert_pdf_to_md, _POLICIES_DIR
+            from tools.new_life_insurance.policyCrawler.convert_to_md import convert_pdf_to_md, _POLICIES_DIR
             import re
 
             for p in newly_downloaded:

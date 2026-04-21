@@ -6,7 +6,7 @@ load_dotenv()
 def main():
     print("Welcome to the AI Life Insurance Consultant!")
     # To run the workflow:
-    # from graphs.workflow import app
+    # from graphs.new_life_insurance.workflow import app
     # result = app.invoke({"user_profile": {...}})
     # print(result)
 

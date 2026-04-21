@@ -9530,3 +9530,4 @@ json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
   "tokens_per_response": 0.0,
   "cost_per_response": 0.0
 }
+2026-04-20 16:29:08.0681 - WARNING - graphrag.query.structured_search.local_search.mixed_context - Reached token limit - reverting to previous context state

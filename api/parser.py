@@ -11,7 +11,7 @@ from api.db import get_user_policies # though not directly used for file dedupli
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT = Path(__file__).parent.parent
-_POLICIES_DIR = _PROJECT_ROOT / "raw_policies"
+_POLICIES_DIR = _PROJECT_ROOT / "raw_policies" / "uploaded"
 
 # Lazy-load docling to avoid heavy imports on startup
 def _get_docling_converter():

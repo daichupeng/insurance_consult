@@ -21,7 +21,7 @@ from langchain_core.tools import tool
 logger = logging.getLogger(__name__)
 
 _PROJECT_ROOT  = Path(__file__).parent.parent
-_POLICIES_DIR  = _PROJECT_ROOT / "raw_policies"
+_POLICIES_DIR  = _PROJECT_ROOT / "raw_policies" / "crawled"
 _GRAPHRAG_ROOT = _PROJECT_ROOT / "graphrag"
 
 
@@ -111,7 +111,7 @@ def download_policy_pdf(policy_name: str, product_summary_url: str, insurer: str
 
     # Convert the new PDF to Markdown for the MD retriever
     try:
-        from tools.policyCrawler.convert_to_md import convert_pdf_to_md
+        from tools.new_life_insurance.policyCrawler.convert_to_md import convert_pdf_to_md
         convert_pdf_to_md(dest_path)
     except Exception as md_exc:
         logger.warning("[policy_tools] MD conversion failed for %s: %s", dest_path.name, md_exc)

@@ -4,13 +4,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.prebuilt import create_react_agent
 
-from tools.graphrag_tools import (
-    graphrag_local_search,
-    graphrag_global_search,
-    list_available_policies,
-    remove_context,
-    query_expansion
-)
+from tools.new_life_insurance.search_tools import query_expansion
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
@@ -18,13 +12,21 @@ llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key=api_key)
 
 class QueryAgent:
     def __init__(self):
-        tools = [
-            graphrag_local_search,
-            graphrag_global_search,
-            list_available_policies,
-            remove_context,
-            query_expansion
-        ]
+        backend = os.getenv("RETRIEVER_BACKEND", "md").lower()
+        tools = [query_expansion]
+        
+        if backend == "graphrag":
+            from tools.new_life_insurance.graphrag_tools import (
+                graphrag_local_search,
+                graphrag_global_search,
+                list_available_policies,
+                remove_context
+            )
+            tools.extend([graphrag_local_search, graphrag_global_search, list_available_policies, remove_context])
+        else:
+            # When using MD, we don't have global graph search, just basic document tools
+            from tools.new_life_insurance.search_tools import list_available_policies, remove_context
+            tools.extend([list_available_policies, remove_context])
         
         system_prompt = (
             "You are a helpful and professional life insurance assistant. "
@@ -32,9 +34,8 @@ class QueryAgent:
             "an insurance comparison analysis.\n"
             "Use the provided context (user requirements, scoring criteria, and evaluated policies) "
             "to give highly relevant and tailored answers.\n"
-            "If the information is not present in the context, please use your GraphRAG tools "
-            "(e.g., graphrag_local_search, graphrag_global_search) to search the available policy documents "
-            "and find the correct details before answering.\n"
+            "If the information is not present in the context, please use your search tools "
+            "to find the correct details before answering.\n"
             "Keep your explanations clear, concise, and easy to understand."
         )
         

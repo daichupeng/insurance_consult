@@ -10,7 +10,7 @@ Usage (batch, from project root):
     uv run python tools/policyCrawler/convert_to_md.py
 
 Programmatic (single file):
-    from tools.policyCrawler.convert_to_md import convert_pdf_to_md
+    from tools.new_life_insurance.policyCrawler.convert_to_md import convert_pdf_to_md
     convert_pdf_to_md(Path("raw_policies/aia/MyPolicy.pdf"))
 
 The .md file is written next to the source PDF with the same stem.
@@ -23,8 +23,8 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_PROJECT_ROOT = Path(__file__).parent.parent.parent
-_POLICIES_DIR = _PROJECT_ROOT / "raw_policies"
+_PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+_POLICIES_DIR = _PROJECT_ROOT / "raw_policies" / "crawled"
 
 
 # ── Lazy-load docling so that importing this module is always safe ─────────────

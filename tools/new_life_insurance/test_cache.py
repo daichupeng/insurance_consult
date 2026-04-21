@@ -6,7 +6,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from tools.cache_manager import CacheManager
+from tools.new_life_insurance.cache_manager import CacheManager
 
 def test():
     cache = CacheManager()
