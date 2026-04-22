@@ -111,3 +111,12 @@ async def update_profile(request: Request):
     request.session["user"] = dict(updated_user)
     
     return {"success": True, "user": updated_user}
+
+@router.get("/dev-login")
+async def dev_login(request: Request):
+    user = get_user_by_email("test@test.com")
+    if not user:
+        user = create_user("test@test.com", "Test", "")
+    request.session["user"] = dict(user)
+    return RedirectResponse(url="/")
+

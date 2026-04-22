@@ -297,6 +297,16 @@ class SessionManager:
                 # Sync state back
                 session.claim_state.update(final_state)
                 
+                send({
+                    "type": "claim_update",
+                    "data": {
+                        "scenario": session.claim_state.get("claim_scenario", ""),
+                        "details": session.claim_state.get("claim_details", {}),
+                        "policies": session.claim_state.get("relevant_policies", []),
+                        "strategy": session.claim_state.get("claim_strategy", "")
+                    }
+                })
+                
                 if final_state.get("missing_info"):
                     # The graph output a clarification message
                     last_msg = final_state["messages"][-1]

@@ -758,6 +758,93 @@ function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePoli
   );
 }
 
+function ClaimingPanel({ data }) {
+  const [tab, setTab] = useState("summary");
+  
+  if (!data) return (
+    <div className="h-full flex flex-col items-center justify-center p-8 text-gray-400">
+      <div className="w-16 h-16 bg-white rounded-[2rem] flex items-center justify-center text-2xl shadow-xl shadow-slate-100 mb-6 border border-slate-50 ring-4 ring-white">📝</div>
+      <p className="text-xs font-bold uppercase tracking-widest">Awaiting claim details...</p>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden">
+      <div className="bg-white border-b border-gray-100 flex gap-4 px-8 pt-5 shadow-sm relative z-10">
+        {['summary', 'policies'].map(t => (
+          <button 
+            key={t} onClick={() => setTab(t)}
+            className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all ${tab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            {t === 'summary' ? 'Claiming Summary' : 'Relevant Policies'}
+          </button>
+        ))}
+      </div>
+      
+      <div className="flex-1 overflow-y-auto p-8 relative z-0">
+        {tab === 'summary' && (
+           <div className="max-w-2xl mx-auto space-y-8 pb-10">
+              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Incident Scenario</h3>
+                <p className="text-gray-800 text-sm leading-relaxed">{data.scenario || "Analyzing..."}</p>
+              </div>
+              
+              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Extracted Details</h3>
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(data.details || {}).map(([k, v]) => (
+                    <div key={k} className="bg-slate-50 px-4 py-2 rounded-xl flex flex-col gap-1 border border-slate-100">
+                       <span className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">{k.replace(/_/g, " ")}</span>
+                       <span className="text-sm font-bold text-gray-900">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
+                    </div>
+                  ))}
+                  {(!data.details || Object.keys(data.details).length === 0) && <span className="text-xs text-gray-400 italic font-medium">No details extracted yet</span>}
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Formal Strategy Draft</h3>
+                <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">{data.strategy || "Generating formal strategy based on relevant policies..."}</div>
+              </div>
+           </div>
+        )}
+        
+        {tab === 'policies' && (
+           <div className="max-w-2xl mx-auto space-y-6 pb-10">
+              {(data.policies || []).map((p, idx) => (
+                <div key={idx} className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50 flex flex-col gap-4 group">
+                  <div className="flex items-center justify-between">
+                     <div>
+                       <h3 className="text-base font-black text-gray-900 tracking-tight">{p.insurance_name}</h3>
+                       <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">{p.category} {p.medical_type ? `· ${p.medical_type}` : ''}</span>
+                     </div>
+                     <a href={`/raw_policies/uploaded/${p.insurance_name}.pdf`} target="_blank" className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View Policy Document">
+                       📄
+                     </a>
+                  </div>
+                  
+                  {p.retrieved_contexts && p.retrieved_contexts.length > 0 && (
+                     <details className="mt-2 bg-slate-50 rounded-2xl border border-slate-100 group-open:bg-white transition-colors">
+                       <summary className="px-4 py-3 text-[10px] font-bold text-slate-500 cursor-pointer uppercase tracking-wider select-none hover:text-blue-600">Extracted Clause Constraints</summary>
+                       <div className="px-5 pb-5 pt-2 text-xs text-gray-600 leading-normal whitespace-pre-wrap border-t border-slate-100">
+                         {p.retrieved_contexts[p.retrieved_contexts.length - 1]}
+                       </div>
+                     </details>
+                  )}
+                </div>
+              ))}
+              {(!data.policies || data.policies.length === 0) && (
+                 <div className="text-center py-10">
+                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No matching active policies identified.</p>
+                 </div>
+              )}
+           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Controller ─────────────────────────────────────────────────────────
 
 function App() {
@@ -772,8 +859,17 @@ function App() {
   window.showProfileModal = () => setProfileModal(true);
 
   const [consultantData, setConsultantData] = useState({
-    sessionId: null, messages: [], phase: "idle", isWaiting: false, isTyping: false,
-    requirements: null, criteria: null, policies: [], activeTab: "requirements"
+    sessionId: null,
+    messages: [],
+    isWaiting: false,
+    isTyping: false,
+    phase: "idle",
+    activeTab: "requirements",
+    requirements: null,
+    criteria: null,
+    policies: null,
+    activeAgent: null,
+    claimData: null
   });
 
   const wsRef = useRef(null);
@@ -836,9 +932,10 @@ function App() {
       switch (d.type) {
         case "question": next.isTyping = false; next.messages = [...next.messages, mkMsg("agent", d.content)]; next.isWaiting = true; break;
         case "status": if (d.phase) next.phase = d.phase; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("status", d.message, d.phase)]; break;
-        case "requirements": next.requirements = d.data; next.activeTab = "requirements"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Profile captured")]; break;
-        case "criteria": next.criteria = d.data; next.activeTab = "criteria"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
-        case "policies": next.policies = d.data; next.activeTab = "policies"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
+        case "requirements": next.requirements = d.data; next.activeTab = "requirements"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Profile captured")]; break;
+        case "criteria": next.criteria = d.data; next.activeTab = "criteria"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
+        case "policies": next.policies = d.data; next.activeTab = "policies"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
+        case "claim_update": next.claimData = d.data; next.activeAgent = "claiming_strategy"; break;
         case "complete": next.phase = "complete"; break;
       }
       return next;
@@ -891,33 +988,50 @@ function App() {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Consultation Session</p>
           </div>
         </div>
-        <PhaseBar phase={consultantData.phase} />
+        {consultantData.activeAgent === "new_life_insurance" && <PhaseBar phase={consultantData.phase} />}
+        {consultantData.activeAgent === "claiming_strategy" && (
+           <div className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full flex items-center gap-2 border border-blue-100">
+               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+               Claim Strategy Engine
+           </div>
+        )}
       </header>
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-1/2 border-r border-slate-100 flex flex-col shadow-2xl shadow-slate-200/50 z-10">
+      <div className="flex-1 flex overflow-hidden justify-center bg-slate-50/50">
+        <div className={`flex flex-col transition-all duration-500 bg-white ${consultantData.activeAgent ? 'w-1/3 border-r border-slate-100 shadow-[10px_0_30px_rgb(0,0,0,0.03)] z-10' : 'w-full max-w-3xl border-x border-slate-100 shadow-xl'}`}>
           <ChatPanel 
              messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
              isTyping={consultantData.isTyping} phase={consultantData.phase}
              onSend={handleSend} isStarted={!!consultantData.sessionId}
           />
         </div>
-        <div className="flex-1 overflow-hidden flex flex-col bg-white/50 backdrop-blur-3xl">
-           <div className="bg-white border-b border-slate-50 flex gap-1 px-8 pt-5">
-              {['requirements', 'criteria', 'policies'].map(t => (
-                <button 
-                  key={t} onClick={() => setConsultantData(prev => ({...prev, activeTab: t}))}
-                  className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-2xl transition-all ${consultantData.activeTab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                >
-                  {t}
-                </button>
-              ))}
+        
+        {consultantData.activeAgent && (
+           <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
+             {consultantData.activeAgent === "new_life_insurance" && (
+               <>
+                 <div className="bg-white border-b border-gray-100 flex gap-4 px-8 pt-5 shadow-sm relative z-10">
+                    {['requirements', 'criteria', 'policies'].map(t => (
+                      <button 
+                        key={t} onClick={() => setConsultantData(prev => ({...prev, activeTab: t}))}
+                        className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all ${consultantData.activeTab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                      >
+                        {t}
+                      </button>
+                    ))}
+                 </div>
+                 <div className="flex-1 overflow-hidden bg-slate-50 z-0">
+                   {consultantData.activeTab === 'requirements' && <RequirementsView data={consultantData.requirements} />}
+                   {consultantData.activeTab === 'criteria' && <CriteriaView data={consultantData.criteria} />}
+                   {consultantData.activeTab === 'policies' && <PoliciesView data={consultantData.policies} />}
+                 </div>
+               </>
+             )}
+             
+             {consultantData.activeAgent === "claiming_strategy" && (
+                <ClaimingPanel data={consultantData.claimData} />
+             )}
            </div>
-           <div className="flex-1 overflow-hidden">
-             {consultantData.activeTab === 'requirements' && <RequirementsView data={consultantData.requirements} />}
-             {consultantData.activeTab === 'criteria' && <CriteriaView data={consultantData.criteria} />}
-             {consultantData.activeTab === 'policies' && <PoliciesView data={consultantData.policies} />}
-           </div>
-        </div>
+        )}
       </div>
     </div>
   );
