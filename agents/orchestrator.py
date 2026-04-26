@@ -37,8 +37,24 @@ class Orchestrator:
         self.llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, api_key=api_key)
         self.structured_llm = self.llm.with_structured_output(OrchestrationResult)
 
-    def evaluate_input(self, user_message: str, active_agent: Optional[str], session_phase: Optional[str]) -> OrchestrationResult:
-        logger.info(f"[Orchestrator] Evaluating message for active_agent={active_agent}, phase={session_phase}")
+    def evaluate_input(self, user_message: str, active_agent: Optional[str], session_phase: Optional[str], history: list = None) -> OrchestrationResult:
+        print(f"[Orchestrator] Evaluating message for active_agent={active_agent}, phase={session_phase}")
+        
+        # Get last 2 messages of context (1 user, 21 system usually)
+        context_msgs = []
+        if history:
+            # history is list of dicts like {"role": "...", "content": "..."}
+            # or langchain messages. We'll handle dicts for simplicity in the API.
+            last_msgs = history[-2:]
+            for m in last_msgs:
+                role = m.get("role", "user")
+                content = m.get("content", "")
+                if role == "user":
+                    context_msgs.append(HumanMessage(content=content))
+                else:
+                    # Map 'assistant' or 'system' to system context for orchestration
+                    # but usually these are assistant responses.
+                    context_msgs.append(SystemMessage(content=f"Previous Assistant Response: {content}"))
         
         system_prompt = dedent(f"""
             You are the Intent-Aware Orchestrator for an Insurance Consultant AI.
@@ -63,13 +79,15 @@ class Orchestrator:
         """).strip()
 
         try:
-            result = self.structured_llm.invoke([
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_message)
-            ])
+            messages = [SystemMessage(content=system_prompt)]
+            if context_msgs:
+                messages.extend(context_msgs)
+            messages.append(HumanMessage(content=user_message))
+            
+            result = self.structured_llm.invoke(messages)
             return result
         except Exception as e:
-            logger.error(f"[Orchestrator] Failed to evaluate input: {e}")
+            print(f"[Orchestrator] Failed to evaluate input: {e}")
             # Failsafe: assume continue flow to the active agent
             return OrchestrationResult(
                 is_valid=True,

@@ -13,6 +13,7 @@ class Session:
     def __init__(self, session_id: str):
         self.session_id = session_id
         self.updates_queue: asyncio.Queue = asyncio.Queue()
+        self.messages: list[dict] = [] # Conversation history for orchestrator context
         self._answer_event = threading.Event()
         self._answer_value: Optional[str] = None
         self.phase = "idle"
@@ -31,7 +32,8 @@ class Session:
             "claim_details": {},
             "relevant_policies": [],
             "claim_strategy": "",
-            "missing_info": True,
+            "claim_strategy": "",
+            "missing_info": [],
             "review_status": ""
         }
         
@@ -302,12 +304,13 @@ class SessionManager:
                     "data": {
                         "scenario": session.claim_state.get("claim_scenario", ""),
                         "details": session.claim_state.get("claim_details", {}),
+                        "potential_costs": session.claim_state.get("potential_costs", []),
                         "policies": session.claim_state.get("relevant_policies", []),
                         "strategy": session.claim_state.get("claim_strategy", "")
                     }
                 })
                 
-                if final_state.get("missing_info"):
+                if len(final_state.get("missing_info", [])) > 0:
                     # The graph output a clarification message
                     last_msg = final_state["messages"][-1]
                     # We expect dict from state, extract content correctly whether it's dict or object
@@ -323,7 +326,7 @@ class SessionManager:
                     session.claim_state = {
                         "messages": [], "claim_scenario": "", "claim_details": {},
                         "relevant_policies": [], "claim_strategy": "",
-                        "missing_info": True, "review_status": ""
+                        "missing_info": [], "review_status": ""
                     }
                     
             except Exception as e:
@@ -347,12 +350,14 @@ class SessionManager:
             return
 
         async def async_send(update: dict):
+            if update.get("type") in ["question", "complete", "error"]:
+                session.messages.append({"role": "assistant", "content": update.get("message") or update.get("content") or ""})
             await session.updates_queue.put(update)
 
         # Step 1: Evaluate Orchestration (wrapped in to_thread since it uses sync LLM invokes)
         result = await asyncio.to_thread(
             session.orchestrator.evaluate_input, 
-            user_message, session.active_agent, session.phase
+            user_message, session.active_agent, session.phase, session.messages
         )
         
         # Step 2: Input Sanitization / Security
@@ -362,6 +367,9 @@ class SessionManager:
             return
 
         logger.info(f"[Session {session_id}] Action={result.intent_type}, Target={result.target_agent}")
+        
+        # Track history
+        session.messages.append({"role": "user", "content": user_message})
 
         # Step 3: Handle Global Commands
         if result.intent_type == "global_command":

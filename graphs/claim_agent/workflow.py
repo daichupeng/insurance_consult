@@ -17,7 +17,7 @@ llm = ChatOpenAI(model="gpt-4o", temperature=0, api_key=api_key)
 
 
 def check_incident_analysis(state: ClaimAgentState):
-    if state["missing_info"]:
+    if len(state["missing_info"]) > 0:
         return "clarifying"
     return "fetch_policies"
 

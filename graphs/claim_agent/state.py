@@ -20,5 +20,6 @@ class ClaimAgentState(TypedDict):
     claim_strategy: str
 
     # Control flags
-    missing_info: bool
+    missing_info: List[str]
     review_status: str # 'pass', 'need_info', 'rewrite'
+    review_feedback: str

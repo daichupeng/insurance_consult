@@ -803,6 +803,18 @@ function ClaimingPanel({ data }) {
               </div>
 
               <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Potential Medical Costs</h3>
+                <div className="space-y-4">
+                  {(data.potential_costs || []).map((cost, idx) => (
+                    <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                       <p className="text-sm text-gray-800 leading-relaxed font-medium">{cost}</p>
+                    </div>
+                  ))}
+                  {(!data.potential_costs || data.potential_costs.length === 0) && <p className="text-xs text-gray-400 italic font-medium">No cost estimates available yet</p>}
+                </div>
+              </div>
+
+              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
                 <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Formal Strategy Draft</h3>
                 <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">{data.strategy || "Generating formal strategy based on relevant policies..."}</div>
               </div>

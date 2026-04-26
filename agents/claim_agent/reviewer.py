@@ -21,9 +21,11 @@ def reviewer(state: ClaimAgentState, llm) -> Dict:
     
     Evaluate if the strategy strictly aligns with standard insurance logic.
     Decide between: 'pass', 'need_info', or 'rewrite'.
+    
+    CRITICAL: If the conversation history shows the user was asked for a specific detail but could not provide it (e.g., saying 'no' or 'I don't know'), do not reject the strategy for missing that info. Mark it as 'pass' or 'rewrite' with instructions to work with reasonable assumptions.
     """
     
     structured_llm = llm.with_structured_output(ReviewResult, method="function_calling")
     res: ReviewResult = structured_llm.invoke([SystemMessage(content=prompt)])
     
-    return {"review_status": res.decision}
+    return {"review_status": res.decision, "review_feedback": res.feedback}
