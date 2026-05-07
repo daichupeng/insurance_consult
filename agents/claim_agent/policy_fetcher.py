@@ -1,10 +1,11 @@
 import sqlite3
 from typing import Dict, List
 
-from graphs.claim_agent.state import ClaimAgentState, PolicyContext
+from graphs.claim_agent.state import PolicyContext
+from agents.claim_agent.substates import TreatmentState
 from api.db import DB_PATH
 
-def policy_fetcher(state: ClaimAgentState) -> Dict:
+def policy_fetcher(state: TreatmentState) -> Dict:
     print("[ClaimAgent] Running policy_fetcher...")
     
     conn = sqlite3.connect(DB_PATH)

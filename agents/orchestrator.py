@@ -62,7 +62,7 @@ class Orchestrator:
             
             AVAILABLE AGENTS:
             - new_life_insurance: Multi-step process recommending new insurance policies (phases: profile, criteria, fetching, retrieval, summarization, scoring, complete).
-            - claiming_strategy: Expert in how to file insurance claims based on a user's incident. Analyzes events, extracts details, and drafts step-by-step claiming strategies against active coverage.
+            - claiming_strategy: If user reports a health related incident, or accidents that might be covered by insurance, use this agent to analyze the incident and propose a claiming strategy.
             - query_agent: Answers general insurance questions or queries specific to the evaluated policies.
             
             CURRENT STATE:

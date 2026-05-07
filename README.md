@@ -91,3 +91,17 @@ The systme uses:
     - Compare current policy vs new ones
     - Save chat sessions
     - Build claiming agent
+
+
+0428:
+    done:
+    - Claim agent initial. Currently focused on claiming plan given some assumptions.
+    - Orchestrator between multiple agents: claim, new insurance, query
+    - Testing scenarios. https://docs.google.com/spreadsheets/d/1FMsgWa_ZM5RyYv52PZ87Xh8L7PnbRmQWq-lFIaTl5Eg/edit?gid=1741521850#gid=1741521850
+
+    todo:
+    - Save chat sessions
+    - Refine claim agent, especially claiming proposal subagent. Build a treatment plan subagent.
+    - Auto-review system
+    - memory 持久化。短期记忆：md，给agent search功能
+    - md policy use search tool for agent

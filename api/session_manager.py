@@ -28,13 +28,17 @@ class Session:
         self.cancel_event = threading.Event()
         self.claim_state: dict = {
             "messages": [],
-            "claim_scenario": "",
-            "claim_details": {},
-            "relevant_policies": [],
-            "claim_strategy": "",
-            "claim_strategy": "",
+            "symptoms": [],
+            "tests_done": [],
+            "procedures_conducted": [],
+            "primary_diagnosis": None,
+            "incurred_cost_items": [],
+            "possible_diagnoses": [],
+            "treatment_strategies": [],
+            "analyzer_state": None,
             "missing_info": [],
-            "review_status": ""
+            "review_status": "",
+            "review_feedback": ""
         }
         
         # Lazy load orchestrator
@@ -84,6 +88,8 @@ class SessionManager:
             return
 
         def send(update: dict):
+            if update.get("type") in ["question", "complete", "error"]:
+                session.messages.append({"role": "assistant", "content": update.get("message") or update.get("content") or ""})
             asyncio.run_coroutine_threadsafe(
                 session.updates_queue.put(update), loop
             ).result()
@@ -235,6 +241,8 @@ class SessionManager:
             return
 
         def send(update: dict):
+            if update.get("type") in ["question", "complete", "error"]:
+                session.messages.append({"role": "assistant", "content": update.get("message") or update.get("content") or ""})
             asyncio.run_coroutine_threadsafe(
                 session.updates_queue.put(update), loop
             ).result()
@@ -280,6 +288,8 @@ class SessionManager:
             return
 
         def send(update: dict):
+            if update.get("type") in ["question", "complete", "error"]:
+                session.messages.append({"role": "assistant", "content": update.get("message") or update.get("content") or ""})
             asyncio.run_coroutine_threadsafe(
                 session.updates_queue.put(update), loop
             ).result()
@@ -299,14 +309,37 @@ class SessionManager:
                 # Sync state back
                 session.claim_state.update(final_state)
                 
+                # Format incurred_cost_items for the frontend
+                potential_costs = []
+                for c in session.claim_state.get("incurred_cost_items", []):
+                    item_name = c.get("item_name") if isinstance(c, dict) else getattr(c, "item_name", "")
+                    item_cost = c.get("item_cost") if isinstance(c, dict) else getattr(c, "item_cost", "")
+                    relevant_ins = c.get("relevant_insurance_type") if isinstance(c, dict) else getattr(c, "relevant_insurance_type", "")
+                    potential_costs.append(f"{item_name} (Cost: {item_cost}) - Insurance: {relevant_ins}")
+
+                # Format strategy from treatment_strategies
+                strategies = session.claim_state.get("treatment_strategies", [])
+                strategy_text = "\n\n".join([
+                    s.get("claim_strategy", "") if isinstance(s, dict) else getattr(s, "claim_strategy", "") 
+                    for s in strategies
+                ])
+
                 send({
                     "type": "claim_update",
                     "data": {
-                        "scenario": session.claim_state.get("claim_scenario", ""),
-                        "details": session.claim_state.get("claim_details", {}),
-                        "potential_costs": session.claim_state.get("potential_costs", []),
-                        "policies": session.claim_state.get("relevant_policies", []),
-                        "strategy": session.claim_state.get("claim_strategy", "")
+                        "scenario": session.claim_state.get("primary_diagnosis", ""),
+                        "details": {
+                            "symptoms": session.claim_state.get("symptoms", []),
+                            "tests_done": session.claim_state.get("tests_done", []),
+                            "procedures_conducted": session.claim_state.get("procedures_conducted", []),
+                            "possible_diagnoses": [
+                                d.get("diagnosis", "") if isinstance(d, dict) else getattr(d, "diagnosis", "") 
+                                for d in session.claim_state.get("possible_diagnoses", [])
+                            ]
+                        },
+                        "potential_costs": potential_costs,
+                        "policies": [],
+                        "strategy": strategy_text
                     }
                 })
                 
@@ -318,15 +351,17 @@ class SessionManager:
                     send({"type": "question", "content": content})
                     session.phase = "processing"
                 else:
-                    strategy = final_state.get("claim_strategy", "No strategy was generated.")
+                    strategy = strategy_text if strategy_text else "No strategy was generated."
                     send({"type": "status", "phase": "complete", "message": "Claim analysis complete."})
                     send({"type": "question", "content": f"Here is your recommended claiming strategy:\n\n{strategy}"})
                     session.phase = "idle"
                     # reset state for next claim
                     session.claim_state = {
-                        "messages": [], "claim_scenario": "", "claim_details": {},
-                        "relevant_policies": [], "claim_strategy": "",
-                        "missing_info": [], "review_status": ""
+                        "messages": [], "symptoms": [], "tests_done": [],
+                        "procedures_conducted": [], "primary_diagnosis": None,
+                        "incurred_cost_items": [], "possible_diagnoses": [],
+                        "treatment_strategies": [], "analyzer_state": None,
+                        "missing_info": [], "review_status": "", "review_feedback": ""
                     }
                     
             except Exception as e:
