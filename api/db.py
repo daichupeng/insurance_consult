@@ -1,6 +1,7 @@
 import sqlite3
 import os
 from typing import List, Optional, Dict, Any
+import json
 
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "databases", "insurance.db")
 
@@ -72,6 +73,32 @@ def init_db():
     for col_name, col_type in new_policy_columns:
         if col_name not in existing_policy_columns:
             cursor.execute(f"ALTER TABLE policies ADD COLUMN {col_name} {col_type}")
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS conversations (
+        id VARCHAR PRIMARY KEY,
+        user_id INTEGER,
+        title VARCHAR,
+        phase VARCHAR,
+        state_data TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(user_id) REFERENCES users (id)
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        conversation_id VARCHAR,
+        role VARCHAR,
+        type VARCHAR,
+        content TEXT,
+        raw_data TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(conversation_id) REFERENCES conversations(id)
+    )
+    """)
 
     conn.commit()
     conn.close()
@@ -178,6 +205,94 @@ def delete_policy(policy_id: int, user_id: int) -> bool:
     conn.commit()
     conn.close()
     return rows > 0
+
+# Conversation operations
+def get_user_conversations(user_id: int) -> List[Dict[str, Any]]:
+    conn = get_db()
+    convs = conn.execute("SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC", (user_id,)).fetchall()
+    conn.close()
+    return [dict(c) for c in convs]
+
+def get_conversation(conv_id: str) -> Optional[Dict[str, Any]]:
+    conn = get_db()
+    conv = conn.execute("SELECT * FROM conversations WHERE id = ?", (conv_id,)).fetchone()
+    conn.close()
+    if conv:
+        c = dict(conv)
+        c['state_data'] = json.loads(c['state_data']) if c['state_data'] else {}
+        return c
+    return None
+
+def create_conversation(conv_id: str, user_id: int, title: str = "New Conversation", phase: str = "idle", state_data: dict = {}) -> Dict[str, Any]:
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO conversations (id, user_id, title, phase, state_data)
+        VALUES (?, ?, ?, ?, ?)
+    """, (conv_id, user_id, title, phase, json.dumps(state_data)))
+    conn.commit()
+    conn.close()
+    return {"id": conv_id, "user_id": user_id, "title": title, "phase": phase, "state_data": state_data}
+
+def update_conversation(conv_id: str, phase: str, state_data: dict, title: Optional[str] = None):
+    conn = get_db()
+    cursor = conn.cursor()
+    if title is not None:
+        cursor.execute("""
+            UPDATE conversations SET phase = ?, state_data = ?, title = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (phase, json.dumps(state_data), title, conv_id))
+    else:
+        cursor.execute("""
+            UPDATE conversations SET phase = ?, state_data = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        """, (phase, json.dumps(state_data), conv_id))
+    conn.commit()
+    conn.close()
+
+def update_conversation_title(conv_id: str, title: str):
+    conn = get_db()
+    conn.execute("UPDATE conversations SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?", (title, conv_id))
+    conn.commit()
+    conn.close()
+
+def delete_conversation(conv_id: str, user_id: int) -> bool:
+    conn = get_db()
+    cursor = conn.cursor()
+    # verify ownership
+    conv = cursor.execute("SELECT id FROM conversations WHERE id = ? AND user_id = ?", (conv_id, user_id)).fetchone()
+    if not conv:
+        conn.close()
+        return False
+        
+    cursor.execute("DELETE FROM messages WHERE conversation_id = ?", (conv_id,))
+    cursor.execute("DELETE FROM conversations WHERE id = ?", (conv_id,))
+    rows = cursor.rowcount
+    conn.commit()
+    conn.close()
+    return rows > 0
+
+def get_conversation_messages(conv_id: str) -> List[Dict[str, Any]]:
+    conn = get_db()
+    msgs = conn.execute("SELECT * FROM messages WHERE conversation_id = ? ORDER BY id ASC", (conv_id,)).fetchall()
+    conn.close()
+    result = []
+    for m in msgs:
+        d = dict(m)
+        d['raw_data'] = json.loads(d['raw_data']) if d['raw_data'] else {}
+        result.append(d)
+    return result
+
+def add_message(conv_id: str, role: str, msg_type: str, content: str, raw_data: dict):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO messages (conversation_id, role, type, content, raw_data)
+        VALUES (?, ?, ?, ?, ?)
+    """, (conv_id, role, msg_type, content, json.dumps(raw_data)))
+    cursor.execute("UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (conv_id,))
+    conn.commit()
+    conn.close()
 
 if __name__ == "__main__":
     init_db()

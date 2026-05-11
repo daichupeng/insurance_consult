@@ -17,7 +17,11 @@ from api.session_manager import SessionManager
 
 from starlette.middleware.sessions import SessionMiddleware
 from api.auth import router as auth_router
-from api.db import get_user_policies, create_policy, update_policy, delete_policy
+from api.db import (
+    get_user_policies, create_policy, update_policy, delete_policy,
+    get_user_conversations, get_conversation, create_conversation, 
+    get_conversation_messages, delete_conversation, update_conversation_title
+)
 from api.parser import extract_text_from_pdf, parse_policy_with_llm, save_policy_files
 
 app = FastAPI(title="Insurance Consultant API")
@@ -125,11 +129,49 @@ async def parse_policy(request: Request, file: UploadFile = File(...)):
         return {"error": f"Parsing failed: {e}"}
 
 @app.post("/api/sessions")
-
-async def create_session():
+async def create_session(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return {"error": "Not authenticated"}
     session_id = str(uuid.uuid4())
+    create_conversation(session_id, user["id"], title="New Conversation")
     session_manager.create_session(session_id)
     return {"session_id": session_id}
+
+@app.get("/api/conversations")
+async def list_conversations(request: Request):
+    user = request.session.get("user")
+    if not user:
+        return {"error": "Not authenticated", "conversations": []}
+    convs = get_user_conversations(user["id"])
+    return {"conversations": convs}
+
+@app.delete("/api/conversations/{session_id}")
+async def remove_conversation(session_id: str, request: Request):
+    user = request.session.get("user")
+    if not user:
+        return {"error": "Not authenticated"}
+    success = delete_conversation(session_id, user["id"])
+    return {"success": success}
+
+@app.put("/api/conversations/{session_id}/title")
+async def rename_conversation(session_id: str, request: Request):
+    user = request.session.get("user")
+    if not user:
+        return {"error": "Not authenticated"}
+    data = await request.json()
+    if "title" in data:
+        update_conversation_title(session_id, data["title"])
+        return {"success": True}
+    return {"error": "Missing title"}
+
+@app.get("/api/conversations/{session_id}/messages")
+async def get_messages(session_id: str, request: Request):
+    user = request.session.get("user")
+    if not user:
+        return {"error": "Not authenticated"}
+    msgs = get_conversation_messages(session_id)
+    return {"messages": msgs}
 
 
 @app.get("/api/sessions/{session_id}")
@@ -152,11 +194,28 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
 
     session = session_manager.get_session(session_id)
     if not session:
-        await websocket.send_text(
-            json.dumps({"type": "error", "message": "Session not found"})
-        )
-        await websocket.close()
-        return
+        # Try to load from DB
+        conv = get_conversation(session_id)
+        if not conv:
+            await websocket.send_text(
+                json.dumps({"type": "error", "message": "Session not found"})
+            )
+            await websocket.close()
+            return
+        
+        session = session_manager.create_session(session_id)
+        # Load state from DB
+        session.phase = conv.get("phase", "idle")
+        state = conv.get("state_data", {})
+        session.user_requirements = state.get("user_requirements")
+        session.criteria = state.get("criteria")
+        session.policies = state.get("policies", [])
+        session.claim_state = state.get("claim_state", session.claim_state)
+        # Load messages to orchestrator context
+        db_msgs = get_conversation_messages(session_id)
+        for m in db_msgs:
+            if m["role"] in ["user", "assistant"]:
+                session.messages.append({"role": m["role"], "content": m["content"]})
 
     loop = asyncio.get_event_loop()
 

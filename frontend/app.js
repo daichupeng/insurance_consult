@@ -870,6 +870,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [profileModal, setProfileModal] = useState(false);
+  const [conversations, setConversations] = useState([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Expose to dashboard header
   window.showProfileModal = () => setProfileModal(true);
@@ -899,6 +901,7 @@ function App() {
       if (data.logged_in) {
         setUser(data.user);
         fetchPolicies();
+        fetchConversations();
       }
     } catch (e) {} finally { setLoading(false); }
   };
@@ -908,6 +911,14 @@ function App() {
       const resp = await fetch("/api/policies");
       const data = await resp.json();
       setPolicies(data.policies || []);
+    } catch (e) {}
+  };
+
+  const fetchConversations = async () => {
+    try {
+      const resp = await fetch("/api/conversations");
+      const data = await resp.json();
+      setConversations(data.conversations || []);
     } catch (e) {}
   };
 
@@ -969,9 +980,98 @@ function App() {
       wsRef.current = ws;
       ws.onopen = () => { setConsultantData(prev => ({...prev, isTyping: true})); ws.send(JSON.stringify({ type: "start", message: text })); };
       ws.onmessage = (e) => handleConsultantMsg(e.data);
+      fetchConversations();
     } else {
       setConsultantData(prev => ({...prev, isWaiting: false, isTyping: true}));
       wsRef.current?.send(JSON.stringify({ type: "answer", content: text }));
+    }
+  };
+
+  const loadConversation = async (conv) => {
+    if (wsRef.current) wsRef.current.close();
+    
+    // Attempt to guess activeAgent from phase/state
+    let agent = null;
+    if (conv.state_data?.user_requirements) agent = "new_life_insurance";
+    else if (conv.state_data?.claim_state?.primary_diagnosis) agent = "claiming_strategy";
+
+    setConsultantData({
+      sessionId: conv.id,
+      messages: [],
+      isWaiting: false,
+      isTyping: false,
+      phase: conv.phase || "idle",
+      activeTab: "requirements",
+      requirements: conv.state_data?.user_requirements || null,
+      criteria: conv.state_data?.criteria || null,
+      policies: conv.state_data?.policies || null,
+      activeAgent: agent,
+      claimData: conv.state_data?.claim_state?.primary_diagnosis ? { details: conv.state_data.claim_state } : null
+    });
+    
+    try {
+      const resp = await fetch(`/api/conversations/${conv.id}/messages`);
+      const data = await resp.json();
+      const formattedMsgs = data.messages.map(m => {
+        const raw = m.raw_data || {};
+        if (raw.type === "user") return mkMsg("user", raw.content);
+        if (raw.type === "question") return mkMsg("agent", raw.content || m.content);
+        if (raw.type === "status") return mkMsg("status", raw.message || raw.content || m.content, raw.phase);
+        if (raw.type === "complete") return mkMsg("milestone", raw.message || raw.content || m.content);
+        if (raw.type === "error") return mkMsg("error", raw.message || raw.content || m.content);
+        if (m.role === "user") return mkMsg("user", m.content);
+        return mkMsg("agent", m.content);
+      });
+      setConsultantData(prev => ({...prev, messages: formattedMsgs}));
+    } catch(e) {}
+    
+    setView("consultant");
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${proto}//${window.location.host}/ws/${conv.id}`);
+    wsRef.current = ws;
+    ws.onmessage = (e) => handleConsultantMsg(e.data);
+  };
+  
+  const handleStartAdvice = () => {
+    setConsultantData({
+      sessionId: null,
+      messages: [],
+      isWaiting: false,
+      isTyping: false,
+      phase: "idle",
+      activeTab: "requirements",
+      requirements: null,
+      criteria: null,
+      policies: null,
+      activeAgent: null,
+      claimData: null
+    });
+    fetchConversations();
+    setView("consultant");
+  };
+
+  const handleRenameConversation = async (e, id, oldTitle) => {
+    e.stopPropagation();
+    const newTitle = prompt("Rename conversation:", oldTitle || "New Conversation");
+    if (newTitle && newTitle.trim() !== "" && newTitle !== oldTitle) {
+      await fetch(`/api/conversations/${id}/title`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newTitle.trim() })
+      });
+      fetchConversations();
+    }
+  };
+
+  const handleDeleteConversation = async (e, id) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this conversation?")) {
+      await fetch(`/api/conversations/${id}`, { method: "DELETE" });
+      if (consultantData.sessionId === id) {
+        handleStartAdvice();
+      } else {
+        fetchConversations();
+      }
     }
   };
 
@@ -999,6 +1099,7 @@ function App() {
       <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 transition-all">
         <div className="flex items-center gap-6">
           <button onClick={() => setView("dashboard")} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-gray-950 flex items-center justify-center transition-all">←</button>
+          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-blue-600 flex items-center justify-center transition-all" title="Toggle History">☰</button>
           <div>
             <h1 className="font-black text-gray-950 text-base tracking-tight leading-none mb-1">Expert Advice</h1>
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Consultation Session</p>
@@ -1013,6 +1114,30 @@ function App() {
         )}
       </header>
       <div className="flex-1 flex overflow-hidden justify-center bg-slate-50/50">
+        
+        <div className={`transition-all duration-300 bg-white border-r border-slate-100 flex flex-col h-full z-20 ${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-none'}`}>
+          <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+            <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest whitespace-nowrap">History</h3>
+            <button onClick={handleStartAdvice} className="text-[10px] font-black bg-white shadow-sm ring-1 ring-slate-100 text-blue-600 px-3 py-1.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap">+ New</button>
+          </div>
+          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+            {conversations.map(c => (
+              <div key={c.id} className={`group relative w-full text-left p-4 rounded-2xl transition-all cursor-pointer ${consultantData.sessionId === c.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-100/50' : 'bg-slate-50 text-gray-900 border border-slate-100 hover:bg-blue-50 hover:ring-1 hover:ring-blue-100'}`} onClick={() => loadConversation(c)}>
+                <div className={`text-xs font-bold truncate mb-1 pr-12 ${consultantData.sessionId === c.id ? 'text-white' : ''}`}>{c.title || "New Conversation"}</div>
+                <div className={`text-[9px] font-black uppercase tracking-widest ${consultantData.sessionId === c.id ? 'text-blue-200' : 'text-gray-400'}`}>{new Date(c.updated_at + "Z").toLocaleString()}</div>
+                
+                <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                  <button onClick={(e) => handleRenameConversation(e, c.id, c.title)} className={`w-6 h-6 rounded flex items-center justify-center text-[10px] ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-blue-800' : 'bg-white text-gray-400 hover:bg-blue-100 hover:text-blue-600 shadow-sm'}`} title="Rename">✎</button>
+                  <button onClick={(e) => handleDeleteConversation(e, c.id)} className={`w-6 h-6 rounded flex items-center justify-center text-[14px] leading-none ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-red-500' : 'bg-white text-gray-400 hover:bg-red-100 hover:text-red-600 shadow-sm'}`} title="Delete">&times;</button>
+                </div>
+              </div>
+            ))}
+            {conversations.length === 0 && (
+              <div className="text-center p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">No history found</div>
+            )}
+          </div>
+        </div>
+
         <div className={`flex flex-col transition-all duration-500 bg-white ${consultantData.activeAgent ? 'w-1/3 border-r border-slate-100 shadow-[10px_0_30px_rgb(0,0,0,0.03)] z-10' : 'w-full max-w-3xl border-x border-slate-100 shadow-xl'}`}>
           <ChatPanel 
              messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
@@ -1057,7 +1182,7 @@ function App() {
       <DashboardView 
         user={user} policies={policies} 
         onAddPolicy={() => setModal({})} onEditPolicy={(p) => setModal(p)}
-        onDeletePolicy={deletePolicy} onStartAdvice={() => setView("consultant")}
+        onDeletePolicy={deletePolicy} onStartAdvice={handleStartAdvice}
         onLogout={() => window.location.href = "/api/auth/logout"}
       />
       {modal && <PolicyModal policy={modal.id ? modal : null} onClose={() => setModal(null)} onSave={savePolicy} />}
