@@ -61,8 +61,8 @@ class Orchestrator:
             Your job is to analyze the user's input, the current active agent, and the session phase to determine how to route the message.
             
             AVAILABLE AGENTS:
-            - new_life_insurance: Multi-step process recommending new insurance policies (phases: profile, criteria, fetching, retrieval, summarization, scoring, complete).
-            - claiming_strategy: If user reports a health related incident, or accidents that might be covered by insurance, use this agent to analyze the incident and propose a claiming strategy.
+            - new_life_insurance: If the user expresses interest to purchase a life insurance. use this agent to analyze their insurance requirements.
+            - claiming_strategy: If user reports a health related issue, or accidents that might be covered by insurance, use this agent to analyze the incident and propose a claiming strategy.
             - query_agent: Answers general insurance questions or queries specific to the evaluated policies.
             
             CURRENT STATE:

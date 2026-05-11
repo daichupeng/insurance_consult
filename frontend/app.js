@@ -785,38 +785,42 @@ function ClaimingPanel({ data }) {
         {tab === 'summary' && (
            <div className="max-w-2xl mx-auto space-y-8 pb-10">
               <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
-                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Incident Scenario</h3>
-                <p className="text-gray-800 text-sm leading-relaxed">{data.scenario || "Analyzing..."}</p>
-              </div>
-              
-              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
                 <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Extracted Details</h3>
                 <div className="flex flex-wrap gap-3">
-                  {Object.entries(data.details || {}).map(([k, v]) => (
+                  {Object.entries(data.details || {}).filter(([k]) => k !== 'possible_diagnoses').map(([k, v]) => (
                     <div key={k} className="bg-slate-50 px-4 py-2 rounded-xl flex flex-col gap-1 border border-slate-100">
                        <span className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">{k.replace(/_/g, " ")}</span>
                        <span className="text-sm font-bold text-gray-900">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
                     </div>
                   ))}
-                  {(!data.details || Object.keys(data.details).length === 0) && <span className="text-xs text-gray-400 italic font-medium">No details extracted yet</span>}
+                  {(!data.details || Object.keys(data.details).filter(k => k !== 'possible_diagnoses').length === 0) && <span className="text-xs text-gray-400 italic font-medium">No details extracted yet</span>}
                 </div>
               </div>
 
               <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
-                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Potential Medical Costs</h3>
+                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Diagnosis</h3>
                 <div className="space-y-4">
-                  {(data.potential_costs || []).map((cost, idx) => (
-                    <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                       <p className="text-sm text-gray-800 leading-relaxed font-medium">{cost}</p>
-                    </div>
-                  ))}
-                  {(!data.potential_costs || data.potential_costs.length === 0) && <p className="text-xs text-gray-400 italic font-medium">No cost estimates available yet</p>}
+                  {(data.details?.possible_diagnoses || []).map((diag, idx) => {
+                    const strategyObj = (data.treatment_strategies || []).find(s => {
+                      const diagName = typeof s.diagnosis === 'object' ? s.diagnosis.diagnosis : s.diagnosis;
+                      return diagName === diag;
+                    });
+                    const strategyText = strategyObj?.claim_strategy || "No strategy generated";
+                    
+                    return (
+                      <details key={idx} className="bg-slate-50 rounded-2xl border border-slate-100 group transition-colors overflow-hidden">
+                        <summary className="px-5 py-4 text-sm font-black text-gray-900 cursor-pointer select-none hover:bg-slate-100 flex items-center justify-between">
+                          {diag}
+                          <span className="text-gray-400 text-xs transition-transform group-open:rotate-180">▼</span>
+                        </summary>
+                        <div className="px-5 pb-5 pt-2 text-xs text-gray-600 leading-relaxed whitespace-pre-wrap border-t border-slate-100 bg-white">
+                          {strategyText}
+                        </div>
+                      </details>
+                    );
+                  })}
+                  {(!data.details?.possible_diagnoses || data.details.possible_diagnoses.length === 0) && <p className="text-xs text-gray-400 italic font-medium">No diagnosis available yet</p>}
                 </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
-                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Formal Strategy Draft</h3>
-                <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-wrap">{data.strategy || "Generating formal strategy based on relevant policies..."}</div>
               </div>
            </div>
         )}

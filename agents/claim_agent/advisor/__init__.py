@@ -217,5 +217,5 @@ def advisor_node(state: AdvisorTask, llm,) -> Dict:
     )
         
     return {
-        "treatment_strategies": treatment
+        "treatment_strategies": [treatment]
     }

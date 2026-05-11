@@ -339,7 +339,14 @@ class SessionManager:
                         },
                         "potential_costs": potential_costs,
                         "policies": [],
-                        "strategy": strategy_text
+                        "strategy": strategy_text,
+                        "treatment_strategies": [
+                            s if isinstance(s, dict) else (s.model_dump() if hasattr(s, "model_dump") else {
+                                "diagnosis": s.diagnosis if hasattr(s, "diagnosis") else "",
+                                "claim_strategy": s.claim_strategy if hasattr(s, "claim_strategy") else ""
+                            })
+                            for s in session.claim_state.get("treatment_strategies", [])
+                        ]
                     }
                 })
                 
