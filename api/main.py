@@ -260,15 +260,24 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
                 message_content = data.get("message", data.get("content", ""))
 
             # Pass to orchestrator instead of hardcoded routing
-            asyncio.create_task(
-                session_manager.handle_message(
-                    session_id, 
-                    message_content, 
-                    loop,
-                    user_profile=user_profile,
-                    existing_policies=existing_policies
+            if data["type"] == "start_test":
+                asyncio.create_task(
+                    session_manager.run_test_claim_workflow(
+                        session_id, 
+                        data.get("params", {}), 
+                        loop
+                    )
                 )
-            )
+            else:
+                asyncio.create_task(
+                    session_manager.handle_message(
+                        session_id, 
+                        message_content, 
+                        loop,
+                        user_profile=user_profile,
+                        existing_policies=existing_policies
+                    )
+                )
     except WebSocketDisconnect:
         pass
     finally:

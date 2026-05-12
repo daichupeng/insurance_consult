@@ -1,6 +1,7 @@
 from typing import Dict, List, Any, TypedDict, Annotated, Optional
 import operator
 from pydantic import BaseModel, Field
+from langchain_core.messages import BaseMessage
 
 class PolicyContext(TypedDict):
     policy_id: int
@@ -37,7 +38,7 @@ class AdvisorTask(TypedDict):
 
 class ClaimAgentState(TypedDict):
     # Chat memory passed from SessionManager
-    messages: Annotated[List[dict], operator.add]
+    messages: Annotated[List[BaseMessage], operator.add]
     
     # Core variables requested by user
     symptoms: Annotated[List[str], operator.add]

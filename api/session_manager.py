@@ -418,6 +418,152 @@ class SessionManager:
         thread = threading.Thread(target=run, daemon=True)
         thread.start()
 
+    async def run_test_claim_workflow(
+        self,
+        session_id: str,
+        test_params: dict,
+        loop: asyncio.AbstractEventLoop,
+    ):
+        session = self.get_session(session_id)
+        if not session:
+            return
+
+        def send(update: dict):
+            if update.get("type") in ["question", "complete", "error", "test_patient_msg"]:
+                role = "assistant" if update.get("type") in ["question", "complete"] else "user"
+                session.messages.append({"role": role, "content": update.get("message") or update.get("content") or ""})
+            self._save_message(session_id, "assistant", update.get("type", "unknown"), update.get("message") or update.get("content") or "", update)
+            self._save_state(session)
+            asyncio.run_coroutine_threadsafe(
+                session.updates_queue.put(update), loop
+            ).result()
+
+        def run():
+            from langchain_openai import ChatOpenAI
+            from langchain_core.messages import HumanMessage, AIMessage
+            from agents.claim_test_agent.scenario_generator import scenario_generator
+            from agents.claim_test_agent.patient_agent import generate_patient_response
+            from agents.claim_test_agent.substates import TestPatientState
+            from graphs.claim_agent.workflow import claim_agent_workflow
+            import os
+            import time
+
+            t_workflow = time.perf_counter()
+            send({"type": "status", "phase": "processing", "message": "Generating test scenario..."})
+            try:
+                llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7, api_key=os.getenv("OPENAI_API_KEY"))
+                
+                # 1. Generate scenario
+                test_state = TestPatientState(
+                    patient_age=test_params.get("patient_age", ""),
+                    ground_truth=test_params.get("ground_truth", ""),
+                    stage=test_params.get("stage", ""),
+                    costs=test_params.get("costs", ""),
+                    scenario_output=""
+                )
+                
+                scenario_result = scenario_generator(test_state, llm)
+                test_state["scenario_output"] = scenario_result["scenario_output"]
+                
+                send({"type": "test_scenario", "content": test_state["scenario_output"]})
+                
+                # We start the conversation with the patient saying they need to make a claim
+                initial_msg = generate_patient_response(test_state, [AIMessage(content="Hello! I am your AI Insurance Claim Agent. How can I assist you with your claim today?")], llm)
+                
+                send({"type": "status", "phase": "processing", "message": "Simulating conversation..."})
+                send({"type": "test_patient_msg", "content": initial_msg})
+                
+                # Enter interaction loop
+                max_turns = 10
+                current_msg = initial_msg
+                
+                for _ in range(max_turns):
+                    time.sleep(1) # small delay for UI
+                    session.claim_state["messages"].append(HumanMessage(content=current_msg))
+                    
+                    final_state = claim_agent_workflow.invoke(session.claim_state)
+                    session.claim_state.update(final_state)
+                    
+                    # Output claim update
+                    potential_costs = []
+                    for c in session.claim_state.get("incurred_cost_items", []):
+                        item_name = c.get("item_name") if isinstance(c, dict) else getattr(c, "item_name", "")
+                        item_cost = c.get("item_cost") if isinstance(c, dict) else getattr(c, "item_cost", "")
+                        relevant_ins = c.get("relevant_insurance_type") if isinstance(c, dict) else getattr(c, "relevant_insurance_type", "")
+                        potential_costs.append(f"{item_name} (Cost: {item_cost}) - Insurance: {relevant_ins}")
+
+                    strategies = session.claim_state.get("treatment_strategies", [])
+                    strategy_text = "\n\n".join([
+                        s.get("claim_strategy", "") if isinstance(s, dict) else getattr(s, "claim_strategy", "") 
+                        for s in strategies
+                    ])
+
+                    send({
+                        "type": "claim_update",
+                        "data": {
+                            "scenario": session.claim_state.get("primary_diagnosis", ""),
+                            "details": {
+                                "symptoms": session.claim_state.get("symptoms", []),
+                                "tests_done": session.claim_state.get("tests_done", []),
+                                "procedures_conducted": session.claim_state.get("procedures_conducted", []),
+                                "possible_diagnoses": [
+                                    d.get("diagnosis", "") if isinstance(d, dict) else getattr(d, "diagnosis", "") 
+                                    for d in session.claim_state.get("possible_diagnoses", [])
+                                ]
+                            },
+                            "potential_costs": potential_costs,
+                            "policies": [],
+                            "strategy": strategy_text,
+                            "treatment_strategies": [
+                                s if isinstance(s, dict) else (s.model_dump() if hasattr(s, "model_dump") else {
+                                    "diagnosis": s.diagnosis if hasattr(s, "diagnosis") else "",
+                                    "claim_strategy": s.claim_strategy if hasattr(s, "claim_strategy") else ""
+                                })
+                                for s in session.claim_state.get("treatment_strategies", [])
+                            ]
+                        }
+                    })
+                    
+                    if len(final_state.get("missing_info", [])) > 0:
+                        # Agent asks question
+                        last_msg = final_state["messages"][-1]
+                        if isinstance(last_msg, dict):
+                            content = last_msg.get("content", "")
+                        elif hasattr(last_msg, "content"):
+                            content = last_msg.content
+                        else:
+                            content = str(last_msg)
+                        send({"type": "question", "content": content})
+                        
+                        # Patient responds
+                        time.sleep(1)
+                        patient_response = generate_patient_response(test_state, session.claim_state["messages"], llm)
+                        send({"type": "test_patient_msg", "content": patient_response})
+                        current_msg = patient_response
+                    else:
+                        # Strategy generated, loop ends
+                        break
+                
+                strategy = strategy_text if strategy_text else "No strategy was generated."
+                send({"type": "status", "phase": "complete", "message": "Claim test complete."})
+                send({"type": "question", "content": f"Here is the generated claiming strategy:\n\n{strategy}"})
+                session.phase = "idle"
+                session.claim_state = {
+                    "messages": [], "symptoms": [], "tests_done": [],
+                    "procedures_conducted": [], "primary_diagnosis": None,
+                    "incurred_cost_items": [], "possible_diagnoses": [],
+                    "treatment_strategies": [], "analyzer_state": None,
+                    "missing_info": [], "review_status": "", "review_feedback": ""
+                }
+                
+            except Exception as e:
+                import traceback
+                logger.error("[Session %s] Test Claim Error: %s", session_id, e, exc_info=True)
+                send({"type": "error", "message": str(e), "detail": traceback.format_exc()})
+
+        thread = threading.Thread(target=run, daemon=True)
+        thread.start()
+
     async def handle_message(
         self,
         session_id: str,

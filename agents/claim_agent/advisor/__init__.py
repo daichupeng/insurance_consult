@@ -20,6 +20,7 @@ class PlannerDecision(BaseModel):
         description="The next agent to route to. 'fetcher' for retrieving relevant contexts from insurance policy. 'strategy' for claiming strategy generation. 'reviewer' if a claiming strategy is generated."
     )
     reasoning: str = Field(description="Why this decision was made.")
+    context_to_search: str = Field(description="Only populate if next_node='fetcher'. Specify the medical conditions or treatment items to focus on when retrieving policy contexts. This will guide the context_retriever.", default="")
 
 def planner_node(state: TreatmentState, llm) -> Dict:
     prompt = """
@@ -67,7 +68,7 @@ def planner_node(state: TreatmentState, llm) -> Dict:
     for p in state.get("relevant_policies", []):
         if p.get('retrieved_contexts'):
             policies_context.append(f"Policy: {p['insurance_name']}\nContext: {p['retrieved_contexts'][-1]}")
-    contexts = "\n\n".join(policies_context) if policies_context else "None."
+    contexts = "\n\n".join(policies_context) if policies_context else "Not retrieved yet."
     review_str = "\n".join([f"- {f}" for f in state.get("review", [])])
 
     if not review_str: 
@@ -78,7 +79,8 @@ def planner_node(state: TreatmentState, llm) -> Dict:
     resp: PlannerDecision = structured_llm.invoke([SystemMessage(content=formatted_prompt)])
     
     return {
-        "next_action": resp.next_node
+        "next_action": resp.next_node,
+        "context_to_search": resp.context_to_search
     }
 
 

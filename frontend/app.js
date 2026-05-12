@@ -651,7 +651,71 @@ function PolicyModal({ policy, onClose, onSave }) {
   );
 }
 
-function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePolicy, onStartAdvice, onLogout }) {
+function TestClaimingModal({ onClose, onStartTest }) {
+  const [formData, setFormData] = useState({
+    patient_age: "",
+    ground_truth: "",
+    stage: "",
+    costs: ""
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
+      <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
+        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
+          <h3 className="font-black text-gray-900 text-lg">Test Claiming Strategy</h3>
+          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); onStartTest(formData); }} className="p-8 space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Patient Age</label>
+              <input 
+                required
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
+                value={formData.patient_age}
+                onChange={e => setFormData({...formData, patient_age: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Ground Truth Condition</label>
+              <input 
+                required
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
+                value={formData.ground_truth}
+                onChange={e => setFormData({...formData, ground_truth: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Current Stage</label>
+              <input 
+                required
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
+                value={formData.stage}
+                onChange={e => setFormData({...formData, stage: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Incurred Costs</label>
+              <input 
+                required
+                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
+                value={formData.costs}
+                onChange={e => setFormData({...formData, costs: e.target.value})}
+              />
+            </div>
+          </div>
+          <div className="flex gap-4 pt-4">
+            <button type="submit" className="flex-1 bg-purple-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-purple-700 hover:shadow-xl hover:shadow-purple-200 transition-all">Generate Claiming Strategy</button>
+            <button type="button" onClick={onClose} className="px-8 h-14 bg-slate-100 text-gray-500 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePolicy, onStartAdvice, onTestClaim, onLogout }) {
   return (
     <div className="h-full flex flex-col bg-slate-100/50">
       <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 ring-1 ring-slate-100">
@@ -663,6 +727,9 @@ function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePoli
           </div>
         </div>
         <div className="flex items-center gap-8">
+          <button onClick={onTestClaim} className="bg-purple-50 text-purple-600 border-2 border-purple-100 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-purple-300 hover:bg-purple-100 transition-all shadow-sm flex items-center gap-2">
+            🧪 Test Claiming
+          </button>
           <button onClick={onStartAdvice} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 hover:shadow-xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center gap-2">
             ✨ New Advice
           </button>
@@ -870,6 +937,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [profileModal, setProfileModal] = useState(false);
+  const [testClaimModal, setTestClaimModal] = useState(false);
   const [conversations, setConversations] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -887,7 +955,8 @@ function App() {
     criteria: null,
     policies: null,
     activeAgent: null,
-    claimData: null
+    claimData: null,
+    testParams: null
   });
 
   const wsRef = useRef(null);
@@ -963,6 +1032,8 @@ function App() {
         case "criteria": next.criteria = d.data; next.activeTab = "criteria"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
         case "policies": next.policies = d.data; next.activeTab = "policies"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
         case "claim_update": next.claimData = d.data; next.activeAgent = "claiming_strategy"; break;
+        case "test_scenario": next.messages = [mkMsg("agent", `*Test Scenario Generated*\n\n${d.content}`)]; break;
+        case "test_patient_msg": next.messages = [...next.messages, mkMsg("user", d.content)]; break;
         case "complete": next.phase = "complete"; break;
       }
       return next;
@@ -1006,7 +1077,8 @@ function App() {
       criteria: conv.state_data?.criteria || null,
       policies: conv.state_data?.policies || null,
       activeAgent: agent,
-      claimData: conv.state_data?.claim_state?.primary_diagnosis ? { details: conv.state_data.claim_state } : null
+      claimData: conv.state_data?.claim_state?.primary_diagnosis ? { details: conv.state_data.claim_state } : null,
+      testParams: null
     });
     
     try {
@@ -1044,8 +1116,41 @@ function App() {
       criteria: null,
       policies: null,
       activeAgent: null,
-      claimData: null
+      claimData: null,
+      testParams: null
     });
+    fetchConversations();
+    setView("consultant");
+  };
+
+  const handleStartTestClaim = async (params) => {
+    setTestClaimModal(false);
+    setConsultantData({
+      sessionId: null,
+      messages: [],
+      isWaiting: false,
+      isTyping: true,
+      phase: "idle",
+      activeTab: "requirements",
+      requirements: null,
+      criteria: null,
+      policies: null,
+      activeAgent: "claiming_strategy",
+      claimData: null,
+      testParams: params
+    });
+    
+    const resp = await fetch("/api/sessions", { method: "POST" });
+    const { session_id } = await resp.json();
+    setConsultantData(prev => ({...prev, sessionId: session_id}));
+    
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const ws = new WebSocket(`${proto}//${window.location.host}/ws/${session_id}`);
+    wsRef.current = ws;
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "start_test", params }));
+    };
+    ws.onmessage = (e) => handleConsultantMsg(e.data);
     fetchConversations();
     setView("consultant");
   };
@@ -1139,6 +1244,14 @@ function App() {
         </div>
 
         <div className={`flex flex-col transition-all duration-500 bg-white ${consultantData.activeAgent ? 'w-1/3 border-r border-slate-100 shadow-[10px_0_30px_rgb(0,0,0,0.03)] z-10' : 'w-full max-w-3xl border-x border-slate-100 shadow-xl'}`}>
+          {consultantData.testParams && (
+             <div className="bg-purple-50 p-4 border-b border-purple-100 flex flex-wrap gap-4 text-xs">
+                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Age:</span> <span className="text-purple-900">{consultantData.testParams.patient_age}</span></div>
+                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Truth:</span> <span className="text-purple-900">{consultantData.testParams.ground_truth}</span></div>
+                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Stage:</span> <span className="text-purple-900">{consultantData.testParams.stage}</span></div>
+                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Costs:</span> <span className="text-purple-900">{consultantData.testParams.costs}</span></div>
+             </div>
+          )}
           <ChatPanel 
              messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
              isTyping={consultantData.isTyping} phase={consultantData.phase}
@@ -1183,10 +1296,12 @@ function App() {
         user={user} policies={policies} 
         onAddPolicy={() => setModal({})} onEditPolicy={(p) => setModal(p)}
         onDeletePolicy={deletePolicy} onStartAdvice={handleStartAdvice}
+        onTestClaim={() => setTestClaimModal(true)}
         onLogout={() => window.location.href = "/api/auth/logout"}
       />
       {modal && <PolicyModal policy={modal.id ? modal : null} onClose={() => setModal(null)} onSave={savePolicy} />}
       {profileModal && <ProfileModal user={user} onClose={() => setProfileModal(false)} onSave={saveProfile} />}
+      {testClaimModal && <TestClaimingModal onClose={() => setTestClaimModal(false)} onStartTest={handleStartTestClaim} />}
     </div>
   );
 }

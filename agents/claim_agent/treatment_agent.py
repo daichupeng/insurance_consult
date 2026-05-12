@@ -15,7 +15,7 @@ class TreatmentPlan(BaseModel):
 def treatment_node(state: TreatmentState, llm) -> Dict:
     print("[ClaimAgent]: treatment analysis...")
     system_prompt = """
-    You are an expert medical doctor. A patient is suspected to have a condition. You need to propose a combination of tests, prescriptions, and treatments for the suspected condition. Do not repeat the tests that have already been done, the prescriptions and procedures that have already been conducted.
+    You are an expert medical doctor. A patient is suspected to have a condition. You need to propose a combination of tests, prescriptions, treatments, procedures and surgeries for the suspected condition. Do not repeat the tests that have already been done, the prescriptions and procedures that have already been conducted.
     """
 
     user_prompt = """

@@ -1,7 +1,7 @@
 import logging
 import operator
 from typing import Dict, List, Literal, Annotated, Any, Optional, TypedDict
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, START, END
 
@@ -226,7 +226,7 @@ def incident_analysis(state: ClaimAgentState, llm) -> Dict:
         # Prefer clarification_question if present, otherwise take the first item from missing_info
         msg = final_inner.get("clarification_question") or final_inner.get("missing_info")[0]
         if msg:
-            new_messages.append({"role": "assistant", "content": msg})
+            new_messages.append(AIMessage(content=msg))
         
     return {
         "symptoms": final_inner.get("symptoms", []),
