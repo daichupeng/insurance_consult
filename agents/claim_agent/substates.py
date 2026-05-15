@@ -37,6 +37,7 @@ class TreatmentState(TypedDict):
 
     incurred_cost_items: List[CostItem]
     relevant_context: Annotated[List[str], operator.add]
+    estimated_future_costs: List[CostItem]
     claim_strategy: str
     relevant_policies: List[Any]
 

@@ -8,6 +8,37 @@ function mkMsg(type, content, statusPhase) {
   return { id: String(++_msgId), type, content, statusPhase };
 }
 
+function MarkdownContent({ content }) {
+  if (!content) return null;
+  
+  let html = content;
+  if (typeof marked !== 'undefined') {
+    try {
+      // Configuration for marked
+      const options = {
+        breaks: true,
+        gfm: true,
+        mangle: false,
+        headerIds: false
+      };
+      
+      // Handle both marked() and marked.parse()
+      if (typeof marked.parse === 'function') {
+        html = marked.parse(content, options);
+      } else if (typeof marked === 'function') {
+        html = marked(content, options);
+      }
+    } catch (e) {
+      console.error("Markdown parsing error:", e);
+    }
+  } else {
+    // Basic fallback for newlines if marked is missing
+    html = content.replace(/\n/g, '<br/>');
+  }
+
+  return <div className="markdown-content text-gray-700 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
 // ─── Shared Components ──────────────────────────────────────────────────────
 
 function PhaseBar({ phase }) {
@@ -374,7 +405,7 @@ function PolicyRankEntry({ policy, rank }) {
                 {Object.entries(policy.context_summary).map(([title, text], i) => (
                   <div key={i} className="pl-4 border-l-2 border-slate-100">
                     <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-1.5">{title}</h5>
-                    <p className="text-sm text-gray-500 font-bold leading-relaxed">{text}</p>
+                    <MarkdownContent content={text} />
                   </div>
                 ))}
               </div>
@@ -658,12 +689,36 @@ function TestClaimingModal({ onClose, onStartTest }) {
     stage: "",
     costs: ""
   });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleRandomize = async () => {
+    setIsGenerating(true);
+    try {
+      const resp = await fetch("/api/test_claim/random", { method: "POST" });
+      const data = await resp.json();
+      setFormData(data);
+    } catch (e) {
+      console.error("Failed to generate random scenario", e);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
       <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
         <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-black text-gray-900 text-lg">Test Claiming Strategy</h3>
+          <div className="flex items-center gap-4">
+            <h3 className="font-black text-gray-900 text-lg">Test Claiming Strategy</h3>
+            <button 
+              type="button"
+              onClick={handleRandomize} 
+              disabled={isGenerating}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 ${isGenerating ? 'bg-slate-100 text-slate-400' : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-100'}`}
+            >
+              {isGenerating ? 'Generating...' : '🎲 Randomly Generate'}
+            </button>
+          </div>
           <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
         </div>
         <form onSubmit={(e) => { e.preventDefault(); onStartTest(formData); }} className="p-8 space-y-6">
@@ -873,15 +928,41 @@ function ClaimingPanel({ data }) {
                       return diagName === diag;
                     });
                     const strategyText = strategyObj?.claim_strategy || "No strategy generated";
+                    const estimatedCosts = strategyObj?.estimated_future_costs || [];
                     
                     return (
                       <details key={idx} className="bg-slate-50 rounded-2xl border border-slate-100 group transition-colors overflow-hidden">
                         <summary className="px-5 py-4 text-sm font-black text-gray-900 cursor-pointer select-none hover:bg-slate-100 flex items-center justify-between">
-                          {diag}
+                          <div className="flex items-center gap-3">
+                             <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
+                             {diag}
+                          </div>
                           <span className="text-gray-400 text-xs transition-transform group-open:rotate-180">▼</span>
                         </summary>
-                        <div className="px-5 pb-5 pt-2 text-xs text-gray-600 leading-relaxed whitespace-pre-wrap border-t border-slate-100 bg-white">
-                          {strategyText}
+                        <div className="px-5 pb-5 pt-2 space-y-6 border-t border-slate-100 bg-white">
+                          <div>
+                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Claiming Strategy</h4>
+                            <div className="text-gray-600 leading-relaxed">
+                              <MarkdownContent content={strategyText} />
+                            </div>
+                          </div>
+                          
+                          {estimatedCosts.length > 0 && (
+                            <div className="pt-4 border-t border-slate-50">
+                               <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Estimated Future Costs</h4>
+                               <div className="space-y-2">
+                                  {estimatedCosts.map((c, ci) => (
+                                    <div key={ci} className="flex justify-between items-start p-3 bg-slate-50 rounded-xl border border-slate-100/50">
+                                       <div className="flex flex-col gap-0.5">
+                                          <span className="text-xs font-bold text-gray-900">{c.item_name}</span>
+                                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{c.relevant_insurance_type}</span>
+                                       </div>
+                                       <span className="text-xs font-black text-blue-600 tabular-nums bg-white px-3 py-1 rounded-lg shadow-sm ring-1 ring-slate-100">{c.item_cost}</span>
+                                    </div>
+                                  ))}
+                               </div>
+                            </div>
+                          )}
                         </div>
                       </details>
                     );
@@ -909,8 +990,8 @@ function ClaimingPanel({ data }) {
                   {p.retrieved_contexts && p.retrieved_contexts.length > 0 && (
                      <details className="mt-2 bg-slate-50 rounded-2xl border border-slate-100 group-open:bg-white transition-colors">
                        <summary className="px-4 py-3 text-[10px] font-bold text-slate-500 cursor-pointer uppercase tracking-wider select-none hover:text-blue-600">Extracted Clause Constraints</summary>
-                       <div className="px-5 pb-5 pt-2 text-xs text-gray-600 leading-normal whitespace-pre-wrap border-t border-slate-100">
-                         {p.retrieved_contexts[p.retrieved_contexts.length - 1]}
+                       <div className="px-5 pb-5 pt-2 text-xs text-gray-600 leading-normal border-t border-slate-100">
+                         <MarkdownContent content={p.retrieved_contexts[p.retrieved_contexts.length - 1]} />
                        </div>
                      </details>
                   )}
@@ -939,6 +1020,7 @@ function App() {
   const [profileModal, setProfileModal] = useState(false);
   const [testClaimModal, setTestClaimModal] = useState(false);
   const [conversations, setConversations] = useState([]);
+  const [testConversations, setTestConversations] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Expose to dashboard header
@@ -956,7 +1038,8 @@ function App() {
     policies: null,
     activeAgent: null,
     claimData: null,
-    testParams: null
+    testParams: null,
+    sessionType: "advice"
   });
 
   const wsRef = useRef(null);
@@ -985,9 +1068,14 @@ function App() {
 
   const fetchConversations = async () => {
     try {
-      const resp = await fetch("/api/conversations");
-      const data = await resp.json();
-      setConversations(data.conversations || []);
+      const [adviceResp, testResp] = await Promise.all([
+        fetch("/api/conversations?type=advice"),
+        fetch("/api/conversations?type=test")
+      ]);
+      const adviceData = await adviceResp.json();
+      const testData = await testResp.json();
+      setConversations(adviceData.conversations || []);
+      setTestConversations(testData.conversations || []);
     } catch (e) {}
   };
 
@@ -1043,7 +1131,11 @@ function App() {
   const handleSend = async (text) => {
     setConsultantData(prev => ({...prev, messages: [...prev.messages, mkMsg("user", text)]}));
     if (!consultantData.sessionId) {
-      const resp = await fetch("/api/sessions", { method: "POST" });
+      const resp = await fetch("/api/sessions", { 
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: consultantData.sessionType || "advice" })
+      });
       const { session_id } = await resp.json();
       setConsultantData(prev => ({...prev, sessionId: session_id}));
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -1061,10 +1153,13 @@ function App() {
   const loadConversation = async (conv) => {
     if (wsRef.current) wsRef.current.close();
     
-    // Attempt to guess activeAgent from phase/state
+    // Decide what to show on the right panel based on advice_entity
     let agent = null;
-    if (conv.state_data?.user_requirements) agent = "new_life_insurance";
-    else if (conv.state_data?.claim_state?.primary_diagnosis) agent = "claiming_strategy";
+    if (conv.advice_entity === "claim") agent = "claiming_strategy";
+    else if (conv.advice_entity === "purchase") agent = "new_life_insurance";
+    // Fallback for legacy conversations
+    else if (conv.type === "test" || conv.state_data?.claim_state) agent = "claiming_strategy";
+    else if (conv.state_data?.user_requirements) agent = "new_life_insurance";
 
     setConsultantData({
       sessionId: conv.id,
@@ -1072,13 +1167,17 @@ function App() {
       isWaiting: false,
       isTyping: false,
       phase: conv.phase || "idle",
-      activeTab: "requirements",
+      activeTab: conv.state_data?.policies ? "policies" : (conv.state_data?.criteria ? "criteria" : "requirements"),
       requirements: conv.state_data?.user_requirements || null,
       criteria: conv.state_data?.criteria || null,
       policies: conv.state_data?.policies || null,
       activeAgent: agent,
-      claimData: conv.state_data?.claim_state?.primary_diagnosis ? { details: conv.state_data.claim_state } : null,
-      testParams: null
+      claimData: conv.state_data?.claim_state ? { 
+        ...conv.state_data.claim_state,
+        details: conv.state_data.claim_state 
+      } : null,
+      testParams: conv.state_data?.test_params || null,
+      sessionType: conv.type || "advice"
     });
     
     try {
@@ -1117,7 +1216,8 @@ function App() {
       policies: null,
       activeAgent: null,
       claimData: null,
-      testParams: null
+      testParams: null,
+      sessionType: "advice"
     });
     fetchConversations();
     setView("consultant");
@@ -1137,10 +1237,15 @@ function App() {
       policies: null,
       activeAgent: "claiming_strategy",
       claimData: null,
-      testParams: params
+      testParams: params,
+      sessionType: "test"
     });
     
-    const resp = await fetch("/api/sessions", { method: "POST" });
+    const resp = await fetch("/api/sessions", { 
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "test" })
+    });
     const { session_id } = await resp.json();
     setConsultantData(prev => ({...prev, sessionId: session_id}));
     
@@ -1199,106 +1304,119 @@ function App() {
     </div>
   );
 
-  if (view === "consultant") return (
-    <div className="h-screen flex flex-col bg-slate-50/50">
-      <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 transition-all">
-        <div className="flex items-center gap-6">
-          <button onClick={() => setView("dashboard")} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-gray-950 flex items-center justify-center transition-all">←</button>
-          <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-blue-600 flex items-center justify-center transition-all" title="Toggle History">☰</button>
-          <div>
-            <h1 className="font-black text-gray-950 text-base tracking-tight leading-none mb-1">Expert Advice</h1>
-            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Consultation Session</p>
-          </div>
-        </div>
-        {consultantData.activeAgent === "new_life_insurance" && <PhaseBar phase={consultantData.phase} />}
-        {consultantData.activeAgent === "claiming_strategy" && (
-           <div className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full flex items-center gap-2 border border-blue-100">
-               <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-               Claim Strategy Engine
-           </div>
-        )}
-      </header>
-      <div className="flex-1 flex overflow-hidden justify-center bg-slate-50/50">
-        
-        <div className={`transition-all duration-300 bg-white border-r border-slate-100 flex flex-col h-full z-20 ${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-none'}`}>
-          <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-            <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest whitespace-nowrap">History</h3>
-            <button onClick={handleStartAdvice} className="text-[10px] font-black bg-white shadow-sm ring-1 ring-slate-100 text-blue-600 px-3 py-1.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap">+ New</button>
-          </div>
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
-            {conversations.map(c => (
-              <div key={c.id} className={`group relative w-full text-left p-4 rounded-2xl transition-all cursor-pointer ${consultantData.sessionId === c.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-100/50' : 'bg-slate-50 text-gray-900 border border-slate-100 hover:bg-blue-50 hover:ring-1 hover:ring-blue-100'}`} onClick={() => loadConversation(c)}>
-                <div className={`text-xs font-bold truncate mb-1 pr-12 ${consultantData.sessionId === c.id ? 'text-white' : ''}`}>{c.title || "New Conversation"}</div>
-                <div className={`text-[9px] font-black uppercase tracking-widest ${consultantData.sessionId === c.id ? 'text-blue-200' : 'text-gray-400'}`}>{new Date(c.updated_at + "Z").toLocaleString()}</div>
-                
-                <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                  <button onClick={(e) => handleRenameConversation(e, c.id, c.title)} className={`w-6 h-6 rounded flex items-center justify-center text-[10px] ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-blue-800' : 'bg-white text-gray-400 hover:bg-blue-100 hover:text-blue-600 shadow-sm'}`} title="Rename">✎</button>
-                  <button onClick={(e) => handleDeleteConversation(e, c.id)} className={`w-6 h-6 rounded flex items-center justify-center text-[14px] leading-none ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-red-500' : 'bg-white text-gray-400 hover:bg-red-100 hover:text-red-600 shadow-sm'}`} title="Delete">&times;</button>
-                </div>
+  return (
+    <div className="h-screen w-full relative overflow-hidden">
+      {view === "consultant" ? (
+        <div className="h-screen flex flex-col bg-slate-50/50">
+          <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 transition-all">
+            <div className="flex items-center gap-6">
+              <button onClick={() => setView("dashboard")} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-gray-950 flex items-center justify-center transition-all">←</button>
+              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-blue-600 flex items-center justify-center transition-all" title="Toggle History">☰</button>
+              <div>
+                <h1 className="font-black text-gray-950 text-base tracking-tight leading-none mb-1">
+                  {consultantData.sessionType === "test" ? "Scenario Testing" : "Expert Advice"}
+                </h1>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                  {consultantData.sessionType === "test" ? "Quality Assurance Mode" : "Consultation Session"}
+                </p>
               </div>
-            ))}
-            {conversations.length === 0 && (
-              <div className="text-center p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">No history found</div>
+            </div>
+            {consultantData.activeAgent === "new_life_insurance" && <PhaseBar phase={consultantData.phase} />}
+            {consultantData.activeAgent === "claiming_strategy" && (
+               <div className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full flex items-center gap-2 border border-blue-100">
+                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                   Claim Strategy Engine
+               </div>
+            )}
+          </header>
+          <div className="flex-1 flex overflow-hidden justify-center bg-slate-50/50">
+            
+            <div className={`transition-all duration-300 bg-white border-r border-slate-100 flex flex-col h-full z-20 ${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-none'}`}>
+              <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest whitespace-nowrap">History</h3>
+                <button 
+                  onClick={consultantData.sessionType === "test" ? () => setTestClaimModal(true) : handleStartAdvice} 
+                  className="text-[10px] font-black bg-white shadow-sm ring-1 ring-slate-100 text-blue-600 px-3 py-1.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
+                >
+                  + New
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {(consultantData.sessionType === "test" ? testConversations : conversations).map(c => (
+                  <div key={c.id} className={`group relative w-full text-left p-4 rounded-2xl transition-all cursor-pointer ${consultantData.sessionId === c.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-100/50' : 'bg-slate-50 text-gray-900 border border-slate-100 hover:bg-blue-50 hover:ring-1 hover:ring-blue-100'}`} onClick={() => loadConversation(c)}>
+                    <div className={`text-xs font-bold truncate mb-1 pr-12 ${consultantData.sessionId === c.id ? 'text-white' : ''}`}>{c.title || "New Conversation"}</div>
+                    <div className={`text-[9px] font-black uppercase tracking-widest ${consultantData.sessionId === c.id ? 'text-blue-200' : 'text-gray-400'}`}>{new Date(c.updated_at + "Z").toLocaleString()}</div>
+                    
+                    <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                      <button onClick={(e) => handleRenameConversation(e, c.id, c.title)} className={`w-6 h-6 rounded flex items-center justify-center text-[10px] ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-blue-800' : 'bg-white text-gray-400 hover:bg-blue-100 hover:text-blue-600 shadow-sm'}`} title="Rename">✎</button>
+                      <button onClick={(e) => handleDeleteConversation(e, c.id)} className={`w-6 h-6 rounded flex items-center justify-center text-[14px] leading-none ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-red-500' : 'bg-white text-gray-400 hover:bg-red-100 hover:text-red-600 shadow-sm'}`} title="Delete">&times;</button>
+                    </div>
+                  </div>
+                ))}
+                {(consultantData.sessionType === "test" ? testConversations : conversations).length === 0 && (
+                  <div className="text-center p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">No history found</div>
+                )}
+              </div>
+            </div>
+
+            <div className={`flex flex-col transition-all duration-500 bg-white ${consultantData.activeAgent ? 'w-1/3 border-r border-slate-100 shadow-[10px_0_30px_rgb(0,0,0,0.03)] z-10' : 'w-full max-w-3xl border-x border-slate-100 shadow-xl'}`}>
+              {consultantData.testParams && (
+                 <div className="bg-purple-50 p-4 border-b border-purple-100 flex flex-wrap gap-4 text-xs">
+                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Age:</span> <span className="text-purple-900">{consultantData.testParams.patient_age}</span></div>
+                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Truth:</span> <span className="text-purple-900">{consultantData.testParams.ground_truth}</span></div>
+                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Stage:</span> <span className="text-purple-900">{consultantData.testParams.stage}</span></div>
+                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Costs:</span> <span className="text-purple-900">{consultantData.testParams.costs}</span></div>
+                 </div>
+              )}
+              <ChatPanel 
+                 messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
+                 isTyping={consultantData.isTyping} phase={consultantData.phase}
+                 onSend={handleSend} isStarted={!!consultantData.sessionId}
+              />
+            </div>
+            
+            {consultantData.activeAgent && (
+               <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
+                 {consultantData.activeAgent === "new_life_insurance" && (
+                   <>
+                     <div className="bg-white border-b border-gray-100 flex gap-4 px-8 pt-5 shadow-sm relative z-10">
+                        {['requirements', 'criteria', 'policies'].map(t => (
+                          <button 
+                            key={t} onClick={() => setConsultantData(prev => ({...prev, activeTab: t}))}
+                            className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all ${consultantData.activeTab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                     </div>
+                     <div className="flex-1 overflow-hidden bg-slate-50 z-0">
+                       {consultantData.activeTab === 'requirements' && <RequirementsView data={consultantData.requirements} />}
+                       {consultantData.activeTab === 'criteria' && <CriteriaView data={consultantData.criteria} />}
+                       {consultantData.activeTab === 'policies' && <PoliciesView data={consultantData.policies} />}
+                     </div>
+                   </>
+                 )}
+                 
+                 {consultantData.activeAgent === "claiming_strategy" && (
+                    <ClaimingPanel data={consultantData.claimData} />
+                 )}
+               </div>
             )}
           </div>
         </div>
-
-        <div className={`flex flex-col transition-all duration-500 bg-white ${consultantData.activeAgent ? 'w-1/3 border-r border-slate-100 shadow-[10px_0_30px_rgb(0,0,0,0.03)] z-10' : 'w-full max-w-3xl border-x border-slate-100 shadow-xl'}`}>
-          {consultantData.testParams && (
-             <div className="bg-purple-50 p-4 border-b border-purple-100 flex flex-wrap gap-4 text-xs">
-                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Age:</span> <span className="text-purple-900">{consultantData.testParams.patient_age}</span></div>
-                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Truth:</span> <span className="text-purple-900">{consultantData.testParams.ground_truth}</span></div>
-                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Stage:</span> <span className="text-purple-900">{consultantData.testParams.stage}</span></div>
-                <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Costs:</span> <span className="text-purple-900">{consultantData.testParams.costs}</span></div>
-             </div>
-          )}
-          <ChatPanel 
-             messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
-             isTyping={consultantData.isTyping} phase={consultantData.phase}
-             onSend={handleSend} isStarted={!!consultantData.sessionId}
-          />
-        </div>
-        
-        {consultantData.activeAgent && (
-           <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
-             {consultantData.activeAgent === "new_life_insurance" && (
-               <>
-                 <div className="bg-white border-b border-gray-100 flex gap-4 px-8 pt-5 shadow-sm relative z-10">
-                    {['requirements', 'criteria', 'policies'].map(t => (
-                      <button 
-                        key={t} onClick={() => setConsultantData(prev => ({...prev, activeTab: t}))}
-                        className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all ${consultantData.activeTab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                 </div>
-                 <div className="flex-1 overflow-hidden bg-slate-50 z-0">
-                   {consultantData.activeTab === 'requirements' && <RequirementsView data={consultantData.requirements} />}
-                   {consultantData.activeTab === 'criteria' && <CriteriaView data={consultantData.criteria} />}
-                   {consultantData.activeTab === 'policies' && <PoliciesView data={consultantData.policies} />}
-                 </div>
-               </>
-             )}
-             
-             {consultantData.activeAgent === "claiming_strategy" && (
-                <ClaimingPanel data={consultantData.claimData} />
-             )}
-           </div>
-        )}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="h-screen w-full relative overflow-hidden">
-      <DashboardView 
-        user={user} policies={policies} 
-        onAddPolicy={() => setModal({})} onEditPolicy={(p) => setModal(p)}
-        onDeletePolicy={deletePolicy} onStartAdvice={handleStartAdvice}
-        onTestClaim={() => setTestClaimModal(true)}
-        onLogout={() => window.location.href = "/api/auth/logout"}
-      />
+      ) : (
+        <DashboardView 
+          user={user} policies={policies} 
+          onAddPolicy={() => setModal({})} onEditPolicy={(p) => setModal(p)}
+          onDeletePolicy={deletePolicy} onStartAdvice={handleStartAdvice}
+          onTestClaim={() => {
+            setConsultantData(prev => ({ ...prev, sessionType: "test" }));
+            setView("consultant");
+            setTestClaimModal(true);
+          }}
+          onLogout={() => window.location.href = "/api/auth/logout"}
+        />
+      )}
       {modal && <PolicyModal policy={modal.id ? modal : null} onClose={() => setModal(null)} onSave={savePolicy} />}
       {profileModal && <ProfileModal user={user} onClose={() => setProfileModal(false)} onSave={saveProfile} />}
       {testClaimModal && <TestClaimingModal onClose={() => setTestClaimModal(false)} onStartTest={handleStartTestClaim} />}

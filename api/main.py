@@ -18,6 +18,7 @@ from api.session_manager import SessionManager
 from starlette.middleware.sessions import SessionMiddleware
 from api.auth import router as auth_router
 from api.db import (
+    init_db,
     get_user_policies, create_policy, update_policy, delete_policy,
     get_user_conversations, get_conversation, create_conversation, 
     get_conversation_messages, delete_conversation, update_conversation_title
@@ -41,6 +42,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api")
 
 session_manager = SessionManager()
+init_db()
 
 # --- Policy Management Endpoints ---
 
@@ -80,6 +82,15 @@ async def remove_policy(policy_id: int, request: Request):
         return {"error": "Not authenticated"}
     success = delete_policy(policy_id, user["id"])
     return {"success": success}
+
+@app.post("/api/test_claim/random")
+async def get_random_test_scenario(request: Request):
+    from langchain_openai import ChatOpenAI
+    from agents.claim_test_agent.random_scenario import generate_random_scenario
+    
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.8, api_key=os.getenv("OPENAI_API_KEY"))
+    scenario = generate_random_scenario(llm)
+    return scenario.model_dump()
 
 @app.post("/api/policies/parse")
 async def parse_policy(request: Request, file: UploadFile = File(...)):
@@ -133,17 +144,25 @@ async def create_session(request: Request):
     user = request.session.get("user")
     if not user:
         return {"error": "Not authenticated"}
+    
+    # Check if a type was provided in the JSON body
+    try:
+        data = await request.json()
+        conv_type = data.get("type", "advice")
+    except:
+        conv_type = "advice"
+        
     session_id = str(uuid.uuid4())
-    create_conversation(session_id, user["id"], title="New Conversation")
+    create_conversation(session_id, user["id"], title="New Conversation", session_type=conv_type)
     session_manager.create_session(session_id)
     return {"session_id": session_id}
 
 @app.get("/api/conversations")
-async def list_conversations(request: Request):
+async def list_conversations(request: Request, type: str = None):
     user = request.session.get("user")
     if not user:
         return {"error": "Not authenticated", "conversations": []}
-    convs = get_user_conversations(user["id"])
+    convs = get_user_conversations(user["id"], session_type=type)
     return {"conversations": convs}
 
 @app.delete("/api/conversations/{session_id}")
@@ -206,6 +225,7 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
         session = session_manager.create_session(session_id)
         # Load state from DB
         session.phase = conv.get("phase", "idle")
+        session.advice_entity = conv.get("advice_entity")
         state = conv.get("state_data", {})
         session.user_requirements = state.get("user_requirements")
         session.criteria = state.get("criteria")

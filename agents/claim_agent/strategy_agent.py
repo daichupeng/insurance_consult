@@ -4,7 +4,7 @@ from langchain_core.messages import SystemMessage
 from agents.claim_agent.substates import TreatmentState
 
 def strategy_node(state: TreatmentState, llm) -> Dict:
-    print("[ClaimAgent] Running planner...")
+    print("[ClaimAgent]: Drafting a claim strategy...")
     diagnosis = state.get('diagnosis')
     symptoms = state.get('symptoms', [])
     tests_done = state.get('tests_done', [])
@@ -13,6 +13,8 @@ def strategy_node(state: TreatmentState, llm) -> Dict:
     tests_needed = state.get('tests_needed', [])
     procedures_needed = state.get('procedures_needed', [])
     prescriptions_needed = state.get('prescriptions_needed', [])
+    estimated_future_costs = state.get('estimated_future_costs', [])
+    estimated_future_costs = "\n".join([f"{c.item_name}: {c.item_cost}" for c in estimated_future_costs])
     policies_context = []
     for p in state.get("relevant_policies", []):
         if p.get('retrieved_contexts'):
@@ -54,16 +56,27 @@ def strategy_node(state: TreatmentState, llm) -> Dict:
     Tests needed: {tests_needed}
     Procedures needed: {procedures_needed}
     Prescriptions needed: {prescriptions_needed}
+    Estimated costs: {estimated_future_costs}
     
     Available Policies and Context:
     {ctx_str}
     
     {reviewer_text}
     Draft a comprehensive claim strategy, including the following information:
-    - Which policy or policies should cover the cost
-    - How much each policy should cover and how much the user has to pay out of pocket
-    - Payment method. Whether certain policy can be used to pay the bill directly or only reimburse the user after payment.
-    - Claim steps. If the user has multiple policies, suggest the order in which to claim from them.
+    1. For already incurred costs:
+        - Which policy or policies should cover the cost
+        - How much each policy should cover and how much the user has to pay out of pocket. Try to combine policy coverages where possible, to minimize out-of-pocket costs.
+        - Claim steps. If the user has multiple policies, suggest the order in which to claim from them.
+    2. For future treatment plan:
+        - What treatment / test / procedures / consultation to do, in order. Specify whether to go to public or private hospitals / clinics.
+        - Which policy or policies should cover the cost and what should the user expect to pay out-of-pocket. Try to minimize out-of-pocket costs, while ensuring medical quality as the highest priority. 
+        - Claim procedure, pay and reimburse or use insurance card for direct payment
+        - Try to combine policy coverages where possible, to minimize out-of-pocket costs.
+        - For example:
+            - Step 1: Go to private GP for fast diagnosis and referral, since the patient has outpatient coverage at private GP clinics. The user has to pay $10 out of pocket as copayment, under policy A. The patient can use the policy card to pay for the balance directly.
+            - Step 2: Arrange an appointment at public hospital for blood test and X-ray, since the condition is likely not urgent, and the coverage for public hospital is higher. The consultation will likely cost $200, the blood test will cost $80. The patient can pay first and then claim all the costs under policy B.
+            - Step 3: Get prescriptions from public hospital. The medication X will cost around $30. The patient can pay the bills first and then claim from policy B.
+            
 
     Explain the reasoning of the plan.
     """

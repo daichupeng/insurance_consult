@@ -6,6 +6,7 @@ import json
 DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "databases", "insurance.db")
 
 def get_db():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
@@ -81,11 +82,21 @@ def init_db():
         title VARCHAR,
         phase VARCHAR,
         state_data TEXT,
+        type VARCHAR DEFAULT 'advice',
+        advice_entity VARCHAR,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY(user_id) REFERENCES users (id)
     )
     """)
+    
+    # Auto-migration for conversations table
+    cursor.execute("PRAGMA table_info(conversations)")
+    existing_conv_columns = [row[1] for row in cursor.fetchall()]
+    if "type" not in existing_conv_columns:
+        cursor.execute("ALTER TABLE conversations ADD COLUMN type VARCHAR DEFAULT 'advice'")
+    if "advice_entity" not in existing_conv_columns:
+        cursor.execute("ALTER TABLE conversations ADD COLUMN advice_entity VARCHAR")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS messages (
@@ -207,9 +218,12 @@ def delete_policy(policy_id: int, user_id: int) -> bool:
     return rows > 0
 
 # Conversation operations
-def get_user_conversations(user_id: int) -> List[Dict[str, Any]]:
+def get_user_conversations(user_id: int, session_type: Optional[str] = None) -> List[Dict[str, Any]]:
     conn = get_db()
-    convs = conn.execute("SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC", (user_id,)).fetchall()
+    if session_type:
+        convs = conn.execute("SELECT * FROM conversations WHERE user_id = ? AND type = ? ORDER BY updated_at DESC", (user_id, session_type)).fetchall()
+    else:
+        convs = conn.execute("SELECT * FROM conversations WHERE user_id = ? ORDER BY updated_at DESC", (user_id,)).fetchall()
     conn.close()
     return [dict(c) for c in convs]
 
@@ -223,30 +237,38 @@ def get_conversation(conv_id: str) -> Optional[Dict[str, Any]]:
         return c
     return None
 
-def create_conversation(conv_id: str, user_id: int, title: str = "New Conversation", phase: str = "idle", state_data: dict = {}) -> Dict[str, Any]:
+def create_conversation(conv_id: str, user_id: int, title: str = "New Conversation", phase: str = "idle", state_data: dict = {}, session_type: str = "advice") -> Dict[str, Any]:
     conn = get_db()
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO conversations (id, user_id, title, phase, state_data)
-        VALUES (?, ?, ?, ?, ?)
-    """, (conv_id, user_id, title, phase, json.dumps(state_data)))
+        INSERT INTO conversations (id, user_id, title, phase, state_data, type, advice_entity)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (conv_id, user_id, title, phase, json.dumps(state_data), session_type, None))
     conn.commit()
     conn.close()
-    return {"id": conv_id, "user_id": user_id, "title": title, "phase": phase, "state_data": state_data}
+    return {"id": conv_id, "user_id": user_id, "title": title, "phase": phase, "state_data": state_data, "type": session_type}
 
-def update_conversation(conv_id: str, phase: str, state_data: dict, title: Optional[str] = None):
+def update_conversation(conv_id: str, phase: str, state_data: dict, title: Optional[str] = None, advice_entity: Optional[str] = None):
     conn = get_db()
     cursor = conn.cursor()
+    
+    fields = ["phase = ?", "state_data = ?", "updated_at = CURRENT_TIMESTAMP"]
+    params = [phase, json.dumps(state_data)]
+    
     if title is not None:
-        cursor.execute("""
-            UPDATE conversations SET phase = ?, state_data = ?, title = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (phase, json.dumps(state_data), title, conv_id))
-    else:
-        cursor.execute("""
-            UPDATE conversations SET phase = ?, state_data = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-        """, (phase, json.dumps(state_data), conv_id))
+        fields.append("title = ?")
+        params.append(title)
+    
+    if advice_entity is not None:
+        fields.append("advice_entity = ?")
+        params.append(advice_entity)
+        
+    params.append(conv_id)
+    
+    cursor.execute(f"""
+        UPDATE conversations SET {', '.join(fields)}
+        WHERE id = ?
+    """, tuple(params))
     conn.commit()
     conn.close()
 

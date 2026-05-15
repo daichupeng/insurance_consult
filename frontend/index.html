@@ -10,11 +10,115 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* Critical Markdown Overrides */
+    .markdown-content,
+    .prose {
+      display: block !important;
+      font-family: inherit !important;
+      color: #374151 !important;
+      line-height: 1.7 !important;
+      font-size: 14px !important;
+    }
+
+    .prose h1,
+    .markdown-content h1 {
+      font-size: 28px !important;
+      font-weight: 900 !important;
+      margin-top: 24px !important;
+      margin-bottom: 16px !important;
+      color: #111827 !important;
+      display: block !important;
+    }
+
+    .prose h2,
+    .markdown-content h2 {
+      font-size: 22px !important;
+      font-weight: 900 !important;
+      margin-top: 20px !important;
+      margin-bottom: 12px !important;
+      color: #111827 !important;
+      display: block !important;
+    }
+
+    .prose h3,
+    .markdown-content h3 {
+      font-size: 18px !important;
+      font-weight: 900 !important;
+      margin-top: 16px !important;
+      margin-bottom: 8px !important;
+      color: #111827 !important;
+      display: block !important;
+    }
+
+    .prose h4,
+    .markdown-content h4 {
+      font-size: 16px !important;
+      font-weight: 900 !important;
+      margin-top: 12px !important;
+      margin-bottom: 8px !important;
+      color: #111827 !important;
+      display: block !important;
+    }
+
+    .prose p,
+    .markdown-content p {
+      margin-bottom: 12px !important;
+      display: block !important;
+    }
+
+    .prose ul,
+    .markdown-content ul {
+      list-style-type: disc !important;
+      list-style-position: outside !important;
+      margin: 16px 0 !important;
+      padding-left: 32px !important;
+      display: block !important;
+    }
+
+    .prose ol,
+    .markdown-content ol {
+      list-style-type: decimal !important;
+      list-style-position: outside !important;
+      margin: 16px 0 !important;
+      padding-left: 32px !important;
+      display: block !important;
+    }
+
+    .prose li,
+    .markdown-content li {
+      margin-bottom: 8px !important;
+      display: list-item !important;
+      list-style: inherit !important;
+    }
+
+    .prose li::marker {
+      color: #2563eb !important;
+      font-size: 1.1em !important;
+    }
+
+    .prose strong,
+    .markdown-content strong {
+      font-weight: 900 !important;
+      color: #000000 !important;
+    }
+
+    .prose blockquote,
+    .markdown-content blockquote {
+      border-left: 4px solid #3b82f6 !important;
+      background: #f8fafc !important;
+      padding: 12px 16px !important;
+      margin: 16px 0 !important;
+      font-style: italic !important;
+      border-radius: 0 8px 8px 0 !important;
+    }
+  </style>
 </head>
 
 <body class="bg-slate-100 h-screen overflow-hidden">
   <div id="root" class="h-full"></div>
-  <script type="text/babel" src="app.js?v=38"></script>
+  <script type="text/babel" src="app.js?v=53"></script>
 </body>
 
 </html>

@@ -6,9 +6,9 @@ from agents.claim_agent.substates import TreatmentState
 from graphs.claim_agent.state import Diagnosis
 
 class TreatmentPlan(BaseModel):
-    consultations_needed: List[str]
-    tests_needed: List[str]
-    procedures_needed: List[str]
+    consultations_needed: List[str] = Field(description="List of consultations needed with their specialty, e.g. 'Consultation with orthopedic specialist'")
+    tests_needed: List[str] = Field(description="List of tests needed, e.g. 'MRI of the knee'")
+    procedures_needed: List[str] = Field(description="List of procedures needed, including surgeries, operations, physical therapies, hospitalisation, etc.")
     prescriptions_needed: List[str]
 
 
@@ -16,6 +16,7 @@ def treatment_node(state: TreatmentState, llm) -> Dict:
     print("[ClaimAgent]: treatment analysis...")
     system_prompt = """
     You are an expert medical doctor. A patient is suspected to have a condition. You need to propose a combination of tests, prescriptions, treatments, procedures and surgeries for the suspected condition. Do not repeat the tests that have already been done, the prescriptions and procedures that have already been conducted.
+    If all reasonable procedures and surgeries / consultations / prescriptions have been done to treat the condition, explicitly say "no further treatments needed".
     """
 
     user_prompt = """

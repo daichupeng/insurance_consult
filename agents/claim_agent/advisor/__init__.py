@@ -12,6 +12,7 @@ from agents.claim_agent.treatment_agent import treatment_node
 from agents.claim_agent.context_retriever import context_retriever
 from agents.claim_agent.policy_fetcher import policy_fetcher
 from agents.claim_agent.strategy_agent import strategy_node
+from agents.claim_agent.treatment_cost_agent import treatment_cost_node
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class PlannerDecision(BaseModel):
     context_to_search: str = Field(description="Only populate if next_node='fetcher'. Specify the medical conditions or treatment items to focus on when retrieving policy contexts. This will guide the context_retriever.", default="")
 
 def planner_node(state: TreatmentState, llm) -> Dict:
+    print("[ClaimAgent]: Running planner")
     prompt = """
     You are the Planner in a Claim Incident Analysis team.
     Our goal: with the treatments for the user's medical condition, devise the best strategy to claim the cost under insurance policy.
@@ -37,6 +39,7 @@ def planner_node(state: TreatmentState, llm) -> Dict:
     Tests needed: {tests_needed}
     Procedures needed: {procedures_needed}
     Prescriptions needed: {prescriptions_needed}
+    Estimated future costs: {estimated_future_costs}
 
     Relevant insurance policy contexts:
     {contexts}
@@ -63,6 +66,8 @@ def planner_node(state: TreatmentState, llm) -> Dict:
     tests_needed = state.get('tests_needed', [])
     procedures_needed = state.get('procedures_needed', [])
     prescriptions_needed = state.get('prescriptions_needed', [])
+    estimated_future_costs = state.get('estimated_future_costs', [])
+    estimated_future_costs = "\n".join([f"{c.item_name}: {c.item_cost}" for c in estimated_future_costs])
     strategy = state.get('claim_strategy', '')
     policies_context = []
     for p in state.get("relevant_policies", []):
@@ -74,7 +79,7 @@ def planner_node(state: TreatmentState, llm) -> Dict:
     if not review_str: 
         review_str = "None."
     
-    formatted_prompt = prompt.format(diagnosis=diagnosis, symptoms=symptoms, tests_done=tests_done, procedures_conducted=procedures_conducted, consultations_needed=consultations_needed, tests_needed=tests_needed, procedures_needed=procedures_needed, prescriptions_needed=prescriptions_needed, strategy=strategy, review=review_str, contexts=contexts)
+    formatted_prompt = prompt.format(diagnosis=diagnosis, symptoms=symptoms, tests_done=tests_done, procedures_conducted=procedures_conducted, consultations_needed=consultations_needed, tests_needed=tests_needed, procedures_needed=procedures_needed, prescriptions_needed=prescriptions_needed, estimated_future_costs=estimated_future_costs, strategy=strategy, review=review_str, contexts=contexts)
     structured_llm = llm.with_structured_output(PlannerDecision, method="function_calling")
     resp: PlannerDecision = structured_llm.invoke([SystemMessage(content=formatted_prompt)])
     
@@ -89,7 +94,7 @@ class ReviewDecision(BaseModel):
     feedback: str = Field(description="If is_passed is False, explain what is missing or wrong.")
 
 def reviewer_node(state: TreatmentState, llm) -> Dict:
-    print("[ClaimAgent]: reviewing findings...")
+    print("[ClaimAgent]: reviewing strategy...")
     prompt = """
     You are the Reviewer in a Claim Incident Analysis team. Review the condition, relevant insurance contexts, and the claiming strategy for this user.
 
@@ -106,6 +111,7 @@ def reviewer_node(state: TreatmentState, llm) -> Dict:
     Tests needed: {tests_needed}
     Procedures needed: {procedures_needed}
     Prescriptions needed: {prescriptions_needed}
+    Estimated costs: {estimated_future_costs}
 
     Relevant insurance policy contexts:
     {contexts}
@@ -128,6 +134,8 @@ def reviewer_node(state: TreatmentState, llm) -> Dict:
         if p.get('retrieved_contexts'):
             policies_context.append(f"Policy: {p['insurance_name']}\nContext: {p['retrieved_contexts'][-1]}")
     contexts = "\n\n".join(policies_context) if policies_context else "None."
+    estimated_future_costs = state.get('estimated_future_costs', [])
+    estimated_future_costs = "\n".join([f"{c.item_name}: {c.item_cost}" for c in estimated_future_costs])
     
     formatted = prompt.format(
         diagnosis=diagnosis,
@@ -138,6 +146,7 @@ def reviewer_node(state: TreatmentState, llm) -> Dict:
         tests_needed=tests_needed,
         procedures_needed=procedures_needed,
         prescriptions_needed=prescriptions_needed,
+        estimated_future_costs=estimated_future_costs,
         contexts=contexts,
         strategy=strategy
     )
@@ -173,9 +182,11 @@ def build_advisor_graph(llm):
     builder.add_node("fetcher", policy_fetcher)
     builder.add_node("strategy", partial(strategy_node, llm=llm))
     builder.add_node("reviewer", partial(reviewer_node, llm=llm))
+    builder.add_node("treatment_cost", partial(treatment_cost_node, llm=llm))
     
     builder.add_edge(START, "treatment")
-    builder.add_edge("treatment", "planner")
+    builder.add_edge("treatment","treatment_cost")
+    builder.add_edge("treatment_cost", "planner")
     builder.add_conditional_edges("planner", route_planner, {
         "fetcher": "fetcher",
         "strategy": "strategy",
@@ -215,6 +226,7 @@ def advisor_node(state: AdvisorTask, llm,) -> Dict:
         procedures_needed=final_inner.get("procedures_needed"),
         prescriptions_needed=final_inner.get("prescriptions_needed"),
         relevant_context=final_inner.get("relevant_context"),
+        estimated_future_costs=final_inner.get("estimated_future_costs", []),
         claim_strategy=final_inner.get("claim_strategy"),
     )
         

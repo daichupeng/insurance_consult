@@ -38,8 +38,15 @@ def planner_node(state: AnalyzerState, llm) -> Dict:
     The user's insurance coverage should not be listed as a missing information since it is saved in the system.
     You should not ask the user about insurance coverage, or potential costs yet to be incurred. If you need information on future costs, you can get the cost agent to make reasonable estimates.
     If the user is unable to provide certain information due to the nature of the incident or current constraints, do not ask the question persistently. 
+ 
+    Address the review of the findings if there is any. Only route to 'reviewer' if you think the comments in the review have been addressed.
+ 
+    Decide the next step:
+    1. 'medical': Use medical subagent to get a list of questions regarding medical symptoms, test results, and diagnosis. Also use this agent to record the medical information into the **information recorded**. When you suspect there are more medical related information the user could provide, use this node to generate a list of missing information to ask the user.
+    2. 'cost': Use cost subagent to generate a list of questions regarding medical costs and record the costs provided by user into the **information recorded**.
+    3. 'ask_user': When there is any questions fed back by the sub agents that have not been answered by the user, ask the user for clarification. If the user explicitly states unable to provide certain information, do not ask for it again.
+    4. 'reviewer': All the relevant information have been gathered under **information recorded**. Now get the reviewer to review information recorded. 
     
-
     ** Information recorded **
     Symptoms reported by user:
     {symptoms_str}
@@ -59,16 +66,8 @@ def planner_node(state: AnalyzerState, llm) -> Dict:
     Review of the previous summary:
     {review}
  
-    Missing Information fed back by the sub agents:
+    Questions to ask the user:
     {missing_info_str}
- 
-    Address the review of the findings if there is any. Only route to 'reviewer' if you think the comments in the review have been addressed.
- 
-    Decide the next step:
-    1. 'medical': Use this to conduct medical related interview to capture symptoms and treatments.
-    2. 'cost': Use this to conduct cost related interview to capture all costs that have been incurred.
-    3. 'ask_user': When the subagents reports back with missing information which should be obtained from the user, such as further symptoms, medical history, tests done, costs already incurred, etc.
-    4. 'reviewer': All the information in the conversation have been gathered under **information recorded**. Now get the reviewer to review the consistency between the conversation and the information recorded. 
     """
 
     

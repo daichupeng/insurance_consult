@@ -40,6 +40,8 @@ class Session:
             "review_status": "",
             "review_feedback": ""
         }
+        self.test_params: Optional[dict] = None
+        self.advice_entity: Optional[str] = None
         
         # Lazy load orchestrator
         self._orchestrator = None
@@ -74,6 +76,7 @@ class SessionManager:
                 "user_requirements": session.user_requirements,
                 "criteria": session.criteria,
                 "policies": session.policies,
+                "test_params": getattr(session, "test_params", None)
             }
             safe_claim_state = {}
             for k, v in session.claim_state.items():
@@ -88,7 +91,7 @@ class SessionManager:
             if session.user_requirements and getattr(session.user_requirements, "get", lambda x: None)("name"):
                 title = f"Advice for {session.user_requirements.get('name')}"
                 
-            update_conversation(session.session_id, session.phase, state_data, title)
+            update_conversation(session.session_id, session.phase, state_data, title, advice_entity=session.advice_entity)
         except Exception as e:
             logger.error(f"Failed to save state: {e}")
 
@@ -399,7 +402,7 @@ class SessionManager:
                 else:
                     strategy = strategy_text if strategy_text else "No strategy was generated."
                     send({"type": "status", "phase": "complete", "message": "Claim analysis complete."})
-                    send({"type": "question", "content": f"Here is your recommended claiming strategy:\n\n{strategy}"})
+                    send({"type": "question", "content": "I have generated the recommended claiming strategy for you. You can review the step-by-step plan in the right panel under 'Claiming Summary'."})
                     session.phase = "idle"
                     # reset state for next claim
                     session.claim_state = {
@@ -427,6 +430,9 @@ class SessionManager:
         session = self.get_session(session_id)
         if not session:
             return
+        
+        session.test_params = test_params
+        session.advice_entity = "claim"
 
         def send(update: dict):
             if update.get("type") in ["question", "complete", "error", "test_patient_msg"]:
@@ -546,7 +552,7 @@ class SessionManager:
                 
                 strategy = strategy_text if strategy_text else "No strategy was generated."
                 send({"type": "status", "phase": "complete", "message": "Claim test complete."})
-                send({"type": "question", "content": f"Here is the generated claiming strategy:\n\n{strategy}"})
+                send({"type": "question", "content": "The claim strategy has been generated. You can review the results in the right panel."})
                 session.phase = "idle"
                 session.claim_state = {
                     "messages": [], "symptoms": [], "tests_done": [],
@@ -596,6 +602,12 @@ class SessionManager:
             return
 
         logger.info(f"[Session {session_id}] Action={result.intent_type}, Target={result.target_agent}")
+        
+        # Set advice entity based on target agent
+        if result.target_agent == "new_life_insurance":
+            session.advice_entity = "purchase"
+        elif result.target_agent == "claiming_strategy":
+            session.advice_entity = "claim"
         
         # Track history
         session.messages.append({"role": "user", "content": user_message})

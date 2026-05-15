@@ -27,6 +27,7 @@ class TreatmentStrategy(BaseModel):
     procedures_needed: List[str]
     prescriptions_needed: List[str]
     relevant_context: Annotated[List[str], operator.add]
+    estimated_future_costs: List[CostItem]
     claim_strategy: str
 
 class AdvisorTask(TypedDict):

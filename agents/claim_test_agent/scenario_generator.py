@@ -28,14 +28,15 @@ Persona: (Name, Age, Occupation, Lifestyle).
 The Incident: (A 2-sentence description of how the injury/illness occurred).
 Current Symptoms: (Comprehensive list of physical or visible signs the patient is experiencing).
 History: (List of historical incidents that the patient might think to be relevant)
-Knowledge Base: (A summary of what the patient thinks is wrong, and what they understood from the doctor and tests).
+Test results: (Test results the patient might have gotten. Include specific metrics if any.)
+Knowledge Base: (A summary of what the patient thinks is wrong, and what they understood from the doctor including possible or confirmed diagnosis, test results, and the treatments, prescriptions, and procedures that they already underwent).
 
 
 Example Execution
 
 User Input:
 Age: 29
-Ground Truth: Meniscal Tear
+Ground Truth: Meniscus Tear
 Stage: A&E (Prior to MRI)
 Costs: $120 Registration fee
 
@@ -43,19 +44,21 @@ Generator Output (Internal Logic):
 Persona: Active 29-year-old marathon runner.
 Symptoms: "Pop" sound during a run, knee locking, unable to fully straighten the leg, swelling like a "grapefruit."
 History: Persistent knee pain for 2 years.
+Test results: None
 Knowledge: Knows it hurts and feels "stuck."
 
 User Input:
 Age: 31
-Ground Truth: Appendicitus
+Ground Truth: Appendicitis
 Stage: Pre-surgery
-Costs: $220 consultation fee; $150 ultrasound diagnosis
+Costs: $220 consultation fee; $150 ultrasound diagnosis; $80 blood test
 
 Generator Output (Internal Logic):
 Persona: 31-year-old office worker.
 Symptoms: Sharp, stabbing pain in the lower right side of her abdomen, nausea, loss of appetite, and a low-grade fever. She feels bloated and has a constant, dull ache that intensifies with movement.
 History: None
-Knowledge: Knows about the diagnosis of appendicitus after the ultrasound test.
+Test results: Ultrasound showed inflammation around the appendix. White blood cell count of 11456 cells/uL.
+Knowledge: Knows about the diagnosis of appendicitis after the tests.
 """
 
 def scenario_generator(state: TestPatientState, llm):

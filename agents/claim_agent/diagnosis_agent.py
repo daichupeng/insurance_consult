@@ -14,7 +14,7 @@ def diagnosis_node(state: ClaimAgentState, llm) -> Dict:
 
     Instructions:
     1. Identify all possible diagnoses based on the symptoms, tests done, procedures conducted and preliminary diagnosis. 
-    2. List them all in order of probability. Set the most likely diagnosis as priority 1, the second most likely diagnosis as priority 2, and so on.
+    2. List them all in order of probability. Set the most likely diagnosis as priority 1, the second most likely diagnosis as priority 2, and so on. 
     3. For each diagnosis, provide the reasoning behind it.
     
     Provide professional, detailed, and comprehensive output.
