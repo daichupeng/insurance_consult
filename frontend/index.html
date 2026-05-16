@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Insurance Consultant</title>
+  <title>Insurance Central</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -12,113 +12,57 @@
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <style>
-    /* Critical Markdown Overrides */
-    .markdown-content,
-    .prose {
-      display: block !important;
-      font-family: inherit !important;
-      color: #374151 !important;
-      line-height: 1.7 !important;
-      font-size: 14px !important;
+    * { box-sizing: border-box; }
+
+    html, body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      background-color: #f5f5f7;
+      color: #1d1d1f;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
 
-    .prose h1,
-    .markdown-content h1 {
-      font-size: 28px !important;
-      font-weight: 900 !important;
-      margin-top: 24px !important;
-      margin-bottom: 16px !important;
-      color: #111827 !important;
-      display: block !important;
+    /* Markdown content */
+    .markdown-content {
+      display: block;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1d1d1f;
     }
-
-    .prose h2,
-    .markdown-content h2 {
-      font-size: 22px !important;
-      font-weight: 900 !important;
-      margin-top: 20px !important;
-      margin-bottom: 12px !important;
-      color: #111827 !important;
-      display: block !important;
-    }
-
-    .prose h3,
-    .markdown-content h3 {
-      font-size: 18px !important;
-      font-weight: 900 !important;
-      margin-top: 16px !important;
-      margin-bottom: 8px !important;
-      color: #111827 !important;
-      display: block !important;
-    }
-
-    .prose h4,
-    .markdown-content h4 {
-      font-size: 16px !important;
-      font-weight: 900 !important;
-      margin-top: 12px !important;
-      margin-bottom: 8px !important;
-      color: #111827 !important;
-      display: block !important;
-    }
-
-    .prose p,
-    .markdown-content p {
-      margin-bottom: 12px !important;
-      display: block !important;
-    }
-
-    .prose ul,
-    .markdown-content ul {
-      list-style-type: disc !important;
-      list-style-position: outside !important;
-      margin: 16px 0 !important;
-      padding-left: 32px !important;
-      display: block !important;
-    }
-
-    .prose ol,
-    .markdown-content ol {
-      list-style-type: decimal !important;
-      list-style-position: outside !important;
-      margin: 16px 0 !important;
-      padding-left: 32px !important;
-      display: block !important;
-    }
-
-    .prose li,
-    .markdown-content li {
-      margin-bottom: 8px !important;
-      display: list-item !important;
-      list-style: inherit !important;
-    }
-
-    .prose li::marker {
-      color: #2563eb !important;
-      font-size: 1.1em !important;
-    }
-
-    .prose strong,
-    .markdown-content strong {
-      font-weight: 900 !important;
-      color: #000000 !important;
-    }
-
-    .prose blockquote,
+    .markdown-content h1 { font-size: 22px; font-weight: 600; margin: 20px 0 10px; color: #1d1d1f; letter-spacing: -0.3px; }
+    .markdown-content h2 { font-size: 18px; font-weight: 600; margin: 16px 0 8px; color: #1d1d1f; letter-spacing: -0.2px; }
+    .markdown-content h3 { font-size: 15px; font-weight: 600; margin: 12px 0 6px; color: #1d1d1f; }
+    .markdown-content h4 { font-size: 14px; font-weight: 600; margin: 10px 0 5px; color: #1d1d1f; }
+    .markdown-content p  { margin-bottom: 10px; display: block; }
+    .markdown-content ul { list-style: disc; padding-left: 24px; margin: 10px 0; display: block; }
+    .markdown-content ol { list-style: decimal; padding-left: 24px; margin: 10px 0; display: block; }
+    .markdown-content li { margin-bottom: 5px; display: list-item; list-style: inherit; }
+    .markdown-content li::marker { color: #0071e3; }
+    .markdown-content strong { font-weight: 600; color: #1d1d1f; }
+    .markdown-content em { font-style: italic; }
     .markdown-content blockquote {
-      border-left: 4px solid #3b82f6 !important;
-      background: #f8fafc !important;
-      padding: 12px 16px !important;
-      margin: 16px 0 !important;
-      font-style: italic !important;
-      border-radius: 0 8px 8px 0 !important;
+      border-left: 3px solid #0071e3;
+      padding: 8px 14px;
+      margin: 12px 0;
+      color: #6e6e73;
+      background: #f5f5f7;
+      border-radius: 0 6px 6px 0;
     }
+    .markdown-content code {
+      background: #f5f5f7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-family: "SF Mono", "Monaco", monospace;
+      color: #0071e3;
+    }
+    .markdown-content hr { border: 0; border-top: 1px solid #e5e5ea; margin: 16px 0; }
   </style>
 </head>
 
-<body class="bg-slate-100 h-screen overflow-hidden">
-  <div id="root" class="h-full"></div>
-  <script type="text/babel" src="app.js?v=53"></script>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" src="app.js?v=60"></script>
 </body>
 
 </html>

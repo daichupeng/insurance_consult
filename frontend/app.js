@@ -10,54 +10,73 @@ function mkMsg(type, content, statusPhase) {
 
 function MarkdownContent({ content }) {
   if (!content) return null;
-  
   let html = content;
   if (typeof marked !== 'undefined') {
     try {
-      // Configuration for marked
-      const options = {
-        breaks: true,
-        gfm: true,
-        mangle: false,
-        headerIds: false
-      };
-      
-      // Handle both marked() and marked.parse()
-      if (typeof marked.parse === 'function') {
-        html = marked.parse(content, options);
-      } else if (typeof marked === 'function') {
-        html = marked(content, options);
-      }
-    } catch (e) {
-      console.error("Markdown parsing error:", e);
-    }
+      const opts = { breaks: true, gfm: true, mangle: false, headerIds: false };
+      html = typeof marked.parse === 'function' ? marked.parse(content, opts) : marked(content, opts);
+    } catch (e) { html = content.replace(/\n/g, '<br/>'); }
   } else {
-    // Basic fallback for newlines if marked is missing
     html = content.replace(/\n/g, '<br/>');
   }
-
-  return <div className="markdown-content text-gray-700 font-medium leading-relaxed" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className="markdown-content" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-// ─── Shared Components ──────────────────────────────────────────────────────
+// ─── Shared UI Atoms ─────────────────────────────────────────────────────────
+
+function IconButton({ onClick, title, children, className = "" }) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`w-8 h-8 rounded-full bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e5e5ea] hover:text-[#1d1d1f] flex items-center justify-center transition-colors text-sm ${className}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Tag({ children, color = "gray" }) {
+  const map = {
+    gray:   "bg-[#f5f5f7] text-[#6e6e73] border-[#e5e5ea]",
+    blue:   "bg-[#e8f2ff] text-[#0071e3] border-[#c2deff]",
+    green:  "bg-[#f0fdf4] text-[#15803d] border-[#bbf7d0]",
+    amber:  "bg-[#fffbeb] text-[#b45309] border-[#fde68a]",
+    red:    "bg-[#fff1f2] text-[#e11d48] border-[#fecdd3]",
+    purple: "bg-[#faf5ff] text-[#7c3aed] border-[#e9d5ff]",
+  };
+  return (
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${map[color]}`}>
+      {children}
+    </span>
+  );
+}
+
+function SectionLabel({ children }) {
+  return (
+    <div className="text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.08em] mb-3">
+      {children}
+    </div>
+  );
+}
+
+// ─── Phase Bar ───────────────────────────────────────────────────────────────
 
 function PhaseBar({ phase }) {
   const PHASES = ["profile", "criteria", "fetching", "retrieval", "scoring", "complete"];
-  const LABELS = {
-    profile: "Profile", criteria: "Criteria", fetching: "Fetching",
-    retrieval: "Retrieval", scoring: "Scoring", complete: "Complete",
-  };
+  const LABELS = { profile: "Profile", criteria: "Criteria", fetching: "Fetching", retrieval: "Retrieval", scoring: "Scoring", complete: "Complete" };
   const cur = PHASES.indexOf(phase);
   return (
-    <div className="flex items-center gap-1 text-xs select-none">
+    <div className="flex items-center gap-1 text-[11px]">
       {PHASES.map((p, i) => (
         <React.Fragment key={p}>
-          <span className={`px-2 py-0.5 rounded-full font-medium transition-all ${i < cur ? "bg-green-100 text-green-700" :
-            i === cur ? "bg-blue-600 text-white shadow-sm" :
-              "bg-gray-100 text-gray-400"
-            }`}>{LABELS[p]}</span>
+          <span className={`px-2.5 py-1 rounded-full font-medium transition-all ${
+            i < cur  ? "bg-[#f0fdf4] text-[#15803d]" :
+            i === cur ? "bg-[#0071e3] text-white" :
+                        "bg-[#f5f5f7] text-[#86868b]"
+          }`}>{LABELS[p]}</span>
           {i < PHASES.length - 1 && (
-            <span className={`text-xs ${i < cur ? "text-green-400" : "text-gray-200"}`}>›</span>
+            <span className={i < cur ? "text-[#86c96e]" : "text-[#d2d2d7]"}>›</span>
           )}
         </React.Fragment>
       ))}
@@ -65,16 +84,15 @@ function PhaseBar({ phase }) {
   );
 }
 
+// ─── Chat Components ─────────────────────────────────────────────────────────
+
 function TypingBubble() {
   return (
     <div className="flex justify-start mb-3 gap-2 msg-enter">
-      <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold shadow-sm">
-        AI
-      </div>
-      <div className="bg-white border border-gray-100 shadow-sm rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
-        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-        <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+      <div className="bg-[#f5f5f7] rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1.5">
+        <span className="w-1.5 h-1.5 bg-[#86868b] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+        <span className="w-1.5 h-1.5 bg-[#86868b] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+        <span className="w-1.5 h-1.5 bg-[#86868b] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
       </div>
     </div>
   );
@@ -84,8 +102,8 @@ function ChatMessage({ msg }) {
   if (msg.type === "status") {
     return (
       <div className="flex justify-center my-2 msg-enter">
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 text-[10px] font-bold uppercase tracking-wider">
-          <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-blue-400 inline-block" />
+        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e8f2ff] text-[#0071e3] text-[10px] font-medium">
+          <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[#0071e3] inline-block" />
           {msg.content}
         </span>
       </div>
@@ -94,8 +112,9 @@ function ChatMessage({ msg }) {
   if (msg.type === "milestone") {
     return (
       <div className="flex justify-center my-2 msg-enter">
-        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-50 border border-green-100 text-green-700 text-[10px] font-bold uppercase tracking-wider">
-          <span>✓</span>{msg.content}
+        <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f0fdf4] text-[#15803d] text-[10px] font-medium border border-[#bbf7d0]">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          {msg.content}
         </span>
       </div>
     );
@@ -103,29 +122,25 @@ function ChatMessage({ msg }) {
   if (msg.type === "error") {
     return (
       <div className="flex justify-center my-2 msg-enter">
-        <span className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs max-w-xs text-center font-bold">
-          ⚠ {msg.content}
+        <span className="px-3 py-1.5 rounded-xl bg-[#fff1f2] border border-[#fecdd3] text-[#e11d48] text-xs max-w-xs text-center font-medium">
+          {msg.content}
         </span>
       </div>
     );
   }
   if (msg.type === "user") {
     return (
-      <div className="flex justify-end mb-4 msg-enter">
-        <div className="max-w-[85%] bg-blue-600 text-white rounded-3xl rounded-br-none px-5 py-3 text-sm font-medium leading-relaxed shadow-lg shadow-blue-100">
+      <div className="flex justify-end mb-3 msg-enter">
+        <div className="max-w-[78%] bg-[#0071e3] text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm leading-relaxed">
           {msg.content}
         </div>
       </div>
     );
   }
-  // agent
   return (
-    <div className="flex justify-start mb-4 gap-3 msg-enter">
-      <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-black shadow-sm">
-        AI
-      </div>
-      <div className="max-w-[85%] bg-white border border-gray-100 shadow-sm rounded-3xl rounded-bl-none px-5 py-3 text-sm leading-relaxed text-gray-800 whitespace-pre-wrap font-medium">
-        {msg.content}
+    <div className="flex justify-start mb-3 gap-2 msg-enter">
+      <div className="max-w-[82%] bg-[#f5f5f7] rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed text-[#1d1d1f]">
+        <MarkdownContent content={msg.content} />
       </div>
     </div>
   );
@@ -136,22 +151,20 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
   const endRef = useRef(null);
   const textareaRef = useRef(null);
 
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, isTyping]);
 
   useEffect(() => {
     const ta = textareaRef.current;
     if (!ta) return;
     ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
+    ta.style.height = Math.min(ta.scrollHeight, 140) + "px";
   }, [input]);
 
   const isProcessing = ["criteria", "fetching", "retrieval", "scoring"].includes(phase) && !isWaitingAnswer;
-
-  const placeholder = !isStarted
-    ? "How can I help you today?"
-    : isWaitingAnswer ? "Type your answer..."
-      : isProcessing ? "Thinking..."
-        : "Type a message...";
+  const placeholder = !isStarted ? "How can I help you today?"
+    : isWaitingAnswer ? "Type your answer…"
+    : isProcessing ? "Thinking…"
+    : "Message…";
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -161,20 +174,18 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex flex-col flex-1 min-h-0 bg-white">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-5 py-5">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="w-20 h-20 rounded-[2.5rem] bg-blue-50 flex items-center justify-center text-4xl mb-6 shadow-inner ring-8 ring-blue-50/50">🛡️</div>
-            <h3 className="text-xl font-black text-gray-900 mb-2 tracking-tight">AI Insurance Advisor</h3>
-            <p className="text-gray-400 text-sm max-w-xs mx-auto font-medium">I'm here to help you find the best coverage based on your profile and needs.</p>
+          <div className="flex flex-col items-center justify-center h-full text-center px-6 py-12">
+            <div className="w-14 h-14 rounded-2xl bg-[#e8f2ff] flex items-center justify-center text-2xl mb-4">🛡️</div>
+            <h3 className="text-base font-semibold text-[#1d1d1f] mb-1.5 tracking-tight">AI Insurance Advisor</h3>
+            <p className="text-[#6e6e73] text-sm max-w-[240px] leading-relaxed">Here to help you find the best coverage for your needs.</p>
           </div>
         )}
         {messages.map((m) => <ChatMessage key={m.id} msg={m} />)}
@@ -182,8 +193,9 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
         <div ref={endRef} />
       </div>
 
-      <div className="p-6 bg-white flex-shrink-0 border-t border-gray-50">
-        <form onSubmit={handleSubmit} className="flex items-end gap-3 bg-slate-50 p-2 rounded-[2rem] border border-gray-100 focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all duration-300">
+      {/* Input bar */}
+      <div className="flex-shrink-0 px-4 py-3 border-t border-[#e5e5ea] bg-white">
+        <form onSubmit={handleSubmit} className="flex items-end gap-2 bg-[#f5f5f7] rounded-2xl px-3 py-2 border border-[#e5e5ea] focus-within:border-[#0071e3] focus-within:bg-white transition-all">
           <textarea
             ref={textareaRef}
             rows={1}
@@ -192,42 +204,46 @@ function ChatPanel({ messages, isWaitingAnswer, isTyping, phase, onSend, isStart
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             disabled={isProcessing}
-            className="flex-1 px-4 py-2 bg-transparent text-sm font-medium focus:outline-none disabled:opacity-40 transition resize-none overflow-y-auto leading-relaxed"
-            style={{ minHeight: "40px", maxHeight: "160px" }}
+            className="flex-1 bg-transparent text-sm text-[#1d1d1f] focus:outline-none disabled:opacity-40 resize-none leading-relaxed placeholder:text-[#86868b]"
+            style={{ minHeight: "24px", maxHeight: "140px" }}
           />
           <button
             type="submit"
             disabled={isProcessing || !input.trim()}
-            className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-100 flex-shrink-0"
+            className="w-8 h-8 bg-[#0071e3] text-white rounded-full flex items-center justify-center hover:bg-[#0077ed] disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0 mb-0.5"
           >
-            <span className="text-2xl font-bold">➔</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>
+            </svg>
           </button>
         </form>
-        <p className="text-[10px] text-gray-300 mt-3 ml-2 font-bold uppercase tracking-widest select-none">Enter to send · Shift+Enter for new line</p>
+        <p className="text-[10px] text-[#86868b] mt-1.5 ml-1">Return to send · Shift+Return for new line</p>
       </div>
     </div>
   );
 }
 
+// ─── Requirements View ───────────────────────────────────────────────────────
+
 function RequirementItemCard({ item }) {
   const displayValue = Array.isArray(item.value)
     ? item.value.join(", ")
     : item.value === true ? "Yes"
-      : item.value === false ? "No"
-        : String(item.value ?? "—");
+    : item.value === false ? "No"
+    : String(item.value ?? "—");
 
   return (
-    <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-[0.1em]">{item.label}</span>
-        <div className="flex items-center gap-2">
-          {item.confirmed_by_user && <span className="text-[10px] text-green-600 font-black">✓ OK</span>}
-          <span className="text-[10px] px-2 py-0.5 rounded-full border border-gray-100 bg-gray-50 text-gray-500 font-black uppercase">{item.source}</span>
+    <div className="bg-white rounded-xl p-4 border border-[#e5e5ea] hover:border-[#d2d2d7] transition-colors">
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <span className="text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em]">{item.label}</span>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {item.confirmed_by_user && <Tag color="green">Confirmed</Tag>}
+          <Tag>{item.source}</Tag>
         </div>
       </div>
-      <div className="text-sm font-black text-gray-900 leading-snug">{displayValue}</div>
+      <div className="text-sm font-medium text-[#1d1d1f]">{displayValue}</div>
       {item.reasoning && (
-        <div className="text-[11px] text-gray-400 mt-3 pt-3 border-t border-gray-50 font-medium italic leading-relaxed">{item.reasoning}</div>
+        <div className="text-[12px] text-[#6e6e73] mt-2 pt-2 border-t border-[#f5f5f7] leading-relaxed">{item.reasoning}</div>
       )}
     </div>
   );
@@ -235,48 +251,47 @@ function RequirementItemCard({ item }) {
 
 function RequirementsView({ data }) {
   if (!data?.items?.length) return (
-    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 grayscale opacity-50">
-      <div className="text-6xl mb-4">👤</div>
-      <p className="font-bold text-sm">Dynamic profile building...</p>
+    <div className="h-full flex flex-col items-center justify-center text-[#86868b] p-8">
+      <div className="text-4xl mb-3 opacity-40">👤</div>
+      <p className="text-sm text-[#6e6e73]">Building profile…</p>
     </div>
   );
-
   return (
-    <div className="p-6 space-y-4 overflow-y-auto h-full bg-slate-50/50">
+    <div className="p-5 space-y-3 overflow-y-auto h-full bg-[#f5f5f7]">
       {data.items.map(item => <RequirementItemCard key={item.key} item={item} />)}
     </div>
   );
 }
 
+// ─── Criteria View ───────────────────────────────────────────────────────────
+
 function CriterionCard({ item }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm shadow-blue-50/20">
-      <button
-        className="w-full p-5 text-left flex items-center gap-4 hover:bg-slate-50/50 transition-colors"
-        onClick={() => setOpen(!open)}
-      >
+    <div className="bg-white rounded-xl border border-[#e5e5ea] overflow-hidden">
+      <button className="w-full px-4 py-3.5 text-left flex items-center gap-3 hover:bg-[#f5f5f7] transition-colors" onClick={() => setOpen(!open)}>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-black text-gray-900 truncate tracking-tight">{item.item}</span>
-            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-xl shadow-sm ring-1 ring-blue-100">{item.weight}%</span>
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-[#1d1d1f] truncate">{item.item}</span>
+            <span className="text-[11px] font-semibold text-[#0071e3] bg-[#e8f2ff] px-2 py-0.5 rounded-full ml-2 flex-shrink-0">{item.weight}%</span>
           </div>
-          <div className="w-full bg-slate-100 rounded-full h-2 shadow-inner">
-            <div className="bg-blue-600 h-full rounded-full transition-all duration-700 shadow-lg shadow-blue-200" style={{ width: `${item.weight}%` }} />
+          <div className="w-full bg-[#f5f5f7] rounded-full h-1.5">
+            <div className="bg-[#0071e3] h-full rounded-full transition-all duration-500" style={{ width: `${item.weight}%` }} />
           </div>
         </div>
-        <span className="text-gray-300 transition-transform duration-300" style={{ transform: open ? 'rotate(180deg)' : 'none' }}>▼</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-[#86868b] transition-transform duration-200 flex-shrink-0 ${open ? 'rotate-180' : ''}`}>
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </button>
-
       {open && (
-        <div className="px-6 pb-6 pt-2 border-t border-gray-50 space-y-4 bg-slate-50/20">
+        <div className="px-4 pb-4 pt-2 border-t border-[#f5f5f7] space-y-3 bg-[#f5f5f7]">
           <div>
-            <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Objective</div>
-            <p className="text-xs text-gray-700 font-bold leading-relaxed">{item.description}</p>
+            <SectionLabel>Objective</SectionLabel>
+            <p className="text-xs text-[#1d1d1f] leading-relaxed">{item.description}</p>
           </div>
-          <div className="p-3 bg-blue-50/30 rounded-2xl border border-blue-100/50">
-            <div className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Scoring Criteria</div>
-            <p className="text-xs text-blue-800 font-black leading-relaxed">{item.scoring_rules}</p>
+          <div className="bg-white rounded-lg p-3 border border-[#e5e5ea]">
+            <SectionLabel>Scoring Criteria</SectionLabel>
+            <p className="text-xs text-[#1d1d1f] leading-relaxed">{item.scoring_rules}</p>
           </div>
         </div>
       )}
@@ -286,37 +301,29 @@ function CriterionCard({ item }) {
 
 function CriteriaView({ data }) {
   if (!data?.criteria?.length && !data?.filters?.length) return (
-    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 grayscale opacity-50">
-      <div className="text-6xl mb-4">📋</div>
-      <p className="font-bold text-sm">Waiting for profile completion...</p>
+    <div className="h-full flex flex-col items-center justify-center text-[#86868b] p-8">
+      <div className="text-4xl mb-3 opacity-40">📋</div>
+      <p className="text-sm text-[#6e6e73]">Waiting for profile completion…</p>
     </div>
   );
-
   return (
-    <div className="p-6 space-y-6 overflow-y-auto h-full bg-slate-50/50">
+    <div className="p-5 space-y-5 overflow-y-auto h-full bg-[#f5f5f7]">
       {data.filters?.length > 0 && (
-        <div className="mb-4">
-          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-             <span className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse shadow-[0_0_8px_rgba(37,99,235,0.4)]"></span>
-             Mandatory Filters (Must-Haves)
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <SectionLabel>Mandatory Filters</SectionLabel>
+          <div className="grid grid-cols-1 gap-2">
             {data.filters.map((f, i) => (
-              <div key={i} className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm shadow-blue-50/10">
-                <span className="text-blue-500 text-base">🛡️</span>
-                <span className="text-sm font-black text-gray-800 tracking-tight leading-tight">{f}</span>
+              <div key={i} className="flex items-center gap-2.5 bg-white px-4 py-2.5 rounded-xl border border-[#e5e5ea]">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#0071e3] flex-shrink-0" />
+                <span className="text-sm text-[#1d1d1f]">{f}</span>
               </div>
             ))}
           </div>
         </div>
       )}
-
       <div>
-        <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-           <span className="w-1.5 h-1.5 bg-purple-600 rounded-full"></span>
-           Weighted Scoring Criteria
-        </div>
-        <div className="space-y-4">
+        <SectionLabel>Weighted Scoring</SectionLabel>
+        <div className="space-y-2">
           {data.criteria.map((c, i) => <CriterionCard key={i} item={c} />)}
         </div>
       </div>
@@ -324,230 +331,358 @@ function CriteriaView({ data }) {
   );
 }
 
+// ─── Policies View ───────────────────────────────────────────────────────────
+
 function PolicyRankEntry({ policy, rank }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const totalScore = policy.scoring.reduce((s, [sc, crit]) => s + sc * (crit.weight / 100), 0);
-  const colorClass = totalScore >= 4 ? "text-green-600" : totalScore >= 3 ? "text-amber-500" : "text-red-500";
-  
-  return (
-    <div className={`bg-white rounded-[2rem] border border-gray-100 p-8 shadow-sm transition-all duration-500 mb-6 group relative ring-offset-2 hover:ring-2 ${isExpanded ? 'ring-blue-200 shadow-2xl scale-[1.02]' : 'ring-blue-50 shadow-sm hover:shadow-xl'}`}>
-      <div className="flex items-start justify-between gap-6 mb-6">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="w-10 h-10 rounded-2xl bg-slate-950 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-slate-200">{rank}</span>
-            <span className={`text-xs px-3 py-1.5 rounded-xl font-black uppercase tracking-wider border ${policy.fulfil_filters[0] ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
-              {policy.fulfil_filters[0] ? '✓ Eligible' : '✗ Ineligible'}
-            </span>
-          </div>
-          <h4 className="font-black text-gray-900 text-xl tracking-tight leading-tight mb-2">{policy.policy_name}</h4>
-          {!policy.fulfil_filters[0] && (
-            <p className="text-xs text-red-400 font-bold leading-tight decoration-red-200 decoration-2 underline-offset-4 mb-2 italic">
-               Reason: {policy.fulfil_filters[1]}
-            </p>
-          )}
-        </div>
-        <div className="text-right">
-          <div className="text-xs font-black text-gray-300 uppercase tracking-widest mb-1">Match</div>
-          <div className={`text-5xl font-black tabular-nums transition-colors duration-500 ${colorClass}`}>{totalScore.toFixed(1)}</div>
-        </div>
-      </div>
+  const scoreColor = totalScore >= 4 ? "text-[#15803d]" : totalScore >= 3 ? "text-[#b45309]" : "text-[#e11d48]";
 
-      <div className="grid grid-cols-2 gap-8 py-6 border-y border-gray-50 bg-slate-50/30 -mx-8 px-8 mb-4">
-        <div>
-          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">Estimated Premium</div>
-          <div className="text-lg font-black text-blue-600 tabular-nums">{policy.basic_info.annual_premium}</div>
-        </div>
-        <div>
-          <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-1.5 opacity-60">ROI / Return Rate</div>
-          <div className="flex items-center gap-3">
-            <div className="text-lg font-black text-purple-600 tabular-nums">{(policy.return_rate * 100).toFixed(2)}%</div>
-            {(policy.basic_info.product_summary_url || policy.basic_info.brochure_url) && (
-              <div className="flex gap-2 ml-1">
-                {policy.basic_info.product_summary_url && (
-                  <a href={policy.basic_info.product_summary_url} target="_blank" className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] hover:bg-blue-600 hover:text-white transition-all shadow-sm" title="Product Summary">📄</a>
-                )}
-                {policy.basic_info.brochure_url && (
-                  <a href={policy.basic_info.brochure_url} target="_blank" className="w-6 h-6 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center text-[10px] hover:bg-purple-600 hover:text-white transition-all shadow-sm" title="Brochure">📖</a>
-                )}
-              </div>
+  return (
+    <div className={`bg-white rounded-2xl border transition-all duration-300 mb-4 ${isExpanded ? 'border-[#0071e3]/30 shadow-sm' : 'border-[#e5e5ea] hover:border-[#d2d2d7]'}`}>
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="w-7 h-7 rounded-lg bg-[#1d1d1f] text-white text-xs font-semibold flex items-center justify-center flex-shrink-0">{rank}</span>
+              <Tag color={policy.fulfil_filters[0] ? "green" : "red"}>
+                {policy.fulfil_filters[0] ? "Eligible" : "Ineligible"}
+              </Tag>
+            </div>
+            <h4 className="font-semibold text-[#1d1d1f] text-base leading-snug tracking-tight">{policy.policy_name}</h4>
+            {!policy.fulfil_filters[0] && (
+              <p className="text-xs text-[#e11d48] mt-1 leading-relaxed">{policy.fulfil_filters[1]}</p>
             )}
           </div>
+          <div className="text-right flex-shrink-0">
+            <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-0.5">Match</div>
+            <div className={`text-3xl font-semibold tabular-nums ${scoreColor}`}>{totalScore.toFixed(1)}</div>
+          </div>
         </div>
-      </div>
 
-      {isExpanded && (
-        <div className="animate-slideDown space-y-8 pt-4">
+        <div className="grid grid-cols-2 gap-4 py-4 border-y border-[#f5f5f7]">
           <div>
-            <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-               <span className="w-1 h-1 bg-blue-600 rounded-full"></span>
-               Scoring Breakdown
-            </div>
-            <div className="space-y-3">
-              {policy.scoring.map(([score, crit, reasoning], i) => (
-                <div key={i} className="p-5 bg-slate-50/50 rounded-2xl border border-slate-100 ring-1 ring-white">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-black text-gray-900 tracking-tight">{crit.item}</span>
-                    <span className={`text-sm font-black ${score >= 4 ? 'text-green-600' : score >= 3 ? 'text-amber-500' : 'text-red-500'}`}>{score}/5</span>
-                  </div>
-                  <p className="text-sm text-gray-500 font-medium leading-relaxed italic">{reasoning}</p>
-                </div>
-              ))}
+            <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Premium</div>
+            <div className="text-sm font-semibold text-[#1d1d1f]">{policy.basic_info.annual_premium}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Return Rate</div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-[#1d1d1f]">{(policy.return_rate * 100).toFixed(2)}%</span>
+              <div className="flex gap-1">
+                {policy.basic_info.product_summary_url && (
+                  <a href={policy.basic_info.product_summary_url} target="_blank"
+                    className="w-6 h-6 rounded-full bg-[#f5f5f7] text-[#6e6e73] flex items-center justify-center text-[10px] hover:bg-[#e8f2ff] hover:text-[#0071e3] transition-colors"
+                    title="Product Summary">📄</a>
+                )}
+                {policy.basic_info.brochure_url && (
+                  <a href={policy.basic_info.brochure_url} target="_blank"
+                    className="w-6 h-6 rounded-full bg-[#f5f5f7] text-[#6e6e73] flex items-center justify-center text-[10px] hover:bg-[#f5f0ff] hover:text-[#7c3aed] transition-colors"
+                    title="Brochure">📖</a>
+                )}
+              </div>
             </div>
           </div>
+        </div>
 
-          {(policy.context_summary && Object.keys(policy.context_summary).length > 0) && (
+        {isExpanded && (
+          <div className="mt-4 space-y-5">
             <div>
-              <div className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                 <span className="w-1 h-1 bg-purple-600 rounded-full"></span>
-                 Deep Dive Summaries
-              </div>
-              <div className="space-y-4">
-                {Object.entries(policy.context_summary).map(([title, text], i) => (
-                  <div key={i} className="pl-4 border-l-2 border-slate-100">
-                    <h5 className="text-xs font-black text-gray-900 uppercase tracking-widest mb-1.5">{title}</h5>
-                    <MarkdownContent content={text} />
+              <SectionLabel>Score Breakdown</SectionLabel>
+              <div className="space-y-2">
+                {policy.scoring.map(([score, crit, reasoning], i) => (
+                  <div key={i} className="p-3 bg-[#f5f5f7] rounded-xl">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-sm font-medium text-[#1d1d1f]">{crit.item}</span>
+                      <span className={`text-sm font-semibold ${score >= 4 ? 'text-[#15803d]' : score >= 3 ? 'text-[#b45309]' : 'text-[#e11d48]'}`}>{score}/5</span>
+                    </div>
+                    <p className="text-xs text-[#6e6e73] leading-relaxed">{reasoning}</p>
                   </div>
                 ))}
               </div>
             </div>
-          )}
-        </div>
-      )}
 
+            {(policy.context_summary && Object.keys(policy.context_summary).length > 0) && (
+              <div>
+                <SectionLabel>Deep Dive</SectionLabel>
+                <div className="space-y-3">
+                  {Object.entries(policy.context_summary).map(([title, text], i) => (
+                    <div key={i} className="pl-3 border-l-2 border-[#e5e5ea]">
+                      <h5 className="text-xs font-semibold text-[#1d1d1f] mb-1.5">{title}</h5>
+                      <MarkdownContent content={text} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
-      <button 
-        onClick={() => setIsExpanded(!isExpanded)}
-        className={`w-full mt-6 py-4 rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 ${isExpanded ? 'bg-slate-900 text-white shadow-xl shadow-slate-200 ring-4 ring-slate-100' : 'bg-slate-50 text-gray-400 hover:bg-blue-600 hover:text-white hover:shadow-lg hover:shadow-blue-100'}`}
-      >
-        <span>{isExpanded ? 'Collapse Analysis' : 'Review Evaluation Details'}</span>
-        <span className={`text-xs transition-transform duration-500 ${isExpanded ? 'rotate-180' : ''}`}>▼</span>
-      </button>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className={`w-full mt-4 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+            isExpanded
+              ? 'bg-[#1d1d1f] text-white'
+              : 'bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8f2ff] hover:text-[#0071e3]'
+          }`}
+        >
+          {isExpanded ? 'Collapse' : 'View Details'}
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+            <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
     </div>
   );
 }
 
 function PoliciesView({ data }) {
   if (!data?.length) return (
-    <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 grayscale opacity-50">
-      <div className="text-6xl mb-4">📊</div>
-      <p className="font-bold text-sm">Analyzing market options...</p>
+    <div className="h-full flex flex-col items-center justify-center text-[#86868b] p-8">
+      <div className="text-4xl mb-3 opacity-40">📊</div>
+      <p className="text-sm text-[#6e6e73]">Analyzing options…</p>
     </div>
   );
-
   return (
-    <div className="p-6 overflow-y-auto h-full bg-slate-50/50">
-      {data.map((p, i) => <PolicyRankEntry key={i} policy={p} rank={i+1} />)}
+    <div className="p-5 overflow-y-auto h-full bg-[#f5f5f7]">
+      {data.map((p, i) => <PolicyRankEntry key={i} policy={p} rank={i + 1} />)}
     </div>
   );
 }
 
-// ─── Dashboard Components ────────────────────────────────────────────────────
+// ─── Claiming Panel ───────────────────────────────────────────────────────────
+
+function ClaimingPanel({ data }) {
+  const [tab, setTab] = useState("summary");
+
+  if (!data) return (
+    <div className="h-full flex flex-col items-center justify-center p-8 text-[#86868b]">
+      <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-xl mb-4 border border-[#e5e5ea]">📝</div>
+      <p className="text-sm text-[#6e6e73]">Awaiting claim details…</p>
+    </div>
+  );
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0 bg-[#f5f5f7]">
+      <div className="bg-white border-b border-[#e5e5ea] flex px-5 pt-4">
+        {['summary', 'policies'].map(t => (
+          <button
+            key={t} onClick={() => setTab(t)}
+            className={`px-3 pb-3 text-xs font-medium transition-all mr-4 border-b-2 ${tab === t ? 'text-[#0071e3] border-[#0071e3]' : 'text-[#86868b] border-transparent hover:text-[#6e6e73]'}`}
+          >
+            {t === 'summary' ? 'Summary' : 'Policies'}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-5">
+        {tab === 'summary' && (
+          <div className="max-w-xl mx-auto space-y-4 pb-8">
+            <div className="bg-white p-5 rounded-xl border border-[#e5e5ea]">
+              <SectionLabel>Extracted Details</SectionLabel>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(data.details || {}).filter(([k]) => k !== 'possible_diagnoses').map(([k, v]) => (
+                  <div key={k} className="bg-[#f5f5f7] px-3 py-1.5 rounded-lg flex flex-col gap-0.5">
+                    <span className="text-[9px] uppercase tracking-wider text-[#86868b] font-medium">{k.replace(/_/g, " ")}</span>
+                    <span className="text-sm font-medium text-[#1d1d1f]">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
+                  </div>
+                ))}
+                {(!data.details || Object.keys(data.details).filter(k => k !== 'possible_diagnoses').length === 0) && (
+                  <span className="text-xs text-[#86868b]">No details extracted yet</span>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-xl border border-[#e5e5ea]">
+              <SectionLabel>Diagnosis</SectionLabel>
+              <div className="space-y-2">
+                {(data.details?.possible_diagnoses || []).map((diag, idx) => {
+                  const sObj = (data.treatment_strategies || []).find(s => {
+                    const d = typeof s.diagnosis === 'object' ? s.diagnosis.diagnosis : s.diagnosis;
+                    return d === diag;
+                  });
+                  return (
+                    <details key={idx} className="bg-[#f5f5f7] rounded-xl overflow-hidden group">
+                      <summary className="px-4 py-3 text-sm font-medium text-[#1d1d1f] cursor-pointer select-none hover:bg-[#ebebeb] flex items-center justify-between list-none">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-5 h-5 rounded-full bg-[#e8f2ff] text-[#0071e3] flex items-center justify-center text-[10px] font-semibold">{idx + 1}</span>
+                          {diag}
+                        </div>
+                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className="text-[#86868b] transition-transform group-open:rotate-180">
+                          <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </summary>
+                      <div className="px-4 pb-4 pt-2 border-t border-[#e5e5ea] bg-white space-y-4">
+                        <div>
+                          <SectionLabel>Claiming Strategy</SectionLabel>
+                          <MarkdownContent content={sObj?.claim_strategy || "No strategy generated"} />
+                        </div>
+                        {(sObj?.estimated_future_costs || []).length > 0 && (
+                          <div>
+                            <SectionLabel>Estimated Future Costs</SectionLabel>
+                            <div className="space-y-1.5">
+                              {sObj.estimated_future_costs.map((c, ci) => (
+                                <div key={ci} className="flex justify-between items-start p-2.5 bg-[#f5f5f7] rounded-lg">
+                                  <div>
+                                    <span className="text-xs font-medium text-[#1d1d1f]">{c.item_name}</span>
+                                    <div className="text-[10px] text-[#86868b] mt-0.5 uppercase tracking-wider">{c.relevant_insurance_type}</div>
+                                  </div>
+                                  <span className="text-xs font-semibold text-[#0071e3] bg-white px-2.5 py-1 rounded-lg border border-[#e5e5ea]">{c.item_cost}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </details>
+                  );
+                })}
+                {(!data.details?.possible_diagnoses || data.details.possible_diagnoses.length === 0) && (
+                  <p className="text-xs text-[#86868b]">No diagnosis available yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {tab === 'policies' && (
+          <div className="max-w-xl mx-auto space-y-3 pb-8">
+            {(data.policies || []).map((p, idx) => (
+              <div key={idx} className="bg-white p-5 rounded-xl border border-[#e5e5ea]">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#1d1d1f]">{p.insurance_name}</h3>
+                    <span className="text-[11px] text-[#86868b] uppercase tracking-wider">{p.category}{p.medical_type ? ` · ${p.medical_type}` : ''}</span>
+                  </div>
+                  <a href={`/raw_policies/uploaded/${p.insurance_name}.pdf`} target="_blank"
+                    className="w-8 h-8 bg-[#f5f5f7] rounded-lg flex items-center justify-center text-[#6e6e73] hover:text-[#0071e3] hover:bg-[#e8f2ff] transition-colors"
+                    title="View Document">📄</a>
+                </div>
+                {p.retrieved_contexts?.length > 0 && (
+                  <details className="bg-[#f5f5f7] rounded-lg overflow-hidden">
+                    <summary className="px-3 py-2 text-[11px] font-medium text-[#6e6e73] cursor-pointer hover:text-[#0071e3] select-none">
+                      Extracted Clauses
+                    </summary>
+                    <div className="px-3 pb-3 pt-2 text-xs text-[#6e6e73] leading-relaxed border-t border-[#e5e5ea]">
+                      <MarkdownContent content={p.retrieved_contexts[p.retrieved_contexts.length - 1]} />
+                    </div>
+                  </details>
+                )}
+              </div>
+            ))}
+            {(!data.policies || data.policies.length === 0) && (
+              <div className="text-center py-8">
+                <p className="text-sm text-[#86868b]">No matching active policies found.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Modals ───────────────────────────────────────────────────────────────────
+
+function ModalShell({ title, onClose, children }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#1d1d1f]/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-xl border border-[#e5e5ea] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#e5e5ea] flex items-center justify-between">
+          <h3 className="font-semibold text-[#1d1d1f]">{title}</h3>
+          <button onClick={onClose} className="w-7 h-7 rounded-full hover:bg-[#f5f5f7] text-[#6e6e73] text-xl leading-none flex items-center justify-center transition-colors">&times;</button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FormField({ label, children }) {
+  return (
+    <div>
+      <label className="block text-[11px] font-medium text-[#86868b] uppercase tracking-[0.07em] mb-1.5">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+const inputCls = "w-full px-3.5 py-2.5 bg-[#f5f5f7] border border-[#e5e5ea] rounded-xl text-sm text-[#1d1d1f] focus:outline-none focus:border-[#0071e3] focus:bg-white transition-all";
 
 function ProfileModal({ user, onClose, onSave }) {
-  const [formData, setFormData] = useState({
-    name: user.name || "",
-    dob: user.dob || "",
-    gender: user.gender || "",
+  const [form, setForm] = useState({
+    name: user.name || "", dob: user.dob || "", gender: user.gender || "",
     smoking_status: user.smoking_status || "non-smoker",
     marital_status: user.marital_status || "single",
     num_children: user.num_children || 0
   });
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
-        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-black text-gray-900 text-lg">Personal Profile</h3>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
+    <ModalShell title="Personal Profile" onClose={onClose}>
+      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="p-6 space-y-4">
+        <FormField label="Full Name">
+          <input required className={inputCls} value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+        </FormField>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField label="Date of Birth">
+            <input type="date" className={inputCls} value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} />
+          </FormField>
+          <FormField label="Gender">
+            <select className={inputCls} value={form.gender} onChange={e => setForm({...form, gender: e.target.value})}>
+              <option value="">Select…</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </FormField>
+          <FormField label="Smoking">
+            <select className={inputCls} value={form.smoking_status} onChange={e => setForm({...form, smoking_status: e.target.value})}>
+              <option value="non-smoker">Non-Smoker</option>
+              <option value="smoker">Smoker</option>
+            </select>
+          </FormField>
+          <FormField label="Marital Status">
+            <select className={inputCls} value={form.marital_status} onChange={e => setForm({...form, marital_status: e.target.value})}>
+              <option value="single">Single</option>
+              <option value="married">Married</option>
+              <option value="divorced">Divorced</option>
+              <option value="widowed">Widowed</option>
+            </select>
+          </FormField>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <div className="col-span-2">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Full Name</label>
-              <input 
-                required
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none"
-                value={formData.name}
-                onChange={e => setFormData({...formData, name: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Date of Birth</label>
-              <input type="date" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.dob} onChange={e => setFormData({...formData, dob: e.target.value})} />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Gender</label>
-              <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})}>
-                <option value="">Select...</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Smoking Status</label>
-              <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.smoking_status} onChange={e => setFormData({...formData, smoking_status: e.target.value})}>
-                <option value="non-smoker">Non-Smoker</option>
-                <option value="smoker">Smoker</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Marital Status</label>
-              <select className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.marital_status} onChange={e => setFormData({...formData, marital_status: e.target.value})}>
-                <option value="single">Single</option>
-                <option value="married">Married</option>
-                <option value="divorced">Divorced</option>
-                <option value="widowed">Widowed</option>
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Number of Children</label>
-              <input type="number" min="0" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.num_children} onChange={e => setFormData({...formData, num_children: parseInt(e.target.value)})} />
-            </div>
-          </div>
-          <div className="flex gap-4 pt-4">
-            <button type="submit" className="flex-1 bg-blue-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 transition-all">Save Profile</button>
-            <button type="button" onClick={onClose} className="px-8 h-14 bg-slate-100 text-gray-500 rounded-2xl font-black text-sm uppercase tracking-widest transition-all">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FormField label="Children">
+          <input type="number" min="0" className={inputCls} value={form.num_children} onChange={e => setForm({...form, num_children: parseInt(e.target.value)})} />
+        </FormField>
+        <div className="flex gap-3 pt-2">
+          <button type="submit" className="flex-1 bg-[#0071e3] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#0077ed] transition-colors">Save Profile</button>
+          <button type="button" onClick={onClose} className="px-5 py-2.5 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl text-sm font-medium hover:bg-[#e5e5ea] transition-colors">Cancel</button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }
 
 function PolicyModal({ policy, onClose, onSave }) {
-  const [formData, setFormData] = useState(policy || {
-    insurance_name: "",
-    status: "in_effect",
-    policy_document_url: "",
-    starting_year: new Date().getFullYear(),
-    payment_years: 20,
-    coverage_years: 99,
-    annual_premium: 0,
-    coverage_amount: 0,
-    category: "life",
-    type: "personal"
+  const [form, setForm] = useState(policy || {
+    insurance_name: "", status: "in_effect", policy_document_url: "",
+    starting_year: new Date().getFullYear(), payment_years: 20,
+    coverage_years: 99, annual_premium: 0, coverage_amount: 0,
+    category: "life", type: "personal"
   });
-
   const [isParsing, setIsParsing] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setIsParsing(true);
     const body = new FormData();
     body.append("file", file);
-
     try {
-      const resp = await fetch("/api/policies/parse", {
-        method: "POST",
-        body
-      });
+      const resp = await fetch("/api/policies/parse", { method: "POST", body });
       const res = await resp.json();
       if (res.success && res.data) {
         const d = res.data;
-        setFormData(prev => ({
+        setForm(prev => ({
           ...prev,
           insurance_name: d.insurance_name || prev.insurance_name,
           payment_years: d.payment_years || prev.payment_years,
@@ -556,139 +691,89 @@ function PolicyModal({ policy, onClose, onSave }) {
           coverage_amount: d.coverage_amount || prev.coverage_amount,
           policy_document_url: res.document_url || prev.policy_document_url
         }));
-      } else {
-        alert(res.error || "Failed to parse document");
-      }
-    } catch (err) {
-      alert("Error uploading file");
-    } finally {
-      setIsParsing(false);
-    }
+      } else { alert(res.error || "Failed to parse document"); }
+    } catch { alert("Error uploading file"); }
+    finally { setIsParsing(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
-        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
-          <h3 className="font-black text-gray-900 text-lg">{policy ? "Edit Policy" : "Protect New Asset"}</h3>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
-        </div>
-
-        <div className="px-8 pt-6">
-          <div className={`relative border-2 border-dashed rounded-3xl p-6 transition-all ${isParsing ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200 hover:border-blue-300'}`}>
-            <input 
-              type="file" 
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" 
-              onChange={handleFileUpload}
-              disabled={isParsing}
-              accept=".pdf"
-            />
-            <div className="text-center">
-              {isParsing ? (
-                <div className="flex flex-col items-center">
-                  <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
-                  <p className="text-xs font-black text-blue-600 uppercase tracking-widest">AI is parsing document...</p>
-                </div>
-              ) : (
-                <>
-                  <p className="text-sm font-black text-gray-900 mb-1">Upload Policy Summary</p>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest text-center">Drag & drop or click to auto-fill details via AI</p>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-        <form onSubmit={(e) => { e.preventDefault(); onSave(formData); }} className="p-8 space-y-6">
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5">
-            <div className="col-span-2">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Category</label>
-              <select 
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-                value={formData.category}
-                onChange={e => setFormData({...formData, category: e.target.value})}
-              >
-                <option value="life">Life Insurance</option>
-                <option value="medical">Medical Insurance</option>
-                <option value="accident">Accident Insurance</option>
-              </select>
-            </div>
-            {formData.category === 'medical' && (
-              <div className="col-span-2">
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Type</label>
-                <select 
-                  className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-                  value={formData.type}
-                  onChange={e => setFormData({...formData, type: e.target.value})}
-                >
-                  <option value="personal">Personal</option>
-                  <option value="corporate">Corporate</option>
-                </select>
+    <ModalShell title={policy ? "Edit Policy" : "Add Policy"} onClose={onClose}>
+      <div className="px-6 pt-4">
+        <div className={`relative border-2 border-dashed rounded-xl p-4 transition-all ${isParsing ? 'bg-[#e8f2ff] border-[#0071e3]/40' : 'bg-[#f5f5f7] border-[#d2d2d7] hover:border-[#0071e3]/40'}`}>
+          <input type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed" onChange={handleFileUpload} disabled={isParsing} accept=".pdf" />
+          <div className="text-center">
+            {isParsing ? (
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="w-5 h-5 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-medium text-[#0071e3]">Parsing document…</p>
               </div>
-            )}
-            <div className="col-span-2">
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Policy Identifier</label>
-              <input 
-                required
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all placeholder:text-gray-300"
-                placeholder="e.g. AIA Pro Lifetime Protector"
-                value={formData.insurance_name}
-                onChange={e => setFormData({...formData, insurance_name: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Current Status</label>
-              <select 
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-50 focus:border-blue-400 outline-none transition-all"
-                value={formData.status}
-                onChange={e => setFormData({...formData, status: e.target.value})}
-              >
-                <option value="in_effect">✓ In Effect</option>
-                <option value="lapsed">⚠ Lapsed</option>
-                <option value="surrendered">✗ Surrendered</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Inception Year</label>
-              <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.starting_year} onChange={e => setFormData({...formData, starting_year: parseInt(e.target.value)})} />
-            </div>
-            {formData.category === 'life' && (
+            ) : (
               <>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Pay Term (Y)</label>
-                  <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.payment_years} onChange={e => setFormData({...formData, payment_years: parseInt(e.target.value)})} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Cover Term (Y)</label>
-                  <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_years} onChange={e => setFormData({...formData, coverage_years: parseInt(e.target.value)})} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Annual (S$)</label>
-                  <input type="number" step="0.01" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.annual_premium} onChange={e => setFormData({...formData, annual_premium: parseFloat(e.target.value)})} />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Sum Assured (S$)</label>
-                  <input type="number" className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none" value={formData.coverage_amount} onChange={e => setFormData({...formData, coverage_amount: parseInt(e.target.value)})} />
-                </div>
+                <p className="text-sm font-medium text-[#1d1d1f]">Upload Policy PDF</p>
+                <p className="text-[11px] text-[#86868b] mt-0.5">Auto-fill details with AI</p>
               </>
             )}
           </div>
-          <div className="flex gap-4 pt-4">
-            <button type="submit" className="flex-1 bg-blue-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-blue-700 hover:shadow-xl hover:shadow-blue-200 transition-all">Confirm Data</button>
-            <button type="button" onClick={onClose} className="px-8 h-14 bg-slate-100 text-gray-500 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
-          </div>
-        </form>
+        </div>
       </div>
-    </div>
+      <form onSubmit={(e) => { e.preventDefault(); onSave(form); }} className="p-6 space-y-4">
+        <FormField label="Category">
+          <select className={inputCls} value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
+            <option value="life">Life Insurance</option>
+            <option value="medical">Medical Insurance</option>
+            <option value="accident">Accident Insurance</option>
+          </select>
+        </FormField>
+        {form.category === 'medical' && (
+          <FormField label="Policy Type">
+            <select className={inputCls} value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
+              <option value="personal">Personal</option>
+              <option value="corporate">Corporate</option>
+            </select>
+          </FormField>
+        )}
+        <FormField label="Policy Name">
+          <input required className={inputCls} placeholder="e.g. AIA Pro Lifetime Protector" value={form.insurance_name} onChange={e => setForm({...form, insurance_name: e.target.value})} />
+        </FormField>
+        <div className="grid grid-cols-2 gap-4">
+          <FormField label="Status">
+            <select className={inputCls} value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
+              <option value="in_effect">In Effect</option>
+              <option value="lapsed">Lapsed</option>
+              <option value="surrendered">Surrendered</option>
+            </select>
+          </FormField>
+          <FormField label="Start Year">
+            <input type="number" className={inputCls} value={form.starting_year} onChange={e => setForm({...form, starting_year: parseInt(e.target.value)})} />
+          </FormField>
+        </div>
+        {form.category === 'life' && (
+          <div className="grid grid-cols-2 gap-4">
+            <FormField label="Pay Term (yr)">
+              <input type="number" className={inputCls} value={form.payment_years} onChange={e => setForm({...form, payment_years: parseInt(e.target.value)})} />
+            </FormField>
+            <FormField label="Cover Term (yr)">
+              <input type="number" className={inputCls} value={form.coverage_years} onChange={e => setForm({...form, coverage_years: parseInt(e.target.value)})} />
+            </FormField>
+            <FormField label="Annual (S$)">
+              <input type="number" step="0.01" className={inputCls} value={form.annual_premium} onChange={e => setForm({...form, annual_premium: parseFloat(e.target.value)})} />
+            </FormField>
+            <FormField label="Sum Assured (S$)">
+              <input type="number" className={inputCls} value={form.coverage_amount} onChange={e => setForm({...form, coverage_amount: parseInt(e.target.value)})} />
+            </FormField>
+          </div>
+        )}
+        <div className="flex gap-3 pt-2">
+          <button type="submit" className="flex-1 bg-[#0071e3] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#0077ed] transition-colors">Save</button>
+          <button type="button" onClick={onClose} className="px-5 py-2.5 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl text-sm font-medium hover:bg-[#e5e5ea] transition-colors">Cancel</button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }
 
 function TestClaimingModal({ onClose, onStartTest }) {
-  const [formData, setFormData] = useState({
-    patient_age: "",
-    ground_truth: "",
-    stage: "",
-    costs: ""
-  });
+  const [form, setForm] = useState({ patient_age: "", ground_truth: "", stage: "", costs: "" });
   const [isGenerating, setIsGenerating] = useState(false);
 
   const handleRandomize = async () => {
@@ -696,178 +781,143 @@ function TestClaimingModal({ onClose, onStartTest }) {
     try {
       const resp = await fetch("/api/test_claim/random", { method: "POST" });
       const data = await resp.json();
-      setFormData(data);
-    } catch (e) {
-      console.error("Failed to generate random scenario", e);
-    } finally {
-      setIsGenerating(false);
-    }
+      setForm(data);
+    } catch { } finally { setIsGenerating(false); }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-[3rem] w-full max-w-lg shadow-2xl overflow-hidden border border-white ring-1 ring-slate-200 animate-slideUp">
-        <div className="px-8 py-6 border-b border-gray-50 flex justify-between items-center bg-slate-50/50">
-          <div className="flex items-center gap-4">
-            <h3 className="font-black text-gray-900 text-lg">Test Claiming Strategy</h3>
-            <button 
-              type="button"
-              onClick={handleRandomize} 
-              disabled={isGenerating}
-              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm flex items-center gap-2 ${isGenerating ? 'bg-slate-100 text-slate-400' : 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-100'}`}
-            >
-              {isGenerating ? 'Generating...' : '🎲 Randomly Generate'}
-            </button>
-          </div>
-          <button onClick={onClose} className="w-10 h-10 rounded-full hover:bg-white hover:shadow-sm text-gray-400 text-2xl flex items-center justify-center transition-all">&times;</button>
+    <ModalShell title="Test Claiming Strategy" onClose={onClose}>
+      <form onSubmit={(e) => { e.preventDefault(); onStartTest(form); }} className="p-6 space-y-4">
+        <div className="flex justify-end -mt-2">
+          <button type="button" onClick={handleRandomize} disabled={isGenerating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#7c3aed] bg-[#faf5ff] border border-[#e9d5ff] hover:bg-[#f3e8ff] transition-colors disabled:opacity-50">
+            {isGenerating ? 'Generating…' : '🎲 Random Scenario'}
+          </button>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); onStartTest(formData); }} className="p-8 space-y-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Patient Age</label>
-              <input 
-                required
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
-                value={formData.patient_age}
-                onChange={e => setFormData({...formData, patient_age: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Ground Truth Condition</label>
-              <input 
-                required
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
-                value={formData.ground_truth}
-                onChange={e => setFormData({...formData, ground_truth: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Current Stage</label>
-              <input 
-                required
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
-                value={formData.stage}
-                onChange={e => setFormData({...formData, stage: e.target.value})}
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Incurred Costs</label>
-              <input 
-                required
-                className="w-full px-5 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-400 transition-all"
-                value={formData.costs}
-                onChange={e => setFormData({...formData, costs: e.target.value})}
-              />
-            </div>
-          </div>
-          <div className="flex gap-4 pt-4">
-            <button type="submit" className="flex-1 bg-purple-600 text-white h-14 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-purple-700 hover:shadow-xl hover:shadow-purple-200 transition-all">Generate Claiming Strategy</button>
-            <button type="button" onClick={onClose} className="px-8 h-14 bg-slate-100 text-gray-500 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-200 transition-all">Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FormField label="Patient Age">
+          <input required className={inputCls} value={form.patient_age} onChange={e => setForm({...form, patient_age: e.target.value})} />
+        </FormField>
+        <FormField label="Ground Truth Condition">
+          <input required className={inputCls} value={form.ground_truth} onChange={e => setForm({...form, ground_truth: e.target.value})} />
+        </FormField>
+        <FormField label="Current Stage">
+          <input required className={inputCls} value={form.stage} onChange={e => setForm({...form, stage: e.target.value})} />
+        </FormField>
+        <FormField label="Incurred Costs">
+          <input required className={inputCls} value={form.costs} onChange={e => setForm({...form, costs: e.target.value})} />
+        </FormField>
+        <div className="flex gap-3 pt-2">
+          <button type="submit" className="flex-1 bg-[#7c3aed] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#6d28d9] transition-colors">Generate Strategy</button>
+          <button type="button" onClick={onClose} className="px-5 py-2.5 bg-[#f5f5f7] text-[#1d1d1f] rounded-xl text-sm font-medium hover:bg-[#e5e5ea] transition-colors">Cancel</button>
+        </div>
+      </form>
+    </ModalShell>
   );
 }
 
+// ─── Dashboard View ───────────────────────────────────────────────────────────
+
 function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePolicy, onStartAdvice, onTestClaim, onLogout }) {
   return (
-    <div className="h-full flex flex-col bg-slate-100/50">
-      <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 ring-1 ring-slate-100">
-        <div className="flex items-center gap-5">
-          <div className="w-12 h-12 rounded-3xl bg-blue-600 flex items-center justify-center text-white text-2xl shadow-xl shadow-blue-100 ring-4 ring-blue-50">🛡️</div>
+    <div className="min-h-screen bg-[#f5f5f7]">
+      {/* Header */}
+      <header className="bg-white border-b border-[#e5e5ea] px-8 py-3.5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-[#0071e3] flex items-center justify-center text-white text-lg">🛡️</div>
           <div>
-            <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none mb-1">Portfolio</h1>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Insurance Management Assistant</p>
+            <h1 className="text-base font-semibold text-[#1d1d1f] tracking-tight leading-none">Insurance Central</h1>
+            <p className="text-[11px] text-[#86868b] mt-0.5">Portfolio Management</p>
           </div>
         </div>
-        <div className="flex items-center gap-8">
-          <button onClick={onTestClaim} className="bg-purple-50 text-purple-600 border-2 border-purple-100 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-purple-300 hover:bg-purple-100 transition-all shadow-sm flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button onClick={onTestClaim}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-[#7c3aed] bg-[#faf5ff] border border-[#e9d5ff] hover:bg-[#f3e8ff] transition-colors">
             🧪 Test Claiming
           </button>
-          <button onClick={onStartAdvice} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 hover:shadow-xl shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center gap-2">
-            ✨ New Advice
+          <button onClick={onStartAdvice}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white bg-[#0071e3] hover:bg-[#0077ed] transition-colors">
+            Get Advice
           </button>
-          <div className="h-10 w-px bg-slate-100" />
-          <div className="flex items-center gap-4">
-             <div className="text-right">
-               <div className="text-sm font-black text-gray-900 leading-none mb-1">{user.name}</div>
-               <div className="flex gap-3 justify-end items-center">
-                 <button onClick={() => window.showProfileModal()} className="text-[10px] font-black text-blue-600 hover:text-blue-800 uppercase tracking-widest transition-colors">Edit Profile</button>
-                 <span className="text-[10px] text-slate-300">•</span>
-                 <button onClick={onLogout} className="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition-colors">Sign Out</button>
-               </div>
-             </div>
-             <img src={user.picture} className="w-11 h-11 rounded-3xl border-2 border-white shadow-md shadow-blue-50" />
+          <div className="h-5 w-px bg-[#e5e5ea]" />
+          <div className="flex items-center gap-2.5">
+            <img src={user.picture} className="w-8 h-8 rounded-full border border-[#e5e5ea]" />
+            <div className="text-sm">
+              <div className="font-medium text-[#1d1d1f] leading-none mb-1">{user.name}</div>
+              <div className="flex gap-3">
+                <button onClick={() => window.showProfileModal()} className="text-[11px] text-[#0071e3] hover:underline leading-none">Edit</button>
+                <button onClick={onLogout} className="text-[11px] text-[#86868b] hover:text-[#e11d48] leading-none transition-colors">Sign out</button>
+              </div>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-10 max-w-7xl mx-auto w-full">
-        <div className="flex items-center justify-between mb-10">
-          <h2 className="text-3xl font-black text-gray-950 tracking-tight">Active Coverage</h2>
-          <button onClick={() => onAddPolicy()} className="bg-white text-blue-600 border-2 border-blue-50 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest hover:border-blue-200 hover:bg-slate-50 transition-all shadow-sm">
-            + Add Asset
+      <main className="max-w-6xl mx-auto px-8 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold text-[#1d1d1f] tracking-tight">Coverage Portfolio</h2>
+          <button onClick={() => onAddPolicy()}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-[#0071e3] bg-white border border-[#d2d2d7] hover:border-[#0071e3] transition-colors">
+            + Add Policy
           </button>
         </div>
 
         {policies.length === 0 ? (
-          <div className="bg-white rounded-[3rem] p-20 text-center border-4 border-dashed border-slate-100/50 flex flex-col items-center">
-            <div className="w-24 h-24 rounded-full bg-slate-50 flex items-center justify-center text-5xl mb-6 grayscale opacity-50">📄</div>
-            <h3 className="text-2xl font-black text-gray-900 mb-3">Your portfolio is empty</h3>
-            <p className="text-gray-400 text-sm max-w-sm mb-10 font-medium">Record your existing insurance plans here to keep track of premium dates and coverage gaps.</p>
-            <button onClick={() => onAddPolicy()} className="bg-blue-600 text-white px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-blue-100 hover:translate-y-[-2px] transition-all">Add Your First Policy</button>
+          <div className="bg-white rounded-2xl p-16 text-center border border-[#e5e5ea] flex flex-col items-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#f5f5f7] flex items-center justify-center text-4xl mb-5 opacity-60">📄</div>
+            <h3 className="text-xl font-semibold text-[#1d1d1f] mb-2 tracking-tight">Portfolio is empty</h3>
+            <p className="text-[#6e6e73] text-sm max-w-xs mb-8 leading-relaxed">Record your existing insurance policies to track premiums and identify coverage gaps.</p>
+            <button onClick={() => onAddPolicy()} className="px-6 py-2.5 bg-[#0071e3] text-white rounded-full text-sm font-medium hover:bg-[#0077ed] transition-colors">Add Your First Policy</button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {policies.map(p => (
-              <div key={p.id} className="bg-white rounded-[3rem] p-8 border border-gray-50 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 group relative ring-offset-2 hover:ring-2 ring-blue-100">
-                <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-all transform translate-y-2 group-hover:translate-y-0 flex gap-2">
-                  <button onClick={() => onEditPolicy(p)} className="w-10 h-10 bg-slate-50 rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 font-black flex items-center justify-center transition-all">✎</button>
-                  <button onClick={() => onDeletePolicy(p.id)} className="w-10 h-10 bg-slate-50 rounded-2xl text-slate-400 hover:text-red-500 hover:bg-red-50 font-black flex items-center justify-center transition-all">&times;</button>
+              <div key={p.id} className="bg-white rounded-2xl p-6 border border-[#e5e5ea] hover:border-[#d2d2d7] transition-colors group relative">
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+                  <button onClick={() => onEditPolicy(p)} className="w-7 h-7 bg-[#f5f5f7] rounded-lg text-[#86868b] hover:text-[#0071e3] hover:bg-[#e8f2ff] flex items-center justify-center text-sm transition-colors">✎</button>
+                  <button onClick={() => onDeletePolicy(p.id)} className="w-7 h-7 bg-[#f5f5f7] rounded-lg text-[#86868b] hover:text-[#e11d48] hover:bg-[#fff1f2] flex items-center justify-center text-lg leading-none transition-colors">&times;</button>
                 </div>
 
-                <div className={`text-[10px] inline-flex mb-6 px-3 py-1 rounded-full font-black uppercase tracking-widest border ${
-                  p.status === 'in_effect' ? 'bg-green-50 text-green-700 border-green-100' : 
-                  p.status === 'lapsed' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-red-50 text-red-700 border-red-100'
-                }`}>
-                  {p.status.replace('_', ' ')}
+                <div className="mb-4">
+                  <Tag color={p.status === 'in_effect' ? 'green' : p.status === 'lapsed' ? 'amber' : 'red'}>
+                    {p.status.replace('_', ' ')}
+                  </Tag>
                 </div>
 
-                <h3 className="text-xl font-black text-gray-900 mb-8 leading-tight line-clamp-2 min-h-[3rem]">{p.insurance_name}</h3>
+                <h3 className="text-base font-semibold text-[#1d1d1f] mb-5 leading-snug line-clamp-2">{p.insurance_name}</h3>
 
                 {p.category === 'life' && (
-                  <div className="grid grid-cols-2 gap-8 mb-8">
+                  <div className="grid grid-cols-2 gap-5 mb-5">
                     <div>
-                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Sum Assured</div>
-                      <div className="text-lg font-black text-gray-900">S$ {(p.coverage_amount || 0).toLocaleString()}</div>
-                      <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">Until {p.starting_year + (p.coverage_years || 0)}</div>
+                      <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Sum Assured</div>
+                      <div className="text-sm font-semibold text-[#1d1d1f]">S$ {(p.coverage_amount || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-[#86868b] mt-1">Until {p.starting_year + (p.coverage_years || 0)}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Premium</div>
-                      <div className="text-lg font-black text-blue-600">S$ {(p.annual_premium || 0).toLocaleString()}</div>
-                      <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">{p.payment_years || 0}y Tenure</div>
+                      <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Annual Premium</div>
+                      <div className="text-sm font-semibold text-[#0071e3]">S$ {(p.annual_premium || 0).toLocaleString()}</div>
+                      <div className="text-[10px] text-[#86868b] mt-1">{p.payment_years || 0}yr pay term</div>
                     </div>
                   </div>
                 )}
                 {p.category === 'medical' && (
-                  <div className="mb-8">
-                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Policy Type</div>
-                    <div className="text-lg font-black text-purple-600 capitalize">{p.type || 'Personal'}</div>
-                    <div className="text-[9px] font-bold text-gray-400 mt-2 uppercase">Inception: {p.starting_year}</div>
+                  <div className="mb-5">
+                    <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Policy Type</div>
+                    <div className="text-sm font-semibold text-[#1d1d1f] capitalize">{p.type || 'Personal'}</div>
+                    <div className="text-[10px] text-[#86868b] mt-1">Since {p.starting_year}</div>
                   </div>
                 )}
                 {p.category === 'accident' && (
-                  <div className="mb-8">
-                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Inception Year</div>
-                    <div className="text-lg font-black text-gray-900">{p.starting_year}</div>
+                  <div className="mb-5">
+                    <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Inception Year</div>
+                    <div className="text-sm font-semibold text-[#1d1d1f]">{p.starting_year}</div>
                   </div>
                 )}
 
                 {p.policy_document_url && (
-                  <div className="pt-6 border-t border-slate-50">
-                    <a href={p.policy_document_url} target="_blank" className="text-[11px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-2 hover:translate-x-1 transition-transform">
-                      <span>📄</span> View Document &rarr;
+                  <div className="pt-4 border-t border-[#f5f5f7]">
+                    <a href={p.policy_document_url} target="_blank"
+                      className="text-[11px] font-medium text-[#0071e3] flex items-center gap-1.5 hover:underline">
+                      📄 View Document →
                     </a>
                   </div>
                 )}
@@ -880,136 +930,45 @@ function DashboardView({ user, policies, onAddPolicy, onEditPolicy, onDeletePoli
   );
 }
 
-function ClaimingPanel({ data }) {
-  const [tab, setTab] = useState("summary");
-  
-  if (!data) return (
-    <div className="h-full flex flex-col items-center justify-center p-8 text-gray-400">
-      <div className="w-16 h-16 bg-white rounded-[2rem] flex items-center justify-center text-2xl shadow-xl shadow-slate-100 mb-6 border border-slate-50 ring-4 ring-white">📝</div>
-      <p className="text-xs font-bold uppercase tracking-widest">Awaiting claim details...</p>
-    </div>
-  );
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
 
+function ConversationSidebar({ open, sessionType, conversations, activeId, onLoad, onNew, onRename, onDelete }) {
   return (
-    <div className="flex flex-col h-full bg-slate-50 relative overflow-hidden">
-      <div className="bg-white border-b border-gray-100 flex gap-4 px-8 pt-5 shadow-sm relative z-10">
-        {['summary', 'policies'].map(t => (
-          <button 
-            key={t} onClick={() => setTab(t)}
-            className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all ${tab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-          >
-            {t === 'summary' ? 'Claiming Summary' : 'Relevant Policies'}
-          </button>
-        ))}
+    <div className={`transition-all duration-300 bg-white border-r border-[#e5e5ea] flex flex-col flex-shrink-0 ${open ? 'w-56' : 'w-0 overflow-hidden border-none'}`}>
+      <div className="px-4 py-3 border-b border-[#f5f5f7] flex items-center justify-between flex-shrink-0">
+        <span className="text-[11px] font-semibold text-[#86868b] uppercase tracking-[0.07em]">History</span>
+        <button onClick={onNew} className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium text-[#0071e3] bg-[#e8f2ff] hover:bg-[#d4e9ff] transition-colors">
+          + New
+        </button>
       </div>
-      
-      <div className="flex-1 overflow-y-auto p-8 relative z-0">
-        {tab === 'summary' && (
-           <div className="max-w-2xl mx-auto space-y-8 pb-10">
-              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
-                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Extracted Details</h3>
-                <div className="flex flex-wrap gap-3">
-                  {Object.entries(data.details || {}).filter(([k]) => k !== 'possible_diagnoses').map(([k, v]) => (
-                    <div key={k} className="bg-slate-50 px-4 py-2 rounded-xl flex flex-col gap-1 border border-slate-100">
-                       <span className="text-[9px] uppercase tracking-widest text-gray-400 font-bold">{k.replace(/_/g, " ")}</span>
-                       <span className="text-sm font-bold text-gray-900">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
-                    </div>
-                  ))}
-                  {(!data.details || Object.keys(data.details).filter(k => k !== 'possible_diagnoses').length === 0) && <span className="text-xs text-gray-400 italic font-medium">No details extracted yet</span>}
-                </div>
-              </div>
-
-              <div className="bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50">
-                <h3 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-6">Diagnosis</h3>
-                <div className="space-y-4">
-                  {(data.details?.possible_diagnoses || []).map((diag, idx) => {
-                    const strategyObj = (data.treatment_strategies || []).find(s => {
-                      const diagName = typeof s.diagnosis === 'object' ? s.diagnosis.diagnosis : s.diagnosis;
-                      return diagName === diag;
-                    });
-                    const strategyText = strategyObj?.claim_strategy || "No strategy generated";
-                    const estimatedCosts = strategyObj?.estimated_future_costs || [];
-                    
-                    return (
-                      <details key={idx} className="bg-slate-50 rounded-2xl border border-slate-100 group transition-colors overflow-hidden">
-                        <summary className="px-5 py-4 text-sm font-black text-gray-900 cursor-pointer select-none hover:bg-slate-100 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                             <span className="w-6 h-6 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-black">{idx + 1}</span>
-                             {diag}
-                          </div>
-                          <span className="text-gray-400 text-xs transition-transform group-open:rotate-180">▼</span>
-                        </summary>
-                        <div className="px-5 pb-5 pt-2 space-y-6 border-t border-slate-100 bg-white">
-                          <div>
-                            <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Claiming Strategy</h4>
-                            <div className="text-gray-600 leading-relaxed">
-                              <MarkdownContent content={strategyText} />
-                            </div>
-                          </div>
-                          
-                          {estimatedCosts.length > 0 && (
-                            <div className="pt-4 border-t border-slate-50">
-                               <h4 className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-4">Estimated Future Costs</h4>
-                               <div className="space-y-2">
-                                  {estimatedCosts.map((c, ci) => (
-                                    <div key={ci} className="flex justify-between items-start p-3 bg-slate-50 rounded-xl border border-slate-100/50">
-                                       <div className="flex flex-col gap-0.5">
-                                          <span className="text-xs font-bold text-gray-900">{c.item_name}</span>
-                                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{c.relevant_insurance_type}</span>
-                                       </div>
-                                       <span className="text-xs font-black text-blue-600 tabular-nums bg-white px-3 py-1 rounded-lg shadow-sm ring-1 ring-slate-100">{c.item_cost}</span>
-                                    </div>
-                                  ))}
-                               </div>
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    );
-                  })}
-                  {(!data.details?.possible_diagnoses || data.details.possible_diagnoses.length === 0) && <p className="text-xs text-gray-400 italic font-medium">No diagnosis available yet</p>}
-                </div>
-              </div>
-           </div>
-        )}
-        
-        {tab === 'policies' && (
-           <div className="max-w-2xl mx-auto space-y-6 pb-10">
-              {(data.policies || []).map((p, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100/50 flex flex-col gap-4 group">
-                  <div className="flex items-center justify-between">
-                     <div>
-                       <h3 className="text-base font-black text-gray-900 tracking-tight">{p.insurance_name}</h3>
-                       <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400">{p.category} {p.medical_type ? `· ${p.medical_type}` : ''}</span>
-                     </div>
-                     <a href={`/raw_policies/uploaded/${p.insurance_name}.pdf`} target="_blank" className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors" title="View Policy Document">
-                       📄
-                     </a>
-                  </div>
-                  
-                  {p.retrieved_contexts && p.retrieved_contexts.length > 0 && (
-                     <details className="mt-2 bg-slate-50 rounded-2xl border border-slate-100 group-open:bg-white transition-colors">
-                       <summary className="px-4 py-3 text-[10px] font-bold text-slate-500 cursor-pointer uppercase tracking-wider select-none hover:text-blue-600">Extracted Clause Constraints</summary>
-                       <div className="px-5 pb-5 pt-2 text-xs text-gray-600 leading-normal border-t border-slate-100">
-                         <MarkdownContent content={p.retrieved_contexts[p.retrieved_contexts.length - 1]} />
-                       </div>
-                     </details>
-                  )}
-                </div>
-              ))}
-              {(!data.policies || data.policies.length === 0) && (
-                 <div className="text-center py-10">
-                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No matching active policies identified.</p>
-                 </div>
-              )}
-           </div>
+      <div className="flex-1 overflow-y-auto py-2 px-2 space-y-0.5">
+        {conversations.map(c => (
+          <div
+            key={c.id}
+            className={`group relative w-full text-left px-3 py-2.5 rounded-xl transition-all cursor-pointer ${activeId === c.id ? 'bg-[#e8f2ff] text-[#0071e3]' : 'text-[#1d1d1f] hover:bg-[#f5f5f7]'}`}
+            onClick={() => onLoad(c)}
+          >
+            <div className="text-xs font-medium truncate pr-10 leading-snug">{c.title || "New Conversation"}</div>
+            <div className={`text-[10px] mt-0.5 ${activeId === c.id ? 'text-[#0071e3]/70' : 'text-[#86868b]'}`}>
+              {new Date(c.updated_at + "Z").toLocaleString()}
+            </div>
+            <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-0.5">
+              <button onClick={(e) => onRename(e, c.id, c.title)}
+                className={`w-5 h-5 rounded flex items-center justify-center text-[10px] ${activeId === c.id ? 'hover:bg-[#0071e3]/20' : 'hover:bg-[#e8f2ff] hover:text-[#0071e3]'}`}>✎</button>
+              <button onClick={(e) => onDelete(e, c.id)}
+                className={`w-5 h-5 rounded flex items-center justify-center text-sm leading-none ${activeId === c.id ? 'hover:bg-[#0071e3]/20' : 'hover:bg-[#fff1f2] hover:text-[#e11d48]'}`}>&times;</button>
+            </div>
+          </div>
+        ))}
+        {conversations.length === 0 && (
+          <div className="text-center py-6 text-xs text-[#86868b]">No history</div>
         )}
       </div>
     </div>
   );
 }
 
-// ─── Main Controller ─────────────────────────────────────────────────────────
+// ─── Main App ─────────────────────────────────────────────────────────────────
 
 function App() {
   const [user, setUser] = useState(null);
@@ -1023,23 +982,13 @@ function App() {
   const [testConversations, setTestConversations] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // Expose to dashboard header
   window.showProfileModal = () => setProfileModal(true);
 
-  const [consultantData, setConsultantData] = useState({
-    sessionId: null,
-    messages: [],
-    isWaiting: false,
-    isTyping: false,
-    phase: "idle",
-    activeTab: "requirements",
-    requirements: null,
-    criteria: null,
-    policies: null,
-    activeAgent: null,
-    claimData: null,
-    testParams: null,
-    sessionType: "advice"
+  const [cd, setCd] = useState({
+    sessionId: null, messages: [], isWaiting: false, isTyping: false,
+    phase: "idle", activeTab: "requirements",
+    requirements: null, criteria: null, policies: null,
+    activeAgent: null, claimData: null, testParams: null, sessionType: "advice"
   });
 
   const wsRef = useRef(null);
@@ -1048,142 +997,108 @@ function App() {
 
   const fetchUser = async () => {
     try {
-      const resp = await fetch("/api/auth/me");
-      const data = await resp.json();
-      if (data.logged_in) {
-        setUser(data.user);
-        fetchPolicies();
-        fetchConversations();
-      }
+      const r = await fetch("/api/auth/me");
+      const d = await r.json();
+      if (d.logged_in) { setUser(d.user); fetchPolicies(); fetchConversations(); }
     } catch (e) {} finally { setLoading(false); }
   };
 
   const fetchPolicies = async () => {
-    try {
-      const resp = await fetch("/api/policies");
-      const data = await resp.json();
-      setPolicies(data.policies || []);
-    } catch (e) {}
+    try { const r = await fetch("/api/policies"); const d = await r.json(); setPolicies(d.policies || []); } catch (e) {}
   };
 
   const fetchConversations = async () => {
     try {
-      const [adviceResp, testResp] = await Promise.all([
-        fetch("/api/conversations?type=advice"),
-        fetch("/api/conversations?type=test")
-      ]);
-      const adviceData = await adviceResp.json();
-      const testData = await testResp.json();
-      setConversations(adviceData.conversations || []);
-      setTestConversations(testData.conversations || []);
+      const [aR, tR] = await Promise.all([fetch("/api/conversations?type=advice"), fetch("/api/conversations?type=test")]);
+      const aD = await aR.json(); const tD = await tR.json();
+      setConversations(aD.conversations || []);
+      setTestConversations(tD.conversations || []);
     } catch (e) {}
   };
 
   const savePolicy = async (data) => {
     const isEdit = !!data.id;
-    const resp = await fetch(isEdit ? `/api/policies/${data.id}` : "/api/policies", {
+    const r = await fetch(isEdit ? `/api/policies/${data.id}` : "/api/policies", {
       method: isEdit ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data)
     });
-    if (resp.ok) { setModal(null); fetchPolicies(); }
+    if (r.ok) { setModal(null); fetchPolicies(); }
   };
 
   const saveProfile = async (data) => {
-    const resp = await fetch("/api/auth/profile", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    });
-    if (resp.ok) {
-      const res = await resp.json();
-      setUser(res.user);
-      setProfileModal(false);
-    }
+    const r = await fetch("/api/auth/profile", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
+    if (r.ok) { const res = await r.json(); setUser(res.user); setProfileModal(false); }
   };
 
   const deletePolicy = async (id) => {
-    if (confirm("Permanently remove this record?")) {
-      await fetch(`/api/policies/${id}`, { method: "DELETE" });
-      fetchPolicies();
-    }
+    if (confirm("Remove this policy?")) { await fetch(`/api/policies/${id}`, { method: "DELETE" }); fetchPolicies(); }
   };
 
-  const handleConsultantMsg = (raw) => {
+  const handleMsg = (raw) => {
     const d = JSON.parse(raw);
-    setConsultantData(prev => {
+    setCd(prev => {
       const next = { ...prev };
       switch (d.type) {
-        case "question": next.isTyping = false; next.messages = [...next.messages, mkMsg("agent", d.content)]; next.isWaiting = true; break;
-        case "status": if (d.phase) next.phase = d.phase; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("status", d.message, d.phase)]; break;
+        case "question":     next.isTyping = false; next.messages = [...next.messages, mkMsg("agent", d.content)]; next.isWaiting = true; break;
+        case "status":       if (d.phase) next.phase = d.phase; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("status", d.message, d.phase)]; break;
         case "requirements": next.requirements = d.data; next.activeTab = "requirements"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Profile captured")]; break;
-        case "criteria": next.criteria = d.data; next.activeTab = "criteria"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
-        case "policies": next.policies = d.data; next.activeTab = "policies"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
+        case "criteria":     next.criteria = d.data; next.activeTab = "criteria"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
+        case "policies":     next.policies = d.data; next.activeTab = "policies"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
         case "claim_update": next.claimData = d.data; next.activeAgent = "claiming_strategy"; break;
-        case "test_scenario": next.messages = [mkMsg("agent", `*Test Scenario Generated*\n\n${d.content}`)]; break;
+        case "test_scenario":    next.messages = [mkMsg("agent", `*Test Scenario Generated*\n\n${d.content}`)]; break;
         case "test_patient_msg": next.messages = [...next.messages, mkMsg("user", d.content)]; break;
-        case "complete": next.phase = "complete"; break;
+        case "complete":     next.phase = "complete"; break;
       }
       return next;
     });
   };
 
   const handleSend = async (text) => {
-    setConsultantData(prev => ({...prev, messages: [...prev.messages, mkMsg("user", text)]}));
-    if (!consultantData.sessionId) {
-      const resp = await fetch("/api/sessions", { 
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: consultantData.sessionType || "advice" })
-      });
-      const { session_id } = await resp.json();
-      setConsultantData(prev => ({...prev, sessionId: session_id}));
+    setCd(prev => ({...prev, messages: [...prev.messages, mkMsg("user", text)]}));
+    if (!cd.sessionId) {
+      const r = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: cd.sessionType || "advice" }) });
+      const { session_id } = await r.json();
+      setCd(prev => ({...prev, sessionId: session_id}));
       const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
       const ws = new WebSocket(`${proto}//${window.location.host}/ws/${session_id}`);
       wsRef.current = ws;
-      ws.onopen = () => { setConsultantData(prev => ({...prev, isTyping: true})); ws.send(JSON.stringify({ type: "start", message: text })); };
-      ws.onmessage = (e) => handleConsultantMsg(e.data);
+      ws.onopen = () => { setCd(prev => ({...prev, isTyping: true})); ws.send(JSON.stringify({ type: "start", message: text })); };
+      ws.onmessage = (e) => handleMsg(e.data);
       fetchConversations();
     } else {
-      setConsultantData(prev => ({...prev, isWaiting: false, isTyping: true}));
+      setCd(prev => ({...prev, isWaiting: false, isTyping: true}));
       wsRef.current?.send(JSON.stringify({ type: "answer", content: text }));
     }
   };
 
   const loadConversation = async (conv) => {
+    if (cd.sessionId === conv.id) return;
     if (wsRef.current) wsRef.current.close();
-    
-    // Decide what to show on the right panel based on advice_entity
+
     let agent = null;
     if (conv.advice_entity === "claim") agent = "claiming_strategy";
     else if (conv.advice_entity === "purchase") agent = "new_life_insurance";
-    // Fallback for legacy conversations
     else if (conv.type === "test" || conv.state_data?.claim_state) agent = "claiming_strategy";
     else if (conv.state_data?.user_requirements) agent = "new_life_insurance";
 
-    setConsultantData({
-      sessionId: conv.id,
-      messages: [],
-      isWaiting: false,
-      isTyping: false,
+    setCd({
+      sessionId: conv.id, messages: [], isWaiting: false, isTyping: false,
       phase: conv.phase || "idle",
       activeTab: conv.state_data?.policies ? "policies" : (conv.state_data?.criteria ? "criteria" : "requirements"),
       requirements: conv.state_data?.user_requirements || null,
       criteria: conv.state_data?.criteria || null,
       policies: conv.state_data?.policies || null,
       activeAgent: agent,
-      claimData: conv.state_data?.claim_state ? { 
-        ...conv.state_data.claim_state,
-        details: conv.state_data.claim_state 
-      } : null,
+      claimData: agent === "claiming_strategy" ? { ...(conv.state_data?.claim_state || {}), details: conv.state_data?.claim_state || {} } : null,
       testParams: conv.state_data?.test_params || null,
       sessionType: conv.type || "advice"
     });
-    
+
     try {
-      const resp = await fetch(`/api/conversations/${conv.id}/messages`);
-      const data = await resp.json();
-      const formattedMsgs = data.messages.map(m => {
+      const r = await fetch(`/api/conversations/${conv.id}/messages`);
+      const data = await r.json();
+      const msgs = data.messages.map(m => {
         const raw = m.raw_data || {};
         if (raw.type === "user") return mkMsg("user", raw.content);
         if (raw.type === "question") return mkMsg("agent", raw.content || m.content);
@@ -1193,231 +1108,190 @@ function App() {
         if (m.role === "user") return mkMsg("user", m.content);
         return mkMsg("agent", m.content);
       });
-      setConsultantData(prev => ({...prev, messages: formattedMsgs}));
-    } catch(e) {}
-    
+      setCd(prev => ({...prev, messages: msgs}));
+    } catch (e) {}
+
     setView("consultant");
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${proto}//${window.location.host}/ws/${conv.id}`);
     wsRef.current = ws;
-    ws.onmessage = (e) => handleConsultantMsg(e.data);
+    ws.onmessage = (e) => handleMsg(e.data);
   };
-  
+
   const handleStartAdvice = () => {
-    setConsultantData({
-      sessionId: null,
-      messages: [],
-      isWaiting: false,
-      isTyping: false,
-      phase: "idle",
-      activeTab: "requirements",
-      requirements: null,
-      criteria: null,
-      policies: null,
-      activeAgent: null,
-      claimData: null,
-      testParams: null,
-      sessionType: "advice"
-    });
+    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: false, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, activeAgent: null, claimData: null, testParams: null, sessionType: "advice" });
     fetchConversations();
     setView("consultant");
   };
 
   const handleStartTestClaim = async (params) => {
     setTestClaimModal(false);
-    setConsultantData({
-      sessionId: null,
-      messages: [],
-      isWaiting: false,
-      isTyping: true,
-      phase: "idle",
-      activeTab: "requirements",
-      requirements: null,
-      criteria: null,
-      policies: null,
-      activeAgent: "claiming_strategy",
-      claimData: null,
-      testParams: params,
-      sessionType: "test"
-    });
-    
-    const resp = await fetch("/api/sessions", { 
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "test" })
-    });
-    const { session_id } = await resp.json();
-    setConsultantData(prev => ({...prev, sessionId: session_id}));
-    
+    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: true, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, activeAgent: "claiming_strategy", claimData: { details: {} }, testParams: params, sessionType: "test" });
+
+    const r = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "test" }) });
+    const { session_id } = await r.json();
+    setCd(prev => ({...prev, sessionId: session_id}));
+
     const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
     const ws = new WebSocket(`${proto}//${window.location.host}/ws/${session_id}`);
     wsRef.current = ws;
-    ws.onopen = () => {
-      ws.send(JSON.stringify({ type: "start_test", params }));
-    };
-    ws.onmessage = (e) => handleConsultantMsg(e.data);
+    ws.onopen = () => { ws.send(JSON.stringify({ type: "start_test", params })); };
+    ws.onmessage = (e) => handleMsg(e.data);
     fetchConversations();
     setView("consultant");
   };
 
-  const handleRenameConversation = async (e, id, oldTitle) => {
+  const handleRename = async (e, id, old) => {
     e.stopPropagation();
-    const newTitle = prompt("Rename conversation:", oldTitle || "New Conversation");
-    if (newTitle && newTitle.trim() !== "" && newTitle !== oldTitle) {
-      await fetch(`/api/conversations/${id}/title`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: newTitle.trim() })
-      });
+    const t = prompt("Rename:", old || "New Conversation");
+    if (t && t.trim() !== "" && t !== old) {
+      await fetch(`/api/conversations/${id}/title`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: t.trim() }) });
       fetchConversations();
     }
   };
 
-  const handleDeleteConversation = async (e, id) => {
+  const handleDeleteConv = async (e, id) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this conversation?")) {
+    if (confirm("Delete this conversation?")) {
       await fetch(`/api/conversations/${id}`, { method: "DELETE" });
-      if (consultantData.sessionId === id) {
-        handleStartAdvice();
-      } else {
-        fetchConversations();
-      }
+      if (cd.sessionId === id) handleStartAdvice();
+      else fetchConversations();
     }
   };
 
   if (loading) return (
-    <div className="h-screen flex items-center justify-center bg-slate-50">
-      <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin shadow-xl"></div>
+    <div className="h-screen flex items-center justify-center bg-[#f5f5f7]">
+      <div className="w-10 h-10 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
   if (!user) return (
-    <div className="h-screen flex items-center justify-center bg-slate-100 p-8">
-      <div className="bg-white p-14 rounded-[4rem] shadow-2xl max-w-sm w-full text-center border border-white ring-1 ring-slate-200">
-        <div className="w-24 h-24 rounded-[3rem] bg-blue-600 flex items-center justify-center text-white text-5xl mx-auto mb-10 shadow-2xl shadow-blue-100 ring-8 ring-blue-50 transition-transform hover:scale-110">🛡️</div>
-        <h1 className="text-3xl font-black text-gray-950 mb-4 tracking-tighter">Insurance Central</h1>
-        <p className="text-slate-400 text-sm mb-12 font-bold uppercase tracking-widest leading-relaxed">Secure. Smart. AI-Powered.</p>
-        <a href="/api/auth/login" className="block w-full bg-blue-600 text-white py-5 rounded-3xl font-black hover:bg-black hover:shadow-2xl transition-all uppercase tracking-widest text-xs shadow-xl shadow-blue-100">
-          Connect Google Account
+    <div className="h-screen flex items-center justify-center bg-[#f5f5f7] p-6">
+      <div className="bg-white p-10 rounded-2xl shadow-sm max-w-sm w-full text-center border border-[#e5e5ea]">
+        <div className="w-16 h-16 rounded-2xl bg-[#0071e3] flex items-center justify-center text-white text-3xl mx-auto mb-6">🛡️</div>
+        <h1 className="text-2xl font-semibold text-[#1d1d1f] mb-2 tracking-tight">Insurance Central</h1>
+        <p className="text-[#6e6e73] text-sm mb-8 leading-relaxed">AI-powered insurance advice,<br />personalised to your needs.</p>
+        <a href="/api/auth/login"
+          className="block w-full bg-[#0071e3] text-white py-3 rounded-full text-sm font-medium hover:bg-[#0077ed] transition-colors">
+          Continue with Google
         </a>
       </div>
     </div>
   );
 
   return (
-    <div className="h-screen w-full relative overflow-hidden">
+    <div className="h-screen w-full">
       {view === "consultant" ? (
-        <div className="h-screen flex flex-col bg-slate-50/50">
-          <header className="bg-white border-b border-gray-100 px-10 py-5 flex items-center justify-between shadow-sm z-10 transition-all">
-            <div className="flex items-center gap-6">
-              <button onClick={() => setView("dashboard")} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-gray-950 flex items-center justify-center transition-all">←</button>
-              <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="w-10 h-10 rounded-2xl bg-slate-50 text-gray-400 hover:bg-slate-100 hover:text-blue-600 flex items-center justify-center transition-all" title="Toggle History">☰</button>
-              <div>
-                <h1 className="font-black text-gray-950 text-base tracking-tight leading-none mb-1">
-                  {consultantData.sessionType === "test" ? "Scenario Testing" : "Expert Advice"}
-                </h1>
-                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                  {consultantData.sessionType === "test" ? "Quality Assurance Mode" : "Consultation Session"}
-                </p>
-              </div>
-            </div>
-            {consultantData.activeAgent === "new_life_insurance" && <PhaseBar phase={consultantData.phase} />}
-            {consultantData.activeAgent === "claiming_strategy" && (
-               <div className="text-[10px] font-bold uppercase tracking-widest text-blue-600 bg-blue-50 px-4 py-2 rounded-full flex items-center gap-2 border border-blue-100">
-                   <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                   Claim Strategy Engine
-               </div>
-            )}
-          </header>
-          <div className="flex-1 flex overflow-hidden justify-center bg-slate-50/50">
-            
-            <div className={`transition-all duration-300 bg-white border-r border-slate-100 flex flex-col h-full z-20 ${isSidebarOpen ? 'w-64' : 'w-0 overflow-hidden border-none'}`}>
-              <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                <h3 className="font-black text-gray-900 text-xs uppercase tracking-widest whitespace-nowrap">History</h3>
-                <button 
-                  onClick={consultantData.sessionType === "test" ? () => setTestClaimModal(true) : handleStartAdvice} 
-                  className="text-[10px] font-black bg-white shadow-sm ring-1 ring-slate-100 text-blue-600 px-3 py-1.5 rounded-xl hover:bg-blue-600 hover:text-white transition-all whitespace-nowrap"
-                >
-                  + New
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-2">
-                {(consultantData.sessionType === "test" ? testConversations : conversations).map(c => (
-                  <div key={c.id} className={`group relative w-full text-left p-4 rounded-2xl transition-all cursor-pointer ${consultantData.sessionId === c.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-100/50' : 'bg-slate-50 text-gray-900 border border-slate-100 hover:bg-blue-50 hover:ring-1 hover:ring-blue-100'}`} onClick={() => loadConversation(c)}>
-                    <div className={`text-xs font-bold truncate mb-1 pr-12 ${consultantData.sessionId === c.id ? 'text-white' : ''}`}>{c.title || "New Conversation"}</div>
-                    <div className={`text-[9px] font-black uppercase tracking-widest ${consultantData.sessionId === c.id ? 'text-blue-200' : 'text-gray-400'}`}>{new Date(c.updated_at + "Z").toLocaleString()}</div>
-                    
-                    <div className="absolute top-3 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                      <button onClick={(e) => handleRenameConversation(e, c.id, c.title)} className={`w-6 h-6 rounded flex items-center justify-center text-[10px] ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-blue-800' : 'bg-white text-gray-400 hover:bg-blue-100 hover:text-blue-600 shadow-sm'}`} title="Rename">✎</button>
-                      <button onClick={(e) => handleDeleteConversation(e, c.id)} className={`w-6 h-6 rounded flex items-center justify-center text-[14px] leading-none ${consultantData.sessionId === c.id ? 'bg-blue-700 text-white hover:bg-red-500' : 'bg-white text-gray-400 hover:bg-red-100 hover:text-red-600 shadow-sm'}`} title="Delete">&times;</button>
-                    </div>
-                  </div>
-                ))}
-                {(consultantData.sessionType === "test" ? testConversations : conversations).length === 0 && (
-                  <div className="text-center p-4 text-xs font-bold text-gray-400 uppercase tracking-widest">No history found</div>
-                )}
-              </div>
+        <div className="h-screen flex flex-col bg-[#f5f5f7]">
+          {/* ── Slim header ── */}
+          <header className="flex-none h-11 bg-white border-b border-[#e5e5ea] px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <IconButton onClick={() => setView("dashboard")} title="Back to Dashboard">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 2L4 6.5 8 11"/>
+                </svg>
+              </IconButton>
+              <IconButton onClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Toggle history">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+                  <path d="M2 3h9M2 6.5h9M2 10h9"/>
+                </svg>
+              </IconButton>
+              <span className="text-sm font-medium text-[#1d1d1f] ml-1">
+                {cd.sessionType === "test" ? "Scenario Testing" : "Expert Advice"}
+              </span>
             </div>
 
-            <div className={`flex flex-col transition-all duration-500 bg-white ${consultantData.activeAgent ? 'w-1/3 border-r border-slate-100 shadow-[10px_0_30px_rgb(0,0,0,0.03)] z-10' : 'w-full max-w-3xl border-x border-slate-100 shadow-xl'}`}>
-              {consultantData.testParams && (
-                 <div className="bg-purple-50 p-4 border-b border-purple-100 flex flex-wrap gap-4 text-xs">
-                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Age:</span> <span className="text-purple-900">{consultantData.testParams.patient_age}</span></div>
-                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Truth:</span> <span className="text-purple-900">{consultantData.testParams.ground_truth}</span></div>
-                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Stage:</span> <span className="text-purple-900">{consultantData.testParams.stage}</span></div>
-                    <div className="flex items-center gap-1"><span className="font-bold text-purple-700">Costs:</span> <span className="text-purple-900">{consultantData.testParams.costs}</span></div>
-                 </div>
+            <div className="flex items-center gap-3">
+              {cd.activeAgent === "new_life_insurance" && <PhaseBar phase={cd.phase} />}
+              {cd.activeAgent === "claiming_strategy" && (
+                <Tag color="blue">
+                  <span className="pulse-dot w-1.5 h-1.5 rounded-full bg-[#0071e3] inline-block mr-1.5" />
+                  Claim Engine
+                </Tag>
               )}
-              <ChatPanel 
-                 messages={consultantData.messages} isWaitingAnswer={consultantData.isWaiting}
-                 isTyping={consultantData.isTyping} phase={consultantData.phase}
-                 onSend={handleSend} isStarted={!!consultantData.sessionId}
+            </div>
+          </header>
+
+          {/* ── Main area ── */}
+          <div className="flex-1 min-h-0 flex overflow-hidden">
+
+            {/* Sidebar */}
+            <ConversationSidebar
+              open={isSidebarOpen}
+              sessionType={cd.sessionType}
+              conversations={cd.sessionType === "test" ? testConversations : conversations}
+              activeId={cd.sessionId}
+              onLoad={loadConversation}
+              onNew={cd.sessionType === "test" ? () => setTestClaimModal(true) : handleStartAdvice}
+              onRename={handleRename}
+              onDelete={handleDeleteConv}
+            />
+
+            {/* Chat column */}
+            <div className={`flex flex-col bg-white ${cd.activeAgent ? 'w-[400px] flex-shrink-0 border-r border-[#e5e5ea]' : 'flex-1 max-w-2xl border-x border-[#e5e5ea] mx-auto'}`}>
+              {cd.testParams && (
+                <div className="bg-[#faf5ff] border-b border-[#e9d5ff] px-4 py-2 flex flex-wrap gap-4 text-xs flex-shrink-0">
+                  {[['Age', cd.testParams.patient_age], ['Condition', cd.testParams.ground_truth], ['Stage', cd.testParams.stage], ['Costs', cd.testParams.costs]].map(([k, v]) => (
+                    <div key={k} className="flex items-center gap-1">
+                      <span className="font-semibold text-[#7c3aed]">{k}:</span>
+                      <span className="text-[#6d28d9]">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <ChatPanel
+                messages={cd.messages}
+                isWaitingAnswer={cd.isWaiting}
+                isTyping={cd.isTyping}
+                phase={cd.phase}
+                onSend={handleSend}
+                isStarted={!!cd.sessionId}
               />
             </div>
-            
-            {consultantData.activeAgent && (
-               <div className="flex-1 overflow-hidden flex flex-col bg-slate-50">
-                 {consultantData.activeAgent === "new_life_insurance" && (
-                   <>
-                     <div className="bg-white border-b border-gray-100 flex gap-4 px-8 pt-5 shadow-sm relative z-10">
-                        {['requirements', 'criteria', 'policies'].map(t => (
-                          <button 
-                            key={t} onClick={() => setConsultantData(prev => ({...prev, activeTab: t}))}
-                            className={`px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-t-xl transition-all ${consultantData.activeTab === t ? 'bg-slate-50 text-blue-600 border-b-4 border-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
-                          >
-                            {t}
-                          </button>
-                        ))}
-                     </div>
-                     <div className="flex-1 overflow-hidden bg-slate-50 z-0">
-                       {consultantData.activeTab === 'requirements' && <RequirementsView data={consultantData.requirements} />}
-                       {consultantData.activeTab === 'criteria' && <CriteriaView data={consultantData.criteria} />}
-                       {consultantData.activeTab === 'policies' && <PoliciesView data={consultantData.policies} />}
-                     </div>
-                   </>
-                 )}
-                 
-                 {consultantData.activeAgent === "claiming_strategy" && (
-                    <ClaimingPanel data={consultantData.claimData} />
-                 )}
-               </div>
+
+            {/* Data panel */}
+            {cd.activeAgent && (
+              <div className="flex-1 min-w-0 flex flex-col overflow-hidden bg-[#f5f5f7]">
+                {cd.activeAgent === "new_life_insurance" && (
+                  <>
+                    <div className="bg-white border-b border-[#e5e5ea] flex px-5 pt-3.5 flex-shrink-0">
+                      {['requirements', 'criteria', 'policies'].map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setCd(prev => ({...prev, activeTab: t}))}
+                          className={`px-3 pb-3 text-xs font-medium transition-all mr-4 border-b-2 capitalize ${cd.activeTab === t ? 'text-[#0071e3] border-[#0071e3]' : 'text-[#86868b] border-transparent hover:text-[#6e6e73]'}`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      {cd.activeTab === 'requirements' && <RequirementsView data={cd.requirements} />}
+                      {cd.activeTab === 'criteria'     && <CriteriaView    data={cd.criteria} />}
+                      {cd.activeTab === 'policies'     && <PoliciesView    data={cd.policies} />}
+                    </div>
+                  </>
+                )}
+                {cd.activeAgent === "claiming_strategy" && <ClaimingPanel data={cd.claimData} />}
+              </div>
             )}
           </div>
         </div>
       ) : (
-        <DashboardView 
-          user={user} policies={policies} 
+        <DashboardView
+          user={user} policies={policies}
           onAddPolicy={() => setModal({})} onEditPolicy={(p) => setModal(p)}
           onDeletePolicy={deletePolicy} onStartAdvice={handleStartAdvice}
           onTestClaim={() => {
-            setConsultantData(prev => ({ ...prev, sessionType: "test" }));
+            setCd(prev => ({ ...prev, sessionType: "test" }));
             setView("consultant");
             setTestClaimModal(true);
           }}
           onLogout={() => window.location.href = "/api/auth/logout"}
         />
       )}
-      {modal && <PolicyModal policy={modal.id ? modal : null} onClose={() => setModal(null)} onSave={savePolicy} />}
+
+      {modal        && <PolicyModal policy={modal.id ? modal : null} onClose={() => setModal(null)} onSave={savePolicy} />}
       {profileModal && <ProfileModal user={user} onClose={() => setProfileModal(false)} onSave={saveProfile} />}
       {testClaimModal && <TestClaimingModal onClose={() => setTestClaimModal(false)} onStartTest={handleStartTestClaim} />}
     </div>
