@@ -69,14 +69,20 @@ def strategy_node(state: TreatmentState, llm) -> Dict:
         - Claim steps. If the user has multiple policies, suggest the order in which to claim from them.
     2. For future treatment plan:
         - What treatment / test / procedures / consultation to do, in order. Specify whether to go to public or private hospitals / clinics.
-        - Which policy or policies should cover the cost and what should the user expect to pay out-of-pocket. Try to minimize out-of-pocket costs, while ensuring medical quality as the highest priority. 
+        - Use medical common sense to determine the sequence of the consultations / tests / procedures / prescriptions / etc. Not all the items listed are necessary to be done. If an item is unnecessary, you can omit it.
+        - Which policy or policies should cover the cost and what should the user expect to pay out-of-pocket. Try to minimize out-of-pocket costs, while ensuring medical quality as the highest priority. Specify the exact numbers if possible.
         - Claim procedure, pay and reimburse or use insurance card for direct payment
         - Try to combine policy coverages where possible, to minimize out-of-pocket costs.
         - For example:
             - Step 1: Go to private GP for fast diagnosis and referral, since the patient has outpatient coverage at private GP clinics. The user has to pay $10 out of pocket as copayment, under policy A. The patient can use the policy card to pay for the balance directly.
             - Step 2: Arrange an appointment at public hospital for blood test and X-ray, since the condition is likely not urgent, and the coverage for public hospital is higher. The consultation will likely cost $200, the blood test will cost $80. The patient can pay first and then claim all the costs under policy B.
             - Step 3: Get prescriptions from public hospital. The medication X will cost around $30. The patient can pay the bills first and then claim from policy B.
-            
+
+    Some strategy tips:
+    - If multiple policies can be used to cover the same cost, the policy with a dedicated purpose should be utilized first. For example, an in-patient policy should be used first for pre-hospitalization and post-hospitalization costs if possible, and reserve the general health policy for the remaining costs or other medical needs.
+    - If multiple policies can be used to cover the same cost, utlize the policy that have a higher limit first.
+    - If a policy has a deductible or co-pay, check if other insurance policies can be used to cover the deductible or co-pay.
+    - A cost item could be claimable under multiple types of policies. For example, a sports injury could be claimable under a medical policy, an accident policy, a travel policy, or an event-specific policy. In such cases, try to combine the coverages to minimize the out-of-pocket costs. 
 
     Explain the reasoning of the plan.
     """

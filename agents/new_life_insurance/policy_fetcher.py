@@ -172,6 +172,7 @@ class PolicyFetcher:
         self,
         requirements: UserRequirements,
         on_policy_found: Optional[Callable] = None,
+        confirm_params_callback: Optional[Callable[[dict], Optional[dict]]] = None,
     ) -> List[dict]:
         """
         Run the full fetcher pipeline and return a list of normalised policy
@@ -179,6 +180,12 @@ class PolicyFetcher:
 
         on_policy_found is called with each policy dict as it becomes available
         during check_download so the frontend can stream incrementally.
+
+        confirm_params_callback, if provided, is invoked with the LLM-extracted
+        crawler params as a dict. It should return the (potentially edited)
+        params dict to use for crawling, or None to fall back to the originals.
+        Used by the API layer to let the user review / edit params on the
+        frontend before any crawling starts.
         """
         t_total = time.perf_counter()
         logger.info(
@@ -205,9 +212,26 @@ class PolicyFetcher:
             state["crawler_params"] = {**state["crawler_params"], "count": self.count}
             return _original_crawl(state)
 
+        def _extract_with_confirm(state: FetcherState) -> dict:
+            """Extract params, then let the caller confirm / edit them before crawling."""
+            out = self._node_extract_params(state)
+            if confirm_params_callback is None:
+                return out
+            try:
+                edited = confirm_params_callback(out.get("crawler_params") or {})
+            except Exception as exc:
+                logger.warning("[PolicyFetcher] confirm_params_callback raised: %s", exc)
+                edited = None
+            if isinstance(edited, dict) and edited:
+                # Merge over the extracted defaults so missing fields remain valid.
+                merged = {**(out.get("crawler_params") or {}), **edited}
+                logger.info("[PolicyFetcher] Crawler params confirmed by user: %s", merged)
+                return {"crawler_params": merged}
+            return out
+
         # Re-compile a fresh graph with the count-patched node
         g = StateGraph(FetcherState)
-        g.add_node("extract_params",   self._node_extract_params)
+        g.add_node("extract_params",   _extract_with_confirm)
         g.add_node("call_crawler",    _crawl_with_count)
         g.add_node("parse_policies",  self._node_parse_policies)
         g.add_node("check_download",  self._make_check_download_node(on_policy_found))

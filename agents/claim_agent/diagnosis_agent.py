@@ -16,6 +16,7 @@ def diagnosis_node(state: ClaimAgentState, llm) -> Dict:
     1. Identify all possible diagnoses based on the symptoms, tests done, procedures conducted and preliminary diagnosis. 
     2. List them all in order of probability. Set the most likely diagnosis as priority 1, the second most likely diagnosis as priority 2, and so on. 
     3. For each diagnosis, provide the reasoning behind it.
+    4. Provide a summary of the incident for each diagnosis, including how the patient got injured/sick and how the symptoms have developed over time. For example: "The patient broke their collarbone after falling off a ladder, and they have been casted in the A&E." "The patient contracted dengue fever after a trip to Thailand." "An unknown reason resulted in the food poisoning for the patient, and they have recovered after treatment."
     
     Provide professional, detailed, and comprehensive output.
     """

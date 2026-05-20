@@ -34,6 +34,8 @@ def context_retriever(state: TreatmentState, llm) -> Dict:
             prompt = f"""
             You are searching for relevant context in the {p['insurance_name']} insurance policy document for an incident. 
             
+            Incident: {diagnosis.incident_summary}
+            
             Tests done: {tests_done}
             Procedures conducted: {procedures_conducted}
 

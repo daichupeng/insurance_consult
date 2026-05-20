@@ -10,6 +10,7 @@ from agents.new_life_insurance.policy_scorer import PolicyScorer
 from agents.new_life_insurance.scoring_reviewer import ScoringReviewer
 from agents.new_life_insurance.report_writer import ReportWriter
 from agents.new_life_insurance.summarizer import PolicySummarizer
+from agents.new_life_insurance.info_extraction import InfoExtractor
 
 import logging
 import os
@@ -39,6 +40,7 @@ criteria_generator = CriteriaGenerator()
 policy_fetcher = PolicyFetcher()
 retriever = _RetrieverClass()
 summarizer_agent = PolicySummarizer()
+info_extractor = InfoExtractor()
 policy_scorer = PolicyScorer()
 scoring_reviewer = ScoringReviewer()
 report_writer = ReportWriter()
@@ -106,13 +108,21 @@ def summarizer_node(state: AgentState) -> dict:
     summarized_policies = summarizer_agent.summarize_policies(policies, criteria)
     return {"policies": summarized_policies}
 
+def info_extraction_node(state: AgentState) -> dict:
+    policies = state.get('policies', [])
+    if not policies:
+        return {"policies": policies}
+
+    extracted_policies = info_extractor.extract(policies)
+    return {"policies": extracted_policies}
+
 def policy_scorer_node(state: AgentState) -> dict:
     policies = state.get('policies', [])
     criteria = state.get('criteria')
-    
+
     if not policies or not criteria:
         return {"policies": policies}
-        
+
     evaluated_policies = policy_scorer.score_policies(policies, criteria)
     return {"policies": evaluated_policies}
 
@@ -125,6 +135,7 @@ def main():
     workflow.add_node("policy_fetcher_node", policy_fetcher_node)
     workflow.add_node("retriever_node", retriever_node)
     workflow.add_node("summarizer_node", summarizer_node)
+    workflow.add_node("info_extraction_node", info_extraction_node)
     workflow.add_node("policy_scorer_node", policy_scorer_node)
 
     workflow.add_edge(START, "profile_analyzer")
@@ -133,7 +144,8 @@ def main():
     workflow.add_edge("policy_fetcher_node", "retriever_node")
     workflow.add_edge("retriever_node", "summarizer_node")
     workflow.add_edge("summarizer_node", "policy_scorer_node")
-    workflow.add_edge("policy_scorer_node", END)
+    workflow.add_edge("policy_scorer_node", "info_extraction_node")
+    workflow.add_edge("info_extraction_node", END)
 
     app = workflow.compile()
 

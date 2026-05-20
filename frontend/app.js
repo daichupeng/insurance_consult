@@ -249,8 +249,122 @@ function RequirementItemCard({ item }) {
   );
 }
 
-function RequirementsView({ data }) {
-  if (!data?.items?.length) return (
+const CRAWLER_PRODUCT_TYPES = [
+  { value: "term",      label: "Term" },
+  { value: "whole",     label: "Whole Life" },
+  { value: "endowment", label: "Endowment" },
+];
+
+function CrawlerParamsCard({ params, confirmed, onConfirm }) {
+  const [form, setForm] = useState(params || {});
+  useEffect(() => { setForm(params || {}); }, [params]);
+
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+  const handleSubmit = (e) => { e.preventDefault(); onConfirm(form); };
+
+  const inputBase = "w-full px-2.5 py-2 bg-[#f5f5f7] border border-[#e5e5ea] rounded-lg text-sm text-[#1d1d1f] focus:outline-none focus:border-[#0071e3] focus:bg-white transition-all";
+  const labelBase = "block text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em] mb-1";
+  const ro = confirmed;
+
+  return (
+    <form onSubmit={handleSubmit}
+      className={`bg-white rounded-xl p-4 border ${confirmed ? 'border-[#bbf7d0]' : 'border-[#0071e3]/40 ring-2 ring-[#0071e3]/10'} mb-3`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em]">Search Parameters</span>
+        {confirmed
+          ? <Tag color="green">Confirmed</Tag>
+          : <Tag color="blue">Action needed</Tag>}
+      </div>
+      <p className="text-[11px] text-[#6e6e73] mb-3 leading-relaxed">
+        {confirmed
+          ? "These parameters were used to crawl comparefirst.sg."
+          : "Review the auto-extracted crawler inputs. Edit anything that needs adjusting, then confirm to start fetching policies."}
+      </p>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <div>
+          <label className={labelBase}>Product</label>
+          <select className={inputBase} disabled={ro}
+            value={form.product_type || "term"}
+            onChange={e => set("product_type", e.target.value)}>
+            {CRAWLER_PRODUCT_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className={labelBase}>Gender</label>
+          <select className={inputBase} disabled={ro}
+            value={form.gender || "M"}
+            onChange={e => set("gender", e.target.value)}>
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+          </select>
+        </div>
+        <div className="col-span-2">
+          <label className={labelBase}>Date of Birth (DD/MM/YYYY)</label>
+          <input className={inputBase} disabled={ro}
+            value={form.dob || ""}
+            onChange={e => set("dob", e.target.value)}
+            placeholder="01/01/1990" />
+        </div>
+        <div>
+          <label className={labelBase}>Smoker</label>
+          <select className={inputBase} disabled={ro}
+            value={form.smoker ? "yes" : "no"}
+            onChange={e => set("smoker", e.target.value === "yes")}>
+            <option value="no">No</option>
+            <option value="yes">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelBase}>Critical Illness</label>
+          <select className={inputBase} disabled={ro}
+            value={form.ci ? "yes" : "no"}
+            onChange={e => set("ci", e.target.value === "yes")}>
+            <option value="no">Not required</option>
+            <option value="yes">Required</option>
+          </select>
+        </div>
+        <div>
+          <label className={labelBase}>Sum Assured (S$)</label>
+          <input type="number" min="0" className={inputBase} disabled={ro}
+            value={form.sum_assured ?? 500000}
+            onChange={e => set("sum_assured", parseInt(e.target.value || "0", 10))} />
+        </div>
+        <div>
+          <label className={labelBase}>Coverage Term (yrs)</label>
+          <input type="number" min="0" className={inputBase} disabled={ro}
+            value={form.coverage_term ?? 20}
+            onChange={e => set("coverage_term", parseInt(e.target.value || "0", 10))} />
+        </div>
+        <div>
+          <label className={labelBase}>Premium Term (yrs)</label>
+          <input type="number" min="0" className={inputBase} disabled={ro}
+            value={form.premium_term ?? 20}
+            onChange={e => set("premium_term", parseInt(e.target.value || "0", 10))} />
+        </div>
+        <div>
+          <label className={labelBase}>Premium Amount (S$)</label>
+          <input type="number" min="0" className={inputBase} disabled={ro}
+            value={form.premium_amount ?? 300}
+            onChange={e => set("premium_amount", parseInt(e.target.value || "0", 10))} />
+        </div>
+      </div>
+
+      {!confirmed && (
+        <button type="submit"
+          className="w-full mt-3 py-2.5 bg-[#0071e3] text-white rounded-xl text-sm font-medium hover:bg-[#0077ed] transition-colors">
+          Confirm & Continue
+        </button>
+      )}
+    </form>
+  );
+}
+
+function RequirementsView({ data, crawlerParams, onConfirmParams }) {
+  const hasReqs = !!data?.items?.length;
+  const hasParams = !!crawlerParams;
+
+  if (!hasReqs && !hasParams) return (
     <div className="h-full flex flex-col items-center justify-center text-[#86868b] p-8">
       <div className="text-4xl mb-3 opacity-40">👤</div>
       <p className="text-sm text-[#6e6e73]">Building profile…</p>
@@ -258,7 +372,14 @@ function RequirementsView({ data }) {
   );
   return (
     <div className="p-5 space-y-3 overflow-y-auto h-full bg-[#f5f5f7]">
-      {data.items.map(item => <RequirementItemCard key={item.key} item={item} />)}
+      {hasParams && (
+        <CrawlerParamsCard
+          params={crawlerParams.data}
+          confirmed={!!crawlerParams.confirmed}
+          onConfirm={onConfirmParams}
+        />
+      )}
+      {hasReqs && data.items.map(item => <RequirementItemCard key={item.key} item={item} />)}
     </div>
   );
 }
@@ -332,6 +453,125 @@ function CriteriaView({ data }) {
 }
 
 // ─── Policies View ───────────────────────────────────────────────────────────
+
+// ─── Key Info ────────────────────────────────────────────────────────────────
+
+const KEY_INFO_SECTION_LABELS = {
+  policy_identity: "Policy Identity",
+  surrender_value: "Surrender Value",
+  death_benefit: "Death Benefit",
+  disability_benefit: "Disability Benefit",
+  terminal_illness_benefit: "Terminal Illness Benefit",
+  multiplier_rule: "Multiplier Rule",
+  continual_income_withdrawal_value: "Income Withdrawal",
+  cash_bonus: "Cash Bonus",
+  additional_cash_bonus: "Additional Cash Bonus",
+  terminal_bonus: "Terminal Bonus",
+  renewal_policy: "Renewal",
+  convert_policy: "Conversion",
+  additional_perks: "Additional Perks",
+};
+
+const KEY_INFO_FIELD_LABELS = {
+  product_name: "Product",
+  product_type: "Type",
+  age_basis_type: "Age Basis",
+  currency: "Currency",
+  available: "Available",
+  covered: "Covered",
+  conditions: "Conditions",
+  value_components: "Value Components",
+  additional_conditions: "Additional Conditions",
+  fund_pool: "Fund Pool",
+  calculation_rules: "Calculation Rules",
+  calculation_assumptions: "Assumptions",
+  input: "Input",
+  rules: "Rules",
+  policy: "Policy",
+};
+
+function formatKeyInfoValue(value) {
+  if (value === null || value === undefined || value === "") return null;
+  if (value === true)  return "Yes";
+  if (value === false) return "No";
+  if (Array.isArray(value)) {
+    const items = value.filter(x => x !== null && x !== undefined && x !== "");
+    return items.length ? items.join(" · ") : null;
+  }
+  if (typeof value === "object") {
+    const lines = Object.entries(value)
+      .map(([k, v]) => {
+        const f = formatKeyInfoValue(v);
+        return f === null ? null : `${KEY_INFO_FIELD_LABELS[k] || k.replace(/_/g, " ")}: ${f}`;
+      })
+      .filter(Boolean);
+    return lines.length ? lines.join(" · ") : null;
+  }
+  return String(value);
+}
+
+function hasSectionData(section) {
+  if (section === null || section === undefined) return false;
+  if (Array.isArray(section)) return section.some(v => v !== null && v !== undefined && v !== "");
+  if (typeof section === "object") return Object.values(section).some(v => formatKeyInfoValue(v) !== null);
+  return formatKeyInfoValue(section) !== null;
+}
+
+function KeyInfoSection({ title, data }) {
+  if (!hasSectionData(data)) return null;
+
+  if (Array.isArray(data)) {
+    return (
+      <div className="p-3 bg-[#f5f5f7] rounded-xl">
+        <div className="text-xs font-semibold text-[#1d1d1f] mb-1.5">{title}</div>
+        <ul className="text-xs text-[#6e6e73] leading-relaxed list-disc pl-4 space-y-0.5">
+          {data.filter(Boolean).map((item, i) => <li key={i}>{item}</li>)}
+        </ul>
+      </div>
+    );
+  }
+
+  const rows = Object.entries(data || {})
+    .map(([k, v]) => [k, formatKeyInfoValue(v)])
+    .filter(([, v]) => v !== null);
+
+  if (!rows.length) return null;
+
+  return (
+    <div className="p-3 bg-[#f5f5f7] rounded-xl">
+      <div className="text-xs font-semibold text-[#1d1d1f] mb-1.5">{title}</div>
+      <div className="space-y-1">
+        {rows.map(([k, v]) => (
+          <div key={k} className="text-xs leading-relaxed">
+            <span className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mr-1.5">
+              {KEY_INFO_FIELD_LABELS[k] || k.replace(/_/g, " ")}
+            </span>
+            <span className="text-[#1d1d1f]">{v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function KeyInfoView({ data }) {
+  if (!data) return null;
+  const sections = Object.entries(data)
+    .map(([k, v]) => [k, v])
+    .filter(([, v]) => hasSectionData(v));
+  if (!sections.length) return null;
+
+  return (
+    <div>
+      <SectionLabel>Key Policy Values</SectionLabel>
+      <div className="grid grid-cols-1 gap-2">
+        {sections.map(([k, v]) => (
+          <KeyInfoSection key={k} title={KEY_INFO_SECTION_LABELS[k] || k.replace(/_/g, " ")} data={v} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function PolicyRankEntry({ policy, rank }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -415,6 +655,8 @@ function PolicyRankEntry({ policy, rank }) {
                 </div>
               </div>
             )}
+
+            <KeyInfoView data={policy.key_info} />
           </div>
         )}
 
@@ -987,7 +1229,7 @@ function App() {
   const [cd, setCd] = useState({
     sessionId: null, messages: [], isWaiting: false, isTyping: false,
     phase: "idle", activeTab: "requirements",
-    requirements: null, criteria: null, policies: null,
+    requirements: null, criteria: null, policies: null, crawlerParams: null,
     activeAgent: null, claimData: null, testParams: null, sessionType: "advice"
   });
 
@@ -1044,6 +1286,7 @@ function App() {
         case "status":       if (d.phase) next.phase = d.phase; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("status", d.message, d.phase)]; break;
         case "requirements": next.requirements = d.data; next.activeTab = "requirements"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Profile captured")]; break;
         case "criteria":     next.criteria = d.data; next.activeTab = "criteria"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
+        case "crawler_params": next.crawlerParams = { data: d.data, confirmed: false }; next.activeTab = "requirements"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Review search parameters")]; break;
         case "policies":     next.policies = d.data; next.activeTab = "policies"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
         case "claim_update": next.claimData = d.data; next.activeAgent = "claiming_strategy"; break;
         case "test_scenario":    next.messages = [mkMsg("agent", `*Test Scenario Generated*\n\n${d.content}`)]; break;
@@ -1052,6 +1295,14 @@ function App() {
       }
       return next;
     });
+  };
+
+  const handleConfirmParams = (params) => {
+    wsRef.current?.send(JSON.stringify({ type: "confirm_params", params }));
+    setCd(prev => ({
+      ...prev,
+      crawlerParams: prev.crawlerParams ? { data: params, confirmed: true } : null,
+    }));
   };
 
   const handleSend = async (text) => {
@@ -1089,6 +1340,7 @@ function App() {
       requirements: conv.state_data?.user_requirements || null,
       criteria: conv.state_data?.criteria || null,
       policies: conv.state_data?.policies || null,
+      crawlerParams: null,
       activeAgent: agent,
       claimData: agent === "claiming_strategy" ? { ...(conv.state_data?.claim_state || {}), details: conv.state_data?.claim_state || {} } : null,
       testParams: conv.state_data?.test_params || null,
@@ -1119,14 +1371,14 @@ function App() {
   };
 
   const handleStartAdvice = () => {
-    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: false, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, activeAgent: null, claimData: null, testParams: null, sessionType: "advice" });
+    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: false, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, crawlerParams: null, activeAgent: null, claimData: null, testParams: null, sessionType: "advice" });
     fetchConversations();
     setView("consultant");
   };
 
   const handleStartTestClaim = async (params) => {
     setTestClaimModal(false);
-    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: true, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, activeAgent: "claiming_strategy", claimData: { details: {} }, testParams: params, sessionType: "test" });
+    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: true, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, crawlerParams: null, activeAgent: "claiming_strategy", claimData: { details: {} }, testParams: params, sessionType: "test" });
 
     const r = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "test" }) });
     const { session_id } = await r.json();
@@ -1266,7 +1518,13 @@ function App() {
                       ))}
                     </div>
                     <div className="flex-1 min-h-0 overflow-hidden">
-                      {cd.activeTab === 'requirements' && <RequirementsView data={cd.requirements} />}
+                      {cd.activeTab === 'requirements' && (
+                        <RequirementsView
+                          data={cd.requirements}
+                          crawlerParams={cd.crawlerParams}
+                          onConfirmParams={handleConfirmParams}
+                        />
+                      )}
                       {cd.activeTab === 'criteria'     && <CriteriaView    data={cd.criteria} />}
                       {cd.activeTab === 'policies'     && <PoliciesView    data={cd.policies} />}
                     </div>

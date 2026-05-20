@@ -283,11 +283,18 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
             if data["type"] == "start_test":
                 asyncio.create_task(
                     session_manager.run_test_claim_workflow(
-                        session_id, 
-                        data.get("params", {}), 
+                        session_id,
+                        data.get("params", {}),
                         loop
                     )
                 )
+            elif data["type"] == "confirm_params":
+                # Structured answer: hand the edited crawler params straight back
+                # to the waiting fetcher thread without going through the LLM
+                # intent classifier.
+                _sess = session_manager.get_session(session_id)
+                if _sess:
+                    _sess.set_answer(json.dumps(data.get("params", {})))
             else:
                 asyncio.create_task(
                     session_manager.handle_message(

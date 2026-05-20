@@ -143,6 +143,7 @@ class SessionManager:
                 from agents.new_life_insurance.criteria_generator import CriteriaGenerator
                 from agents.new_life_insurance.policy_fetcher import PolicyFetcher
                 from agents.new_life_insurance.summarizer import PolicySummarizer
+                from agents.new_life_insurance.info_extraction import InfoExtractor
                 from agents.new_life_insurance.policy_scorer import PolicyScorer
 
                 # Retriever backend selection
@@ -162,6 +163,7 @@ class SessionManager:
                 policy_fetcher = PolicyFetcher()
                 retriever = _RetrieverClass()
                 summarizer_agent = PolicySummarizer()
+                info_extractor = InfoExtractor()
                 policy_scorer = PolicyScorer()
 
                 session.user_profile = user_profile
@@ -199,13 +201,32 @@ class SessionManager:
                 # Phase 3: Fetch policies from comparefirst.sg
                 if session.cancel_event.is_set(): return
                 session.phase = "fetching"
-                send({"type": "status", "phase": "fetching", "message": "Fetching top policies from comparefirst.sg..."})
+                send({"type": "status", "phase": "fetching", "message": "Preparing crawler parameters..."})
                 t0 = time.perf_counter()
 
                 def on_policy_found(policy_dict):
                     send({"type": "crawled_policy", "data": policy_dict})
 
-                crawled_policies = policy_fetcher.fetch(profile, on_policy_found=on_policy_found)
+                def confirm_params_callback(params: dict):
+                    """Push extracted params to frontend, block until user confirms / edits."""
+                    import json as _json
+                    send({"type": "crawler_params", "data": params})
+                    send({"type": "status", "phase": "fetching", "message": "Awaiting parameter confirmation..."})
+                    raw = session.wait_for_answer()
+                    edited = None
+                    if raw:
+                        try:
+                            edited = _json.loads(raw)
+                        except Exception:
+                            edited = None
+                    send({"type": "status", "phase": "fetching", "message": "Fetching top policies from comparefirst.sg..."})
+                    return edited if isinstance(edited, dict) else None
+
+                crawled_policies = policy_fetcher.fetch(
+                    profile,
+                    on_policy_found=on_policy_found,
+                    confirm_params_callback=confirm_params_callback,
+                )
                 logger.info("[Session %s] Phase 3 fetching: %.2fs  (%d policies)",
                             session_id, time.perf_counter() - t0, len(crawled_policies))
                 session.crawled_policies = crawled_policies
@@ -237,6 +258,14 @@ class SessionManager:
                 t0 = time.perf_counter()
                 policies = summarizer_agent.summarize_policies(policies, criteria)
                 logger.info("[Session %s] Phase 4.5 summarization: %.2fs", session_id, time.perf_counter() - t0)
+
+                # Phase 4.75: Key info extraction (runs before scoring so scorer can use it if needed)
+                if session.cancel_event.is_set(): return
+                session.phase = "info_extraction"
+                send({"type": "status", "phase": "info_extraction", "message": "Extracting key policy values..."})
+                t0 = time.perf_counter()
+                policies = info_extractor.extract(policies)
+                logger.info("[Session %s] Phase 4.75 info extraction: %.2fs", session_id, time.perf_counter() - t0)
 
                 # Phase 5: Scoring
                 if session.cancel_event.is_set(): return

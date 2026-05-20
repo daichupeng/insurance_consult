@@ -118,10 +118,10 @@ class PolicyScorer:
             for criterion in criteria.criteria:
                 print(f"\n[PolicyScorer]: Evaluating criterion '{criterion.item}' horizontally across {len(policies)} policies")
                 horizontal_results = self.evaluate_criterion_horizontally(policies, criterion)
-                
+
                 # Assign the results back to the respective policies
                 for i, policy in enumerate(policies):
                     score, reason = horizontal_results.get(i + 1, (0, "Failed to score this criterion."))
                     policy.scoring.append((score, criterion, reason))
-            
+
         return policies

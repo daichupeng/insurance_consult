@@ -105,6 +105,7 @@ class Policy(BaseModel):
     retrieved_context: Dict[str, List[str]] = Field(description = 'Relevant context found in the policy documents')
     context_summary: Dict[str, str] = Field(default_factory=dict, description='LLM-generated summary of retrieved_context mapping item identifiers to summary text')
     policy_document: str = Field(default="", description="Full markdown text of the policy product summary document")
+    key_info: Optional[Dict[str, Any]] = Field(default=None, description='Structured snapshot of the policy economic terms (benefits, surrender values, bonuses, etc.) extracted from policy_document')
 
 class RetrieverState(TypedDict):
     search_items: List[ScoringItem]

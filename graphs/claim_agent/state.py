@@ -14,6 +14,7 @@ class Diagnosis(BaseModel):
     diagnosis: str
     diagnosis_reason: str
     priority: int
+    incident_summary: str
 
 class CostItem(BaseModel):
     item_name: str=Field(description="Exact procedures, prescriptions, consultations that have been conducted. Specify the item and the facilities. For example, GP consultation at private clinic, X-ray test at polyclinic, Paracetamol Prescription by GP， Appendectomy at a private hospital.")
@@ -42,11 +43,11 @@ class ClaimAgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     
     # Core variables requested by user
-    symptoms: Annotated[List[str], operator.add]
-    tests_done: Annotated[List[str], operator.add]
-    procedures_conducted: Annotated[List[str], operator.add]
+    symptoms: List[str]
+    tests_done: List[str]
+    procedures_conducted: List[str]
     primary_diagnosis: Optional[str]
-    incurred_cost_items: Annotated[List[CostItem], operator.add]
+    incurred_cost_items: List[CostItem]
 
     possible_diagnoses: List[Diagnosis]
     treatment_strategies: Annotated[List[TreatmentStrategy], operator.add]
