@@ -207,6 +207,105 @@ async def get_session(session_id: str):
     }
 
 
+def _policy_from_crawled(cd: dict) -> dict:
+    """Build a minimal Policy-shaped dict from a crawled policy entry.
+
+    Used when the user asks to build a simulator for a policy that wasn't in
+    the top-N (so it never went through retrieval / info extraction). The
+    scenario coder will fall back to its read_policy_section tool because
+    key_info is empty.
+    """
+    return {
+        "policy_name": cd.get("policy_name", ""),
+        "basic_info": {
+            "insurer": cd.get("insurer", ""),
+            "sub_type": cd.get("sub_type", ""),
+            "sub_information": cd.get("sub_information", ""),
+            "annual_premium": cd.get("annual_premium", "N/A"),
+            "coverage_term_years": cd.get("coverage_term_years", "N/A"),
+            "premium_term_years": cd.get("premium_term_years", "N/A"),
+            "total_premium": cd.get("total_premium", "N/A"),
+            "distribution_cost": cd.get("distribution_cost", "N/A"),
+            "credit_rating": cd.get("credit_rating", "N/A"),
+            "guaranteed_maturity_benefit": cd.get("guaranteed_maturity_benefit", "N/A"),
+            "product_summary_url": cd.get("product_summary_url", ""),
+            "brochure_url": cd.get("brochure_url", ""),
+        },
+        "return_rate": float(cd.get("return_rate") or 0.0),
+        "fulfil_filters": (True, "Not evaluated (not in top-N)"),
+        "scoring": [],
+        "retrieved_context": {},
+        "context_summary": {},
+        "policy_document": "",
+        "key_info": None,
+    }
+
+
+@app.post("/api/simulator/prepare")
+async def simulator_prepare(payload: dict):
+    """Generate (or load cached) simulator code for a policy and return its
+    INPUT / OUTPUT schemas.
+
+    Body: {"session_id": "...", "policy_name": "...", "force": false}
+    """
+    session_id = payload.get("session_id")
+    policy_name = payload.get("policy_name")
+    force = bool(payload.get("force", False))
+    if not session_id or not policy_name:
+        return {"error": "session_id and policy_name required"}
+
+    session = session_manager.get_session(session_id)
+    if not session:
+        return {"error": "Session not found"}
+
+    # Prefer the scored / info-extracted entry (top-N); fall back to the raw
+    # crawled record for any other policy.
+    policy_dict = next(
+        (p for p in (session.policies or []) if p.get("policy_name") == policy_name),
+        None,
+    )
+    if policy_dict is None:
+        crawled = next(
+            (p for p in (session.crawled_policies or []) if p.get("policy_name") == policy_name),
+            None,
+        )
+        if crawled is None:
+            return {"error": f"Policy '{policy_name}' not found in session"}
+        policy_dict = _policy_from_crawled(crawled)
+
+    from agents.new_life_insurance.scenario_coder import (
+        ScenarioCoder, codebank_path, load_schemas,
+    )
+    from schema.models import Policy
+
+    target = codebank_path(policy_name)
+    if force or not target.exists():
+        try:
+            policy = Policy(**policy_dict)
+        except Exception as e:
+            return {"error": f"Policy decode failed: {e}"}
+        try:
+            await asyncio.to_thread(ScenarioCoder().generate, policy, force)
+        except Exception as e:
+            return {"error": f"Generation failed: {e}"}
+
+    return load_schemas(policy_name)
+
+
+@app.post("/api/simulator/run")
+async def simulator_run(payload: dict):
+    """Execute a cached simulator with user-provided inputs.
+
+    Body: {"policy_name": "...", "inputs": { ... }}
+    """
+    policy_name = payload.get("policy_name")
+    if not policy_name:
+        return {"error": "policy_name required"}
+
+    from agents.new_life_insurance.scenario_coder import run_simulator
+    return await asyncio.to_thread(run_simulator, policy_name, payload.get("inputs") or {})
+
+
 @app.websocket("/ws/{session_id}")
 async def websocket_endpoint(websocket: WebSocket, session_id: str):
     await websocket.accept()

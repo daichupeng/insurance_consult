@@ -165,7 +165,10 @@ class PolicyFetcher:
         Number of policies to fetch (default 10).
     """
 
-    def __init__(self, count: int = 3):
+    def __init__(self, count: int = 20):
+        # Crawl as many policies as comparefirst will show (typically a few dozen).
+        # The session pipeline then narrows to the top ranks for expensive
+        # downstream work (retrieval, scoring, info extraction, simulator coding).
         self.count = count
 
     def fetch(

@@ -573,7 +573,7 @@ function KeyInfoView({ data }) {
   );
 }
 
-function PolicyRankEntry({ policy, rank }) {
+function PolicyRankEntry({ policy, rank, onBuildSimulator }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const totalScore = policy.scoring.reduce((s, [sc, crit]) => s + sc * (crit.weight / 100), 0);
   const scoreColor = totalScore >= 4 ? "text-[#15803d]" : totalScore >= 3 ? "text-[#b45309]" : "text-[#e11d48]";
@@ -655,39 +655,544 @@ function PolicyRankEntry({ policy, rank }) {
                 </div>
               </div>
             )}
-
-            <KeyInfoView data={policy.key_info} />
           </div>
         )}
 
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-2 ${
+              isExpanded
+                ? 'bg-[#1d1d1f] text-white'
+                : 'bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8f2ff] hover:text-[#0071e3]'
+            }`}
+          >
+            {isExpanded ? 'Collapse' : 'View Details'}
+            <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
+              <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          {onBuildSimulator && (
+            <button
+              onClick={() => onBuildSimulator(policy.policy_name)}
+              className="px-3 py-2.5 rounded-xl text-xs font-medium bg-[#0071e3] text-white hover:bg-[#0077ed] transition-colors flex items-center gap-1.5"
+              title="Build Simulator"
+            >
+              🧮 Simulator
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CrawledPolicyCard({ policy, onBuildSimulator }) {
+  const annual = policy.annual_premium && policy.annual_premium !== "N/A" ? policy.annual_premium : "—";
+  const roi = (typeof policy.return_rate === "number") ? (policy.return_rate * 100).toFixed(2) + "%" : "—";
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#e5e5ea] hover:border-[#d2d2d7] transition-colors mb-3">
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-0.5">{policy.insurer || "Insurer"}</div>
+            <h4 className="text-sm font-semibold text-[#1d1d1f] leading-snug">{policy.policy_name}</h4>
+            {policy.sub_information && (
+              <p className="text-[11px] text-[#86868b] mt-1 leading-snug">{policy.sub_information}</p>
+            )}
+          </div>
+          <div className="flex gap-1 flex-shrink-0">
+            {policy.product_summary_url && (
+              <a href={policy.product_summary_url} target="_blank"
+                className="w-6 h-6 rounded-full bg-[#f5f5f7] text-[#6e6e73] flex items-center justify-center text-[10px] hover:bg-[#e8f2ff] hover:text-[#0071e3] transition-colors"
+                title="Product Summary">📄</a>
+            )}
+            {policy.brochure_url && (
+              <a href={policy.brochure_url} target="_blank"
+                className="w-6 h-6 rounded-full bg-[#f5f5f7] text-[#6e6e73] flex items-center justify-center text-[10px] hover:bg-[#f5f0ff] hover:text-[#7c3aed] transition-colors"
+                title="Brochure">📖</a>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 py-2 border-y border-[#f5f5f7]">
+          <div>
+            <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-0.5">Annual</div>
+            <div className="text-xs font-semibold text-[#1d1d1f]">{annual}</div>
+          </div>
+          <div>
+            <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-0.5">Return Rate</div>
+            <div className="text-xs font-semibold text-[#1d1d1f]">{roi}</div>
+          </div>
+        </div>
+
         <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className={`w-full mt-4 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-2 ${
-            isExpanded
-              ? 'bg-[#1d1d1f] text-white'
-              : 'bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8f2ff] hover:text-[#0071e3]'
-          }`}
+          onClick={() => onBuildSimulator && onBuildSimulator(policy.policy_name)}
+          className="w-full mt-3 py-2 rounded-xl text-xs font-medium bg-[#f5f5f7] text-[#0071e3] hover:bg-[#e8f2ff] transition-colors flex items-center justify-center gap-1.5"
         >
-          {isExpanded ? 'Collapse' : 'View Details'}
-          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}>
-            <path d="M1.5 3.5l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          🧮 Build Simulator
         </button>
       </div>
     </div>
   );
 }
 
-function PoliciesView({ data }) {
-  if (!data?.length) return (
+function PoliciesView({ scored, crawled, onBuildSimulator }) {
+  const hasScored = Array.isArray(scored) && scored.length > 0;
+  const scoredNames = new Set((scored || []).map(p => p.policy_name));
+  const others = (crawled || []).filter(p => p.policy_name && !scoredNames.has(p.policy_name));
+
+  if (!hasScored && others.length === 0) return (
     <div className="h-full flex flex-col items-center justify-center text-[#86868b] p-8">
       <div className="text-4xl mb-3 opacity-40">📊</div>
       <p className="text-sm text-[#6e6e73]">Analyzing options…</p>
     </div>
   );
+
   return (
     <div className="p-5 overflow-y-auto h-full bg-[#f5f5f7]">
-      {data.map((p, i) => <PolicyRankEntry key={i} policy={p} rank={i + 1} />)}
+      {hasScored && (
+        <>
+          <SectionLabel>Top Recommendations</SectionLabel>
+          {scored.map((p, i) => (
+            <PolicyRankEntry key={`s-${i}`} policy={p} rank={i + 1} onBuildSimulator={onBuildSimulator} />
+          ))}
+        </>
+      )}
+      {others.length > 0 && (
+        <div className={hasScored ? "mt-5" : ""}>
+          <SectionLabel>Other Crawled Policies ({others.length})</SectionLabel>
+          <p className="text-[11px] text-[#86868b] mb-3 leading-relaxed">
+            These were crawled but not scored. Click "Build Simulator" on any of them to generate a scenario calculator on demand.
+          </p>
+          {others.map((p, i) => (
+            <CrawledPolicyCard key={`c-${i}`} policy={p} onBuildSimulator={onBuildSimulator} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Simulator ───────────────────────────────────────────────────────────────
+
+const SIM_INPUT_CLS = "w-full px-2.5 py-2 bg-[#f5f5f7] border border-[#e5e5ea] rounded-lg text-sm text-[#1d1d1f] focus:outline-none focus:border-[#0071e3] focus:bg-white transition-all";
+const SIM_LABEL_CLS = "block text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em] mb-1";
+
+function InfoTooltip({ text }) {
+  const [open, setOpen] = useState(false);
+  if (!text || !String(text).trim()) return null;
+  return (
+    <span className="relative inline-flex">
+      <button type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={(e) => { e.preventDefault(); setOpen(o => !o); }}
+        aria-label="Field explanation"
+        className="w-3.5 h-3.5 rounded-full bg-[#e5e5ea] text-[#6e6e73] hover:bg-[#0071e3] hover:text-white text-[9px] font-bold flex items-center justify-center transition-colors leading-none">
+        ?
+      </button>
+      {open && (
+        <span className="absolute z-30 left-5 -top-1 w-64 p-2.5 rounded-lg bg-[#1d1d1f] text-white text-[11px] leading-snug shadow-lg normal-case font-normal tracking-normal pointer-events-none">
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function SimFieldLabel({ field }) {
+  return (
+    <div className="flex items-center gap-1 mb-1">
+      <span className="text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em]">
+        {field.label || field.key}
+      </span>
+      <InfoTooltip text={field.description} />
+    </div>
+  );
+}
+
+function SimulatorField({ field, value, onChange }) {
+  const t = field.type;
+  if (t === "select" && Array.isArray(field.options)) {
+    return (
+      <select className={SIM_INPUT_CLS} value={value ?? field.default ?? ""}
+        onChange={e => onChange(field.key, e.target.value)}>
+        {field.options.map((o, i) => (
+          <option key={i} value={o.value ?? o}>{o.label ?? String(o.value ?? o)}</option>
+        ))}
+      </select>
+    );
+  }
+  if (t === "boolean") {
+    return (
+      <select className={SIM_INPUT_CLS} value={value ? "yes" : "no"}
+        onChange={e => onChange(field.key, e.target.value === "yes")}>
+        <option value="no">No</option>
+        <option value="yes">Yes</option>
+      </select>
+    );
+  }
+  if (t === "number" || t === "integer") {
+    return (
+      <input type="number" className={SIM_INPUT_CLS} value={value ?? field.default ?? 0}
+        step={t === "integer" ? 1 : "any"}
+        onChange={e => {
+          const v = e.target.value;
+          if (v === "") return onChange(field.key, "");
+          onChange(field.key, t === "integer" ? parseInt(v, 10) : parseFloat(v));
+        }} />
+    );
+  }
+  return (
+    <input type="text" className={SIM_INPUT_CLS} value={value ?? field.default ?? ""}
+      onChange={e => onChange(field.key, e.target.value)} />
+  );
+}
+
+function SimulatorOutputs({ schema, outputs }) {
+  if (!outputs) return null;
+  if (outputs.error) {
+    return (
+      <div className="bg-[#fff1f2] border border-[#fecdd3] text-[#e11d48] text-sm rounded-xl p-4">
+        {outputs.error}
+      </div>
+    );
+  }
+  const fields = (schema || []).filter(f => f && f.key);
+  return (
+    <div className="bg-white rounded-xl p-4 border border-[#e5e5ea]">
+      <SectionLabel>Results</SectionLabel>
+      <div className="grid grid-cols-2 gap-3">
+        {fields.map(f => {
+          const raw = outputs[f.key];
+          let display = "—";
+          if (raw !== null && raw !== undefined && raw !== "") {
+            if (typeof raw === "number") {
+              display = f.type === "text"
+                ? String(raw)
+                : raw.toLocaleString(undefined, { maximumFractionDigits: 2 });
+            } else if (typeof raw === "object") {
+              display = JSON.stringify(raw);
+            } else {
+              display = String(raw);
+            }
+          }
+          return (
+            <div key={f.key} className={`p-3 bg-[#f5f5f7] rounded-lg ${f.key === "notes" ? "col-span-2" : ""}`}>
+              <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">{f.label || f.key}</div>
+              <div className="text-sm font-medium text-[#1d1d1f] break-words whitespace-pre-wrap">{display}</div>
+              {f.description && <div className="text-[11px] text-[#86868b] mt-1 leading-relaxed">{f.description}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function parsePremiumAmount(s) {
+  if (s === null || s === undefined || s === "" || s === "N/A") return null;
+  const m = String(s).match(/(\d[\d,]*(\.\d+)?)/);
+  return m ? parseFloat(m[1].replace(/,/g, "")) : null;
+}
+
+function parsePremiumTerm(s) {
+  if (s === null || s === undefined || s === "" || s === "N/A") return null;
+  if (/whole/i.test(String(s))) return "whole";
+  const m = String(s).match(/\d+/);
+  return m ? parseInt(m[0], 10) : null;
+}
+
+function PremiumSummary({ policy }) {
+  if (!policy?.basic_info) return null;
+  const info = policy.basic_info;
+  const annual = parsePremiumAmount(info.annual_premium);
+  const term = parsePremiumTerm(info.premium_term_years);
+  const fmt = (n) => "S$ " + n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+
+  let totalDisplay = "—";
+  if (annual !== null && typeof term === "number") {
+    totalDisplay = fmt(annual * term);
+  } else if (annual !== null && term === "whole") {
+    totalDisplay = `${fmt(annual)} × Whole Life`;
+  } else if (info.total_premium && info.total_premium !== "N/A") {
+    totalDisplay = info.total_premium;
+  }
+
+  return (
+    <div className="bg-white rounded-xl p-4 border border-[#e5e5ea]">
+      <SectionLabel>Premium</SectionLabel>
+      <div className="grid grid-cols-3 gap-3">
+        <div>
+          <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Annual</div>
+          <div className="text-sm font-semibold text-[#1d1d1f]">{info.annual_premium || "—"}</div>
+        </div>
+        <div>
+          <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Pay Term</div>
+          <div className="text-sm font-semibold text-[#1d1d1f]">
+            {term === "whole" ? "Whole Life" : (info.premium_term_years && info.premium_term_years !== "N/A" ? `${info.premium_term_years} yrs` : "—")}
+          </div>
+        </div>
+        <div>
+          <div className="text-[10px] font-medium text-[#86868b] uppercase tracking-wider mb-1">Total Outlay</div>
+          <div className="text-sm font-semibold text-[#0071e3]">{totalDisplay}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CollapsibleKeyInfo({ data }) {
+  const [open, setOpen] = useState(false);
+  if (!data) return null;
+  return (
+    <div className="bg-white rounded-xl border border-[#e5e5ea] overflow-hidden">
+      <button onClick={() => setOpen(!open)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-[#f5f5f7] transition-colors">
+        <span className="text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em]">Policy Key Information</span>
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`text-[#86868b] transition-transform ${open ? 'rotate-180' : ''}`}>
+          <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 pt-2 border-t border-[#f5f5f7]">
+          <KeyInfoView data={data} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SimulatorEventGroup({ eventField, alwaysFields, scopedFieldsByEvent, inputs, onChange }) {
+  const currentEvent = inputs.event ?? eventField.default;
+  const handleEventChange = (val) => onChange("event", val);
+
+  return (
+    <div className="bg-white rounded-xl border border-[#e5e5ea] overflow-hidden">
+      <div className="px-4 pt-3">
+        <div className="text-[10px] font-semibold text-[#86868b] uppercase tracking-[0.07em] mb-1">Scenario / Event</div>
+      </div>
+      <div className="divide-y divide-[#f5f5f7]">
+        {(eventField.options || []).map((opt) => {
+          const val = opt.value ?? opt;
+          const label = opt.label ?? String(val);
+          const selected = currentEvent === val;
+          const scoped = scopedFieldsByEvent[val] || [];
+          return (
+            <label key={val}
+              className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${selected ? "bg-[#e8f2ff]/40" : "hover:bg-[#f5f5f7]"}`}>
+              <input type="radio" name="sim-event" className="mt-1 accent-[#0071e3]"
+                checked={selected} onChange={() => handleEventChange(val)} />
+              <div className="flex-1 min-w-0">
+                <div className={`text-sm font-medium ${selected ? "text-[#0071e3]" : "text-[#1d1d1f]"}`}>{label}</div>
+                {scoped.length > 0 && (
+                  <div className={`mt-2 grid grid-cols-2 gap-2 ${selected ? "" : "opacity-40 pointer-events-none"}`}>
+                    {scoped.map(f => (
+                      <div key={f.key} className={f.type === "text" ? "col-span-2" : ""}>
+                        <SimFieldLabel field={f} />
+                        <SimulatorField field={f} value={inputs[f.key]} onChange={onChange} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SimulatorView({ sessionId, policies, initialPolicyName, onInitialConsumed }) {
+  const [selectedName, setSelectedName] = useState(initialPolicyName || policies?.[0]?.policy_name || "");
+  const [schemas, setSchemas] = useState({});
+  const [inputs, setInputs] = useState({});
+  const [outputs, setOutputs] = useState(null);
+  const [preparing, setPreparing] = useState(false);
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Honour a one-shot "build simulator for X" request from the Policies tab.
+  useEffect(() => {
+    if (initialPolicyName) {
+      setSelectedName(initialPolicyName);
+      onInitialConsumed && onInitialConsumed();
+    }
+  }, [initialPolicyName]);
+
+  useEffect(() => {
+    if (policies?.length && selectedName && !policies.find(p => p.policy_name === selectedName)) {
+      setSelectedName(policies[0].policy_name);
+    }
+  }, [policies, selectedName]);
+
+  const selectedPolicy = policies?.find(p => p.policy_name === selectedName) || null;
+  const schema = selectedName ? schemas[selectedName] : null;
+
+  const fetchSchema = (name, force) => {
+    setPreparing(true); setError(null);
+    return fetch("/api/simulator/prepare", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ session_id: sessionId, policy_name: name, force: !!force }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        setSchemas(prev => ({ ...prev, [name]: data }));
+        if (data?.input_schema) {
+          setInputs(Object.fromEntries(data.input_schema.map(f => [f.key, f.default])));
+        }
+        setOutputs(null);
+      })
+      .catch(e => setError(String(e)))
+      .finally(() => setPreparing(false));
+  };
+
+  useEffect(() => {
+    if (!sessionId || !selectedName) return;
+    if (schemas[selectedName]) {
+      const sch = schemas[selectedName];
+      if (sch?.input_schema) {
+        setInputs(Object.fromEntries(sch.input_schema.map(f => [f.key, f.default])));
+      }
+      setOutputs(null);
+      return;
+    }
+    fetchSchema(selectedName, false);
+  }, [sessionId, selectedName]);
+
+  const updateInput = (k, v) => setInputs(prev => ({ ...prev, [k]: v }));
+
+  const handleRun = async () => {
+    if (!selectedName) return;
+    setRunning(true); setError(null);
+    try {
+      const r = await fetch("/api/simulator/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ policy_name: selectedName, inputs }),
+      });
+      setOutputs(await r.json());
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  if (!policies?.length) return (
+    <div className="h-full flex flex-col items-center justify-center text-[#86868b] p-8">
+      <div className="text-4xl mb-3 opacity-40">🧮</div>
+      <p className="text-sm text-[#6e6e73]">Waiting for policies…</p>
+    </div>
+  );
+
+  // Split inputs into the event field, event-scoped fields, and always-on fields.
+  const inputFields = schema?.input_schema || [];
+  const eventField = inputFields.find(f => f.key === "event");
+  const hasScoping = inputFields.some(f => Array.isArray(f.event_scope) && f.event_scope.length);
+  const alwaysFields = inputFields.filter(f => f.key !== "event" && !(Array.isArray(f.event_scope) && f.event_scope.length));
+  const scopedFieldsByEvent = {};
+  if (eventField && hasScoping) {
+    for (const opt of (eventField.options || [])) {
+      const val = opt.value ?? opt;
+      scopedFieldsByEvent[val] = inputFields.filter(f =>
+        Array.isArray(f.event_scope) && f.event_scope.includes(val)
+      );
+    }
+  }
+
+  return (
+    <div className="p-5 space-y-3 overflow-y-auto h-full bg-[#f5f5f7]">
+      <div className="bg-white rounded-xl p-4 border border-[#e5e5ea]">
+        <div className="flex items-end gap-2">
+          <div className="flex-1 min-w-0">
+            <label className={SIM_LABEL_CLS}>Policy</label>
+            <select className={SIM_INPUT_CLS} value={selectedName} onChange={e => setSelectedName(e.target.value)}>
+              {policies.map((p, i) => <option key={i} value={p.policy_name}>{p.policy_name}</option>)}
+            </select>
+          </div>
+          <button onClick={() => fetchSchema(selectedName, true)} disabled={preparing}
+            title="Regenerate simulator code"
+            className="px-3 py-2 rounded-lg bg-[#f5f5f7] text-[#6e6e73] hover:bg-[#e8f2ff] hover:text-[#0071e3] text-xs font-medium transition-colors disabled:opacity-50 flex-shrink-0">
+            ↻ Regenerate
+          </button>
+        </div>
+      </div>
+
+      <PremiumSummary policy={selectedPolicy} />
+      <CollapsibleKeyInfo data={selectedPolicy?.key_info} />
+
+      {preparing && (
+        <div className="bg-white rounded-xl p-4 border border-[#e5e5ea] flex items-center gap-3">
+          <div className="w-4 h-4 border-2 border-[#0071e3] border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm text-[#6e6e73]">Building simulator for this policy…</span>
+        </div>
+      )}
+
+      {schema?.error && (
+        <div className="bg-[#fff1f2] border border-[#fecdd3] text-[#e11d48] text-sm rounded-xl p-4">
+          {schema.error}
+        </div>
+      )}
+
+      {schema?.input_schema && (
+        <>
+          {alwaysFields.length > 0 && (
+            <div className="bg-white rounded-xl p-4 border border-[#e5e5ea]">
+              <SectionLabel>Inputs</SectionLabel>
+              <div className="grid grid-cols-2 gap-2.5">
+                {alwaysFields.map(field => (
+                  <div key={field.key} className={field.type === "text" ? "col-span-2" : ""}>
+                    <SimFieldLabel field={field} />
+                    <SimulatorField field={field} value={inputs[field.key]} onChange={updateInput} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {eventField && hasScoping && (
+            <SimulatorEventGroup
+              eventField={eventField}
+              alwaysFields={alwaysFields}
+              scopedFieldsByEvent={scopedFieldsByEvent}
+              inputs={inputs}
+              onChange={updateInput}
+            />
+          )}
+
+          {(!hasScoping) && (
+            <div className="bg-white rounded-xl p-4 border border-[#e5e5ea]">
+              <SectionLabel>Scenario Inputs</SectionLabel>
+              <div className="grid grid-cols-2 gap-2.5">
+                {inputFields.filter(f => !alwaysFields.includes(f)).map(field => (
+                  <div key={field.key} className={field.type === "text" ? "col-span-2" : ""}>
+                    <SimFieldLabel field={field} />
+                    <SimulatorField field={field} value={inputs[field.key]} onChange={updateInput} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button onClick={handleRun} disabled={running}
+            className="w-full py-2.5 bg-[#0071e3] text-white rounded-xl text-sm font-medium hover:bg-[#0077ed] disabled:opacity-50 transition-colors">
+            {running ? "Running…" : "Run Simulation"}
+          </button>
+        </>
+      )}
+
+      {error && (
+        <div className="bg-[#fff1f2] border border-[#fecdd3] text-[#e11d48] text-sm rounded-xl p-4">
+          {error}
+        </div>
+      )}
+
+      <SimulatorOutputs schema={schema?.output_schema} outputs={outputs} />
     </div>
   );
 }
@@ -1229,7 +1734,8 @@ function App() {
   const [cd, setCd] = useState({
     sessionId: null, messages: [], isWaiting: false, isTyping: false,
     phase: "idle", activeTab: "requirements",
-    requirements: null, criteria: null, policies: null, crawlerParams: null,
+    requirements: null, criteria: null, policies: null, crawledPolicies: null, crawlerParams: null,
+    simulatorInitial: null,
     activeAgent: null, claimData: null, testParams: null, sessionType: "advice"
   });
 
@@ -1287,6 +1793,8 @@ function App() {
         case "requirements": next.requirements = d.data; next.activeTab = "requirements"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Profile captured")]; break;
         case "criteria":     next.criteria = d.data; next.activeTab = "criteria"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Criteria generated")]; break;
         case "crawler_params": next.crawlerParams = { data: d.data, confirmed: false }; next.activeTab = "requirements"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Review search parameters")]; break;
+        case "crawled_policies": next.crawledPolicies = d.data; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", `Crawled ${(d.data || []).length} policies`)]; break;
+        case "crawled_policy": next.crawledPolicies = [...(next.crawledPolicies || []), d.data]; break;
         case "policies":     next.policies = d.data; next.activeTab = "policies"; next.activeAgent = "new_life_insurance"; next.messages = [...next.messages.filter(m => m.type !== "status"), mkMsg("milestone", "Evaluations complete")]; break;
         case "claim_update": next.claimData = d.data; next.activeAgent = "claiming_strategy"; break;
         case "test_scenario":    next.messages = [mkMsg("agent", `*Test Scenario Generated*\n\n${d.content}`)]; break;
@@ -1296,6 +1804,28 @@ function App() {
       return next;
     });
   };
+
+  const handleBuildSimulator = (policyName) => {
+    setCd(prev => ({ ...prev, activeTab: "simulator", simulatorInitial: policyName }));
+  };
+
+  // Merge scored (top-N) + crawled (all) for the Simulator dropdown.
+  const mergedSimulatorPolicies = (() => {
+    const scored = cd.policies || [];
+    const crawled = cd.crawledPolicies || [];
+    const seen = new Set(scored.map(p => p.policy_name));
+    const extras = crawled.filter(c => c.policy_name && !seen.has(c.policy_name)).map(c => ({
+      policy_name: c.policy_name,
+      basic_info: {
+        annual_premium: c.annual_premium,
+        premium_term_years: c.premium_term_years,
+        total_premium: c.total_premium,
+      },
+      return_rate: c.return_rate,
+      key_info: null,
+    }));
+    return [...scored, ...extras];
+  })();
 
   const handleConfirmParams = (params) => {
     wsRef.current?.send(JSON.stringify({ type: "confirm_params", params }));
@@ -1340,7 +1870,9 @@ function App() {
       requirements: conv.state_data?.user_requirements || null,
       criteria: conv.state_data?.criteria || null,
       policies: conv.state_data?.policies || null,
+      crawledPolicies: null,
       crawlerParams: null,
+      simulatorInitial: null,
       activeAgent: agent,
       claimData: agent === "claiming_strategy" ? { ...(conv.state_data?.claim_state || {}), details: conv.state_data?.claim_state || {} } : null,
       testParams: conv.state_data?.test_params || null,
@@ -1371,14 +1903,14 @@ function App() {
   };
 
   const handleStartAdvice = () => {
-    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: false, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, crawlerParams: null, activeAgent: null, claimData: null, testParams: null, sessionType: "advice" });
+    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: false, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, crawledPolicies: null, crawlerParams: null, simulatorInitial: null, activeAgent: null, claimData: null, testParams: null, sessionType: "advice" });
     fetchConversations();
     setView("consultant");
   };
 
   const handleStartTestClaim = async (params) => {
     setTestClaimModal(false);
-    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: true, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, crawlerParams: null, activeAgent: "claiming_strategy", claimData: { details: {} }, testParams: params, sessionType: "test" });
+    setCd({ sessionId: null, messages: [], isWaiting: false, isTyping: true, phase: "idle", activeTab: "requirements", requirements: null, criteria: null, policies: null, crawledPolicies: null, crawlerParams: null, simulatorInitial: null, activeAgent: "claiming_strategy", claimData: { details: {} }, testParams: params, sessionType: "test" });
 
     const r = await fetch("/api/sessions", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "test" }) });
     const { session_id } = await r.json();
@@ -1507,7 +2039,7 @@ function App() {
                 {cd.activeAgent === "new_life_insurance" && (
                   <>
                     <div className="bg-white border-b border-[#e5e5ea] flex px-5 pt-3.5 flex-shrink-0">
-                      {['requirements', 'criteria', 'policies'].map(t => (
+                      {['requirements', 'criteria', 'policies', 'simulator'].map(t => (
                         <button
                           key={t}
                           onClick={() => setCd(prev => ({...prev, activeTab: t}))}
@@ -1526,7 +2058,21 @@ function App() {
                         />
                       )}
                       {cd.activeTab === 'criteria'     && <CriteriaView    data={cd.criteria} />}
-                      {cd.activeTab === 'policies'     && <PoliciesView    data={cd.policies} />}
+                      {cd.activeTab === 'policies'     && (
+                        <PoliciesView
+                          scored={cd.policies}
+                          crawled={cd.crawledPolicies}
+                          onBuildSimulator={handleBuildSimulator}
+                        />
+                      )}
+                      {cd.activeTab === 'simulator'    && (
+                        <SimulatorView
+                          sessionId={cd.sessionId}
+                          policies={mergedSimulatorPolicies}
+                          initialPolicyName={cd.simulatorInitial}
+                          onInitialConsumed={() => setCd(prev => ({ ...prev, simulatorInitial: null }))}
+                        />
+                      )}
                     </div>
                   </>
                 )}

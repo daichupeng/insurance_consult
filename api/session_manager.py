@@ -232,12 +232,26 @@ class SessionManager:
                 session.crawled_policies = crawled_policies
                 send({"type": "crawled_policies", "data": crawled_policies})
 
+                # Narrow down to the top N policies for the expensive downstream work
+                # (retrieval, summarization, info extraction, scoring). All crawled
+                # policies remain available to the simulator on demand.
+                TOP_N = 3
+                top_crawled = sorted(
+                    crawled_policies,
+                    key=lambda p: float(p.get("return_rate") or 0.0),
+                    reverse=True,
+                )[:TOP_N]
+                top_names = [p.get("policy_name") for p in top_crawled if p.get("policy_name")]
+                logger.info(
+                    "[Session %s] Selected top %d for deep analysis (by return_rate): %s",
+                    session_id, len(top_crawled), top_names,
+                )
+
                 # Phase 4: Retrieval
                 if session.cancel_event.is_set(): return
                 session.phase = "retrieval"
-                crawled_names = [p["policy_name"] for p in crawled_policies if p.get("policy_name")]
-                send({"type": "policies_list", "data": crawled_names or []})
-                send({"type": "status", "phase": "retrieval", "message": "Retrieving relevant policy documents..."})
+                send({"type": "policies_list", "data": top_names})
+                send({"type": "status", "phase": "retrieval", "message": f"Retrieving relevant policy documents for top {len(top_crawled)} policies..."})
                 t0 = time.perf_counter()
 
                 def on_policy_done(policy):
@@ -246,7 +260,7 @@ class SessionManager:
                 policies = retriever.retrieve(
                     criteria,
                     on_policy_done=on_policy_done,
-                    crawled_policies=crawled_policies,
+                    crawled_policies=top_crawled,
                 )
                 logger.info("[Session %s] Phase 4 retrieval: %.2fs  (%d policies)",
                             session_id, time.perf_counter() - t0, len(policies))

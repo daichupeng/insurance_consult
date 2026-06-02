@@ -113,6 +113,42 @@ class PolicyResult:
 
 
 # ---------------------------------------------------------------------------
+# Helpers — input normalization
+# ---------------------------------------------------------------------------
+#
+# The crawler's public callers (LangChain tool / LangGraph node) pass Python
+# bools for `smoker` and `ci`. The comparefirst form, on the other hand, uses
+# `data-id="Y"` / `data-id="N"` on its option list and stores the same string
+# in a hidden input. If we forward the raw bool into page.evaluate(), Playwright
+# serializes it as JavaScript `true` / `false`, the template literal
+# `data-id="${ci}"` becomes `data-id="true"`, no <li> matches, no click fires,
+# and the form ends up submitted with the default. Always coerce here.
+
+def _yn(v) -> str:
+    """Coerce bool / str / int / None → 'Y' or 'N'."""
+    if isinstance(v, bool):
+        return "Y" if v else "N"
+    if v is None:
+        return "N"
+    s = str(v).strip().lower()
+    if s in ("y", "yes", "true", "1", "t"):
+        return "Y"
+    return "N"
+
+
+def _gender(v) -> str:
+    """Coerce 'male'/'female'/'M'/'F' → 'M' or 'F'."""
+    if v is None:
+        return "M"
+    s = str(v).strip().lower()
+    if s in ("m", "male"):
+        return "M"
+    if s in ("f", "female"):
+        return "F"
+    return "M"
+
+
+# ---------------------------------------------------------------------------
 # Helpers — term/SA matching
 # ---------------------------------------------------------------------------
 
@@ -192,6 +228,11 @@ def _fill_form(
     """
     cfg = FORM_CONFIG[product_type]
 
+    # Defensive normalization — callers may pass bools or "male"/"female".
+    gender = _gender(gender)
+    smoker = _yn(smoker)
+    ci     = _yn(ci)
+
     # 1. Category — click the styled <li data-id="all">
     if cfg.get("category_id"):
         page.evaluate("""(catId) => {
@@ -232,6 +273,26 @@ def _fill_form(
         const h = document.querySelector('#selCIRider');
         if (h) { h.value = ci; h.dispatchEvent(new Event('change', { bubbles: true })); }
     }""", ci)
+
+    # 5b. Verify CI / smoker actually took effect — surfaces silent type-mismatch bugs.
+    verify = page.evaluate("""() => {
+        const ci_hidden = document.querySelector('#selCIRider');
+        const sm_hidden = document.querySelector('#selSmokStatus');
+        const ci_li = document.querySelector('ul#illness-benefit li.active, ul#illness-benefit li.selected, ul#illness-benefit li.on, ul#illness-benefit li[aria-selected="true"]');
+        const sm_li = document.querySelector('ul#smoker li.active, ul#smoker li.selected, ul#smoker li.on, ul#smoker li[aria-selected="true"]');
+        return {
+            ci_hidden: ci_hidden ? ci_hidden.value : null,
+            smoker_hidden: sm_hidden ? sm_hidden.value : null,
+            ci_active_li: ci_li ? ci_li.getAttribute('data-id') : null,
+            smoker_active_li: sm_li ? sm_li.getAttribute('data-id') : null,
+        };
+    }""")
+    print(f"    form-state: smoker={smoker!r} → hidden={verify.get('smoker_hidden')!r} active-li={verify.get('smoker_active_li')!r}; "
+          f"ci={ci!r} → hidden={verify.get('ci_hidden')!r} active-li={verify.get('ci_active_li')!r}")
+    if verify.get("ci_hidden") not in (ci, None):
+        print(f"    [!] CI selection did not stick (wanted {ci!r}, hidden is {verify.get('ci_hidden')!r})", file=sys.stderr)
+    if verify.get("smoker_hidden") not in (smoker, None):
+        print(f"    [!] Smoker selection did not stick (wanted {smoker!r}, hidden is {verify.get('smoker_hidden')!r})", file=sys.stderr)
 
     # 6. Premium Type = Annual
     prem_type_id = cfg.get("prem_type_id")
@@ -567,6 +628,13 @@ def crawl_policies(
     """
     if product_type not in FORM_CONFIG:
         raise ValueError(f"product_type must be 'term', 'whole', or 'endowment'; got {product_type!r}")
+
+    # Coerce loose inputs (bool / "male" / "yes" / ...) to the strict form values
+    # the JS form code expects.
+    gender = _gender(gender)
+    smoker = _yn(smoker)
+    ci     = _yn(ci)
+    print(f"[Fetching Policies] Normalized form inputs: gender={gender}, smoker={smoker}, ci={ci}")
 
     cfg = FORM_CONFIG[product_type]
     listing_url = f"{BASE_URL}/productsListEvent.action?prodGroup={cfg['prod_group']}&pageAction=prodlisting"
